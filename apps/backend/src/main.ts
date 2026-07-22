@@ -1,8 +1,61 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe, Logger } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
+  const logger = new Logger('Bootstrap');
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
+
+  const configService = app.get(ConfigService);
+  const port = configService.get<number>('port') || 3000;
+
+  // Global prefix
+  app.setGlobalPrefix('api/v1');
+
+  // CORS
+  app.enableCors({
+    origin: '*',
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
+    credentials: true,
+  });
+
+  // Global Pipes & Interceptors & Filters
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
+
+  app.useGlobalInterceptors(new TransformInterceptor());
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  // Graceful shutdown hooks
+  app.enableShutdownHooks();
+
+  // Swagger Documentation
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('Memory Arena API Spec')
+    .setDescription(
+      'Backend REST API and WebSockets specification for Memory Arena IoT multiplayer game',
+    )
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
+
+  await app.listen(port);
+  logger.log(`🚀 Memory Arena Backend is running on port ${port}`);
+  logger.log(
+    `📚 Swagger documentation available at http://localhost:${port}/api/docs`,
+  );
 }
-bootstrap();
+
+void bootstrap();

@@ -1,0 +1,169 @@
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { PrismaService } from '../../database/prisma/prisma.service';
+import { BroadcastService } from '../socket/broadcast.service';
+import { SequenceService } from '../game/services/sequence.service';
+import { Difficulty, SessionStatus, SocketEvent } from '../../common/enums';
+import { JoinPlayerDto } from './dto/join-player.dto';
+import { SelectDifficultyDto } from './dto/select-difficulty.dto';
+
+@Injectable()
+export class SessionService {
+  private readonly logger = new Logger(SessionService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly broadcast: BroadcastService,
+    private readonly sequenceService: SequenceService,
+  ) {}
+
+  /**
+   * Gets or creates the active game session
+   */
+  async getOrCreateSession() {
+    let session = await this.prisma.gameSession.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!session) {
+      session = await this.prisma.gameSession.create({
+        data: {
+          status: SessionStatus.WAITING,
+          difficulty: Difficulty.MEDIUM,
+          currentRound: 1,
+          player1Score: 0,
+          player2Score: 0,
+        },
+      });
+      this.logger.log(`Created new GameSession: ${session.id}`);
+    }
+
+    return session;
+  }
+
+  /**
+   * Registers a player into player 1 or player 2 slot
+   */
+  async joinPlayer(playerId: string, dto: JoinPlayerDto) {
+    const session = await this.getOrCreateSession();
+
+    if (
+      session.status !== SessionStatus.WAITING &&
+      session.status !== SessionStatus.LOGIN
+    ) {
+      throw new BadRequestException(
+        'Cannot join session after match has started',
+      );
+    }
+
+    const updateData: {
+      player1Id?: string;
+      player2Id?: string;
+      status?: SessionStatus;
+    } = {};
+
+    if (dto.playerNumber === 1) {
+      updateData.player1Id = playerId;
+    } else {
+      updateData.player2Id = playerId;
+    }
+
+    const hasP1 = updateData.player1Id || session.player1Id;
+    const hasP2 = updateData.player2Id || session.player2Id;
+
+    if (hasP1 && hasP2) {
+      updateData.status = SessionStatus.READY;
+    } else {
+      updateData.status = SessionStatus.LOGIN;
+    }
+
+    const updatedSession = await this.prisma.gameSession.update({
+      where: { id: session.id },
+      data: updateData,
+    });
+
+    this.broadcast.emit(SocketEvent.SESSION_UPDATE, updatedSession);
+    return updatedSession;
+  }
+
+  /**
+   * Sets game difficulty for current session
+   */
+  async setDifficulty(dto: SelectDifficultyDto) {
+    const session = await this.getOrCreateSession();
+
+    if (
+      session.status !== SessionStatus.WAITING &&
+      session.status !== SessionStatus.LOGIN &&
+      session.status !== SessionStatus.READY
+    ) {
+      throw new BadRequestException(
+        'Cannot change difficulty during active match',
+      );
+    }
+
+    const updatedSession = await this.prisma.gameSession.update({
+      where: { id: session.id },
+      data: { difficulty: dto.difficulty },
+    });
+
+    this.broadcast.emit(SocketEvent.SESSION_UPDATE, updatedSession);
+    return updatedSession;
+  }
+
+  /**
+   * Starts the match
+   */
+  async startMatch() {
+    const session = await this.getOrCreateSession();
+
+    if (!session.player1Id || !session.player2Id) {
+      throw new BadRequestException(
+        'Two players must join before starting the match',
+      );
+    }
+
+    const initialSequence = this.sequenceService.generateSequence(
+      session.difficulty,
+    );
+
+    const updatedSession = await this.prisma.gameSession.update({
+      where: { id: session.id },
+      data: {
+        status: SessionStatus.COUNTDOWN,
+        currentRound: 1,
+        player1Score: 0,
+        player2Score: 0,
+        currentSequence: initialSequence,
+      },
+    });
+
+    this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
+      sessionId: updatedSession.id,
+      countdownSeconds: 3,
+    });
+
+    this.broadcast.emit(SocketEvent.SESSION_UPDATE, updatedSession);
+    return updatedSession;
+  }
+
+  /**
+   * Resets active session
+   */
+  async resetSession() {
+    const session = await this.prisma.gameSession.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (session) {
+      await this.prisma.gameSession.delete({
+        where: { id: session.id },
+      });
+    }
+
+    const newSession = await this.getOrCreateSession();
+    this.broadcast.emit(SocketEvent.SYSTEM_RESET, { reset: true });
+    this.broadcast.emit(SocketEvent.SESSION_UPDATE, newSession);
+
+    return newSession;
+  }
+}

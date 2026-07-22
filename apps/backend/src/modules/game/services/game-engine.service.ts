@@ -1,0 +1,249 @@
+import {
+  Injectable,
+  Logger,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
+import { PrismaService } from '../../../database/prisma/prisma.service';
+import { BroadcastService } from '../../socket/broadcast.service';
+import { SequenceService } from './sequence.service';
+import { ValidatorService } from './validator.service';
+import { ScoringService } from './scoring.service';
+import { StateMachineService } from './state-machine.service';
+import { SubmitInputDto } from '../dto/submit-input.dto';
+import { Color, SessionStatus, SocketEvent } from '../../../common/enums';
+import { GAME_CONSTANTS } from '../../../common/constants/game.constants';
+
+@Injectable()
+export class GameEngineService {
+  private readonly logger = new Logger(GameEngineService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly broadcast: BroadcastService,
+    private readonly sequenceService: SequenceService,
+    private readonly validatorService: ValidatorService,
+    private readonly scoringService: ScoringService,
+    private readonly stateMachineService: StateMachineService,
+  ) {}
+
+  /**
+   * Retrieves active session details or throws 404
+   */
+  async getCurrentSession() {
+    const session = await this.prisma.gameSession.findFirst({
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!session) {
+      throw new NotFoundException('No active game session found');
+    }
+
+    return session;
+  }
+
+  /**
+   * Gets current sequence for active session (used by ESP32)
+   */
+  async getCurrentSequence() {
+    const session = await this.getCurrentSession();
+
+    let sequence = session.currentSequence as Color[];
+
+    if (!sequence || sequence.length === 0) {
+      sequence = this.sequenceService.generateSequence(session.difficulty);
+      await this.prisma.gameSession.update({
+        where: { id: session.id },
+        data: {
+          currentSequence: sequence,
+          status: SessionStatus.SHOW_SEQUENCE,
+        },
+      });
+    }
+
+    const displaySpeed =
+      GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty] || 500;
+
+    return {
+      sequence,
+      displaySpeed,
+      sessionId: session.id,
+      round: session.currentRound,
+    };
+  }
+
+  /**
+   * Processes player inputs from ESP32 or unified API
+   */
+  async processRoundInput(dto: SubmitInputDto) {
+    const session = await this.prisma.gameSession.findUnique({
+      where: { id: dto.sessionId },
+    });
+
+    if (!session) {
+      throw new NotFoundException(
+        `GameSession with ID ${dto.sessionId} not found`,
+      );
+    }
+
+    const targetSequence = (session.currentSequence as Color[]) || [];
+
+    if (targetSequence.length === 0) {
+      throw new BadRequestException('Current session has no active sequence');
+    }
+
+    // 1. Validate inputs
+    const p1Val = this.validatorService.validateInput(
+      targetSequence,
+      dto.player1.input,
+    );
+    const p2Val = this.validatorService.validateInput(
+      targetSequence,
+      dto.player2.input,
+    );
+
+    // 2. Evaluate round winner
+    const evalResult = this.scoringService.evaluateRound({
+      player1Correct: p1Val.isCorrect,
+      player1Time: dto.player1.time,
+      player2Correct: p2Val.isCorrect,
+      player2Time: dto.player2.time,
+    });
+
+    let newP1Score = session.player1Score;
+    let newP2Score = session.player2Score;
+
+    if (evalResult.winnerPlayerNumber === 1) {
+      newP1Score += 1;
+    } else if (evalResult.winnerPlayerNumber === 2) {
+      newP2Score += 1;
+    }
+
+    // 3. Check for match winner
+    const matchWinnerNumber = this.scoringService.checkMatchWinner(
+      newP1Score,
+      newP2Score,
+    );
+    const isMatchFinished = matchWinnerNumber !== null;
+
+    // Generate next sequence
+    const nextSequence = this.sequenceService.generateSequence(
+      session.difficulty,
+    );
+    const displaySpeed = GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty];
+
+    if (isMatchFinished) {
+      // Determine winner player ID
+      const winnerId =
+        matchWinnerNumber === 1 ? session.player1Id : session.player2Id;
+
+      // Complete match inside database transaction
+      await this.prisma.$transaction(async (tx) => {
+        const match = await tx.match.create({
+          data: {
+            difficulty: session.difficulty,
+            winnerId: winnerId || null,
+            durationMs: 0,
+            player1Score: newP1Score,
+            player2Score: newP2Score,
+            startedAt: session.createdAt,
+            finishedAt: new Date(),
+          },
+        });
+
+        if (session.player1Id) {
+          await tx.matchPlayer.create({
+            data: {
+              matchId: match.id,
+              playerId: session.player1Id,
+              playerNumber: 1,
+            },
+          });
+        }
+
+        if (session.player2Id) {
+          await tx.matchPlayer.create({
+            data: {
+              matchId: match.id,
+              playerId: session.player2Id,
+              playerNumber: 2,
+            },
+          });
+        }
+
+        await tx.round.create({
+          data: {
+            matchId: match.id,
+            roundNumber: dto.round,
+            sequence: targetSequence,
+            player1Input: dto.player1.input,
+            player2Input: dto.player2.input,
+            player1Time: dto.player1.time,
+            player2Time: dto.player2.time,
+            winnerPlayerNumber: evalResult.winnerPlayerNumber,
+            player1Correct: p1Val.isCorrect,
+            player2Correct: p2Val.isCorrect,
+          },
+        });
+
+        await tx.gameSession.delete({
+          where: { id: session.id },
+        });
+      });
+
+      this.broadcast.emit(SocketEvent.MATCH_RESULT, {
+        winnerPlayerNumber: matchWinnerNumber,
+        winnerId,
+        player1Score: newP1Score,
+        player2Score: newP2Score,
+      });
+
+      this.broadcast.emit(SocketEvent.LEADERBOARD_UPDATE, { updated: true });
+
+      return {
+        winner: evalResult.winnerPlayerNumber,
+        player1Score: newP1Score,
+        player2Score: newP2Score,
+        matchFinished: true,
+        nextRound: null,
+        nextSequence: [],
+        displaySpeed,
+      };
+    } else {
+      // Advance to next round
+      const nextRoundNumber = evalResult.shouldRestartRound
+        ? session.currentRound
+        : session.currentRound + 1;
+
+      await this.prisma.gameSession.update({
+        where: { id: session.id },
+        data: {
+          player1Score: newP1Score,
+          player2Score: newP2Score,
+          currentRound: nextRoundNumber,
+          currentSequence: nextSequence,
+          status: SessionStatus.SHOW_SEQUENCE,
+        },
+      });
+
+      this.broadcast.emit(SocketEvent.ROUND_RESULT, {
+        round: dto.round,
+        winnerPlayerNumber: evalResult.winnerPlayerNumber,
+        player1Score: newP1Score,
+        player2Score: newP2Score,
+        shouldRestart: evalResult.shouldRestartRound,
+        nextRound: nextRoundNumber,
+      });
+
+      return {
+        winner: evalResult.winnerPlayerNumber,
+        player1Score: newP1Score,
+        player2Score: newP2Score,
+        matchFinished: false,
+        nextRound: nextRoundNumber,
+        nextSequence,
+        displaySpeed,
+      };
+    }
+  }
+}
