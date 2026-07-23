@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export function LeaderboardTable() {
   const { data: players = [], isLoading } = useQuery({
@@ -16,72 +17,112 @@ export function LeaderboardTable() {
   });
 
   return (
-    <Card className="bg-background/60 backdrop-blur-md border-primary/20 shadow-2xl h-full flex flex-col">
-      <CardHeader className="text-center pb-6 border-b border-border/50">
-        <Trophy className="w-12 h-12 mx-auto text-yellow-500 mb-3 drop-shadow-[0_0_15px_rgba(234,179,8,0.5)]" />
-        <CardTitle className="text-3xl font-extrabold tracking-tight text-primary">Global Leaderboard</CardTitle>
-        <CardDescription className="text-md">Top players worldwide</CardDescription>
+    <Card className="bg-white/95 backdrop-blur-xl border-4 border-purple-300/40 shadow-2xl rounded-[2.5rem] h-full flex flex-col overflow-hidden text-slate-900">
+      <CardHeader className="text-center pb-4 pt-6 border-b border-purple-100 bg-gradient-to-b from-purple-50/80 to-transparent">
+        <div className="w-14 h-14 mx-auto bg-amber-400 text-amber-950 rounded-2xl flex items-center justify-center mb-2 shadow-lg transform -rotate-3 border-2 border-amber-300">
+          <Trophy className="w-8 h-8 fill-amber-950" />
+        </div>
+        <CardTitle className="text-3xl font-black tracking-tight font-orbitron bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-indigo-600">
+          GLOBAL LEADERBOARD
+        </CardTitle>
+        <CardDescription className="text-sm font-semibold text-purple-600/80">
+          Top Arena Champions 👑
+        </CardDescription>
       </CardHeader>
-      <CardContent className="pt-6 flex-1 overflow-y-auto max-h-[600px]">
-        <div className="rounded-md border border-border/50 overflow-hidden">
-          <Table>
-            <TableHeader className="bg-muted/50">
-              <TableRow>
-                <TableHead className="w-12 text-center"><Hash className="w-4 h-4 mx-auto"/></TableHead>
-                <TableHead>Player</TableHead>
-                <TableHead className="text-center">Wins</TableHead>
-                <TableHead className="text-right"><Timer className="w-4 h-4 ml-auto inline mr-1"/> Best Time</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {isLoading ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell className="text-center">-</TableCell>
-                    <TableCell>Loading...</TableCell>
-                    <TableCell className="text-center">-</TableCell>
-                    <TableCell className="text-right">-</TableCell>
-                  </TableRow>
-                ))
-              ) : players.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                    No players found. Be the first to play!
-                  </TableCell>
-                </TableRow>
-              ) : (
-                players.map((entry, idx) => (
-                  <TableRow key={entry.id} className="transition-colors hover:bg-muted/50">
-                    <TableCell className="text-center font-bold">
-                      {idx === 0 ? <Medal className="w-6 h-6 text-yellow-500 mx-auto" /> :
-                       idx === 1 ? <Medal className="w-6 h-6 text-gray-400 mx-auto" /> :
-                       idx === 2 ? <Medal className="w-6 h-6 text-amber-600 mx-auto" /> :
-                       `#${idx + 1}`}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8 border border-primary/20">
-                          <AvatarImage src={entry.player.pictureUrl || ''} />
-                          <AvatarFallback>{entry.player.displayName.substring(0, 2).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <span className="font-semibold text-foreground text-sm truncate max-w-[120px] sm:max-w-[150px]">{entry.player.displayName}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="secondary" className="text-sm px-2 py-0.5 font-bold">
-                        {entry.score}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <span className="font-mono font-medium text-primary text-sm">
-                        {entry.bestTimeMs > 0 ? `${(entry.bestTimeMs / 1000).toFixed(3)}s` : '-'}
+
+      <CardContent className="pt-4 flex-1 overflow-y-auto max-h-[580px] px-4 md:px-6">
+        <div className="flex flex-col gap-2.5">
+          {isLoading ? (
+            Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex justify-between items-center p-4 bg-purple-50 rounded-2xl animate-pulse">
+                <div className="w-8 h-8 bg-purple-200 rounded-full" />
+                <div className="w-32 h-6 bg-purple-200 rounded" />
+                <div className="w-16 h-6 bg-purple-200 rounded" />
+              </div>
+            ))
+          ) : players.length === 0 ? (
+            <div className="text-center py-10 text-purple-600 font-semibold bg-purple-50/60 rounded-2xl border-2 border-dashed border-purple-200">
+              No champions yet! Be the first to play & claim #1! 🏆
+            </div>
+          ) : (
+            players.map((entry, idx) => {
+              const isTop = idx === 0;
+              const isSecond = idx === 1;
+              const isThird = idx === 2;
+              
+              return (
+                <div 
+                  key={entry.id} 
+                  className={cn(
+                    "flex items-center gap-3 p-3 md:p-3.5 rounded-2xl transition-all duration-300 border-2",
+                    isTop 
+                      ? "bg-gradient-to-r from-amber-100 via-amber-50 to-white border-amber-400 shadow-md scale-[1.02]" 
+                      : isSecond 
+                      ? "bg-slate-50 border-slate-300 shadow-sm"
+                      : isThird
+                      ? "bg-amber-50/60 border-amber-200 shadow-sm"
+                      : "bg-white border-slate-100 hover:bg-slate-50"
+                  )}
+                >
+                  {/* Rank Badge */}
+                  <div className="flex-shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center font-orbitron font-black text-lg md:text-xl shadow-inner">
+                    {isTop ? (
+                      <span className="w-full h-full bg-amber-400 text-amber-950 rounded-xl flex items-center justify-center border border-amber-300 font-black">
+                        🥇 1
                       </span>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                    ) : isSecond ? (
+                      <span className="w-full h-full bg-slate-200 text-slate-800 rounded-xl flex items-center justify-center border border-slate-300 font-black">
+                        🥈 2
+                      </span>
+                    ) : isThird ? (
+                      <span className="w-full h-full bg-amber-200 text-amber-900 rounded-xl flex items-center justify-center border border-amber-300 font-black">
+                        🥉 3
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 font-bold">#{idx + 1}</span>
+                    )}
+                  </div>
+                  
+                  {/* Avatar */}
+                  <Avatar className={cn(
+                    "h-10 w-10 md:h-11 md:w-11 border-2 shadow-sm",
+                    isTop ? "border-amber-400" : "border-purple-200"
+                  )}>
+                    <AvatarImage src={entry.player.pictureUrl || ''} />
+                    <AvatarFallback className="bg-purple-100 text-purple-700 font-bold">
+                      {entry.player.displayName.substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  {/* Player Name */}
+                  <div className="flex-1 min-w-0">
+                    <div className={cn(
+                      "font-black truncate text-sm md:text-base",
+                      isTop ? "text-amber-950" : "text-slate-800"
+                    )}>
+                      {entry.player.displayName}
+                    </div>
+                    {isTop && (
+                      <span className="inline-block bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full font-orbitron">
+                        Champion
+                      </span>
+                    )}
+                  </div>
+                  
+                  {/* Stats */}
+                  <div className="flex flex-col items-end gap-0.5">
+                    <div className="font-orbitron font-black text-base md:text-lg text-purple-700">
+                      {entry.score} <span className="text-[10px] text-purple-500 font-bold uppercase">Wins</span>
+                    </div>
+                    <div className="text-xs font-mono font-bold text-slate-500 flex items-center gap-1">
+                      <Timer className="w-3 h-3 text-cyan-600" />
+                      {entry.bestTimeMs > 0 ? `${(entry.bestTimeMs / 1000).toFixed(2)}s` : '-'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </CardContent>
     </Card>
