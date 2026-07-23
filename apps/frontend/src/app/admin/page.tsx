@@ -78,8 +78,11 @@ export default function AdminPage() {
   if (!isAuthenticated) return null;
 
   return (
-    <main className="min-h-screen bg-background p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <main className="h-screen max-h-screen w-screen flex flex-col justify-between bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden p-4 md:p-6 text-white">
+      {/* Floating RMUT Orbs */}
+      <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-yellow-200/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-orange-300/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col justify-center space-y-6 z-10">
         
         <div className="flex items-center gap-4 border-b border-border/50 pb-4">
           <ShieldAlert className="w-10 h-10 text-destructive" />

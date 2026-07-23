@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Inter, Orbitron } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
+import { DevNavToolbar } from "@/components/DevNavToolbar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -26,10 +27,11 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
-        className={`${inter.variable} ${orbitron.variable} antialiased min-h-screen font-inter bg-main text-foreground`}
+        className={`${inter.variable} ${orbitron.variable} antialiased h-screen w-screen overflow-hidden font-inter bg-main text-foreground`}
       >
         <Providers>
           {children}
+          <DevNavToolbar />
         </Providers>
       </body>
     </html>

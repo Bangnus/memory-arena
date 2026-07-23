@@ -121,10 +121,10 @@ export function GameScreen({
   };
 
   return (
-    <div className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto space-y-8">
+    <div className="flex flex-col items-center justify-between w-full max-w-4xl mx-auto flex-1 min-h-0 py-1">
       
       {/* Top Bar: Players & Scores */}
-      <div className="flex flex-col md:flex-row justify-between w-full px-4 gap-6">
+      <div className="flex flex-col md:flex-row justify-between w-full px-4 gap-4">
         {session.players.map((player) => {
           const isMe = player.id === currentUserId;
           return (
@@ -178,7 +178,7 @@ export function GameScreen({
       </div>
 
       {/* Center Game Area */}
-      <div className="relative w-full aspect-square max-w-[560px] flex items-center justify-center mt-2">
+      <div className="relative w-full aspect-square max-w-[400px] md:max-w-[440px] flex items-center justify-center my-auto">
         
         {/* Countdown Overlay */}
         <AnimatePresence>

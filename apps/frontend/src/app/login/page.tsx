@@ -91,8 +91,11 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-background/50 relative p-4">
-      <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center [mask-image:linear-gradient(180deg,white,rgba(255,255,255,0))] opacity-20 pointer-events-none" />
+    <main className="flex h-screen max-h-screen w-screen flex-col items-center justify-center bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden p-4 text-white">
+      {/* Floating RMUT Orbs */}
+      <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-yellow-200/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-orange-300/40 rounded-full blur-3xl pointer-events-none" />
+      
       <div className="z-10 w-full max-w-md">
         <Suspense fallback={
           <div className="flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>

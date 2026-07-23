@@ -5,17 +5,17 @@ import { LeaderboardTable } from '@/features/leaderboard/LeaderboardTable';
 
 export default function Home() {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500 relative overflow-hidden text-white">
+    <main className="flex h-screen max-h-screen w-screen flex-col items-center justify-between bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden text-white py-4 px-4">
       
-      {/* Playful Bright Floating Orbs */}
-      <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-cyan-300/30 rounded-full blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-yellow-300/30 rounded-full blur-3xl pointer-events-none animate-pulse" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[750px] bg-pink-400/20 rounded-full blur-3xl pointer-events-none" />
+      {/* Playful Bright RMUT Floating Orbs */}
+      <div className="absolute -top-20 -left-20 w-[550px] h-[550px] bg-yellow-200/40 rounded-full blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute -bottom-20 -right-20 w-[550px] h-[550px] bg-orange-300/40 rounded-full blur-3xl pointer-events-none animate-pulse" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-sky-200/30 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="z-10 container mx-auto px-4 py-8 flex flex-col lg:flex-row items-center justify-between gap-12 max-w-[1400px]">
+      <div className="z-10 container mx-auto px-4 flex-1 flex flex-col lg:flex-row items-center justify-between gap-8 max-w-[1400px] min-h-0">
         
         {/* Left Side: Leaderboard */}
-        <div className="w-full lg:w-1/2 xl:w-5/12 h-[650px] animate-in fade-in slide-in-from-left-8 duration-700">
+        <div className="w-full lg:w-1/2 xl:w-5/12 h-full max-h-[calc(100vh-100px)] py-2 animate-in fade-in slide-in-from-left-8 duration-700">
           <LeaderboardTable />
         </div>
 
@@ -23,15 +23,15 @@ export default function Home() {
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
           
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black px-4 py-1.5 rounded-full text-sm shadow-lg transform -rotate-1">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 text-slate-950 font-black px-4 py-1.5 rounded-full text-sm shadow-lg transform -rotate-1">
             <Sparkles className="w-4 h-4 fill-slate-950" />
-            <span>2-PLAYER MEMORY BATTLE</span>
+            <span>RMUT MEMORY BATTLE ARENA</span>
           </div>
 
           <div className="space-y-4">
             <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black font-orbitron tracking-tight leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
               MEMORY<br/>
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-amber-300 to-pink-400">
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-amber-300 to-orange-400">
                 ARENA
               </span>
             </h1>
@@ -70,6 +70,11 @@ export default function Home() {
         </div>
 
       </div>
+
+      {/* Footer Credit (Subtle & Small) */}
+      <footer className="z-10 pb-3 text-center text-[11px] font-mono text-white/40 hover:text-white/80 transition-opacity">
+        Created by Nus Peerapat
+      </footer>
     </main>
   );
 }

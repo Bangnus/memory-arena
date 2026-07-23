@@ -32,11 +32,15 @@ export default function GamePage() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center bg-gradient-to-br from-background to-background/50 relative overflow-hidden p-4">
+    <main className="h-screen max-h-screen w-screen flex flex-col items-center justify-between bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden p-4 text-white">
+      {/* Floating RMUT Orbs */}
+      <div className="absolute -top-20 -left-20 w-[450px] h-[450px] bg-yellow-200/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -right-20 w-[450px] h-[450px] bg-orange-300/40 rounded-full blur-3xl pointer-events-none" />
+
       {/* Top Header */}
-      <div className="w-full max-w-5xl flex justify-between items-center mb-8 z-10">
-        <h1 className="text-2xl font-black text-primary tracking-tight">MEMORY ARENA</h1>
-        <Button variant="ghost" asChild>
+      <div className="w-full max-w-5xl flex justify-between items-center mb-2 z-10">
+        <h1 className="text-2xl font-black text-amber-300 font-orbitron tracking-wide drop-shadow-md">MEMORY ARENA</h1>
+        <Button variant="ghost" asChild className="bg-white/10 text-white hover:bg-white/20">
           <Link href="/history">Match History</Link>
         </Button>
       </div>

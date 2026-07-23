@@ -24,7 +24,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [player, setPlayer] = React.useState<PlayerProfile | null>(null);
 
   React.useEffect(() => {
-    // Initialize from local storage on mount
+    // Initialize from local storage on mount, fallback to Mock Dev user for easy UI testing
     const storedToken = localStorage.getItem('token');
     const storedPlayer = localStorage.getItem('player');
     
@@ -35,6 +35,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (e) {
         console.error('Failed to parse stored player', e);
       }
+    } else {
+      // Default Mock User for Dev UI previewing
+      const mockPlayer: PlayerProfile = {
+        id: 'dev-player-1',
+        lineId: 'line-dev-123',
+        displayName: 'Dev Champion',
+        pictureUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=DevChampion',
+      };
+      setToken('mock-dev-token');
+      setPlayer(mockPlayer);
     }
   }, []);
 

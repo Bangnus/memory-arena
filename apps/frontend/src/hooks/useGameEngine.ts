@@ -30,6 +30,29 @@ export function useGameEngine() {
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
   const [matchWinner, setMatchWinner] = useState<string | null>(null);
 
+  // Default mock session for dev previewing when socket is not connected
+  const [mockSession, setMockSession] = useState<GameSession>({
+    id: 'mock-session-123',
+    status: 'WAITING',
+    difficulty: 'EASY',
+    players: [
+      {
+        id: 'dev-player-1',
+        displayName: 'Dev Champion',
+        pictureUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=DevChampion',
+        isReady: false,
+        score: 1,
+      },
+      {
+        id: 'p-2',
+        displayName: 'CyberOpponent 🤖',
+        pictureUrl: 'https://api.dicebear.com/7.x/bottts/svg?seed=CyberOpponent',
+        isReady: true,
+        score: 0,
+      }
+    ]
+  });
+
   useEffect(() => {
     if (!socket) return;
 
@@ -80,22 +103,62 @@ export function useGameEngine() {
     };
   }, [socket]);
 
+  // Interactive Mock simulation when offline
   const toggleReady = useCallback(() => {
-    if (socket) {
+    if (socket && isConnected) {
       socket.emit('player_ready');
+    } else {
+      // Mock toggle ready & start mock game sequence
+      setMockSession(prev => {
+        const nextReady = !prev.players[0].isReady;
+        const updatedPlayers = prev.players.map((p, idx) => 
+          idx === 0 ? { ...p, isReady: nextReady } : p
+        );
+
+        if (nextReady) {
+          // Trigger mock 3-2-1 countdown & game round
+          let count = 3;
+          setCountdown(3);
+          const timer = setInterval(() => {
+            count--;
+            if (count >= 0) {
+              setCountdown(count);
+            } else {
+              clearInterval(timer);
+              setCountdown(null);
+              // Play sequence
+              setSequence([COLOR.RED, COLOR.GREEN, COLOR.BLUE]);
+              setDisplaySpeedMs(800);
+              setTimeout(() => {
+                setIsInputPhase(true);
+              }, 2500);
+            }
+          }, 1000);
+        }
+
+        return { ...prev, players: updatedPlayers };
+      });
     }
-  }, [socket]);
+  }, [socket, isConnected]);
 
   const submitSequence = useCallback((playerSequence: string[]) => {
-    if (socket && isInputPhase) {
+    if (socket && isConnected && isInputPhase) {
       socket.emit('submit_sequence', { sequence: playerSequence });
-      setIsInputPhase(false); // Optimistically lock inputs
+      setIsInputPhase(false);
+    } else if (isInputPhase) {
+      // Mock round victory for dev preview
+      setIsInputPhase(false);
+      setRoundWinner('dev-player-1');
+      setMockSession(prev => ({
+        ...prev,
+        players: prev.players.map((p, idx) => idx === 0 ? { ...p, score: p.score + 1 } : p)
+      }));
     }
-  }, [socket, isInputPhase]);
+  }, [socket, isConnected, isInputPhase]);
 
   return {
-    isConnected,
-    session,
+    isConnected: true, // Always allow dev previewing
+    session: session || mockSession,
     countdown,
     sequence,
     displaySpeedMs,

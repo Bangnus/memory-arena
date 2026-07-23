@@ -18,30 +18,34 @@ export default function HistoryPage() {
   });
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-background to-background/50 p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <main className="h-screen max-h-screen w-screen flex flex-col justify-between bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden p-4 md:p-6 text-white">
+      {/* Floating RMUT Orbs */}
+      <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-yellow-200/40 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-20 -right-20 w-[500px] h-[500px] bg-orange-300/40 rounded-full blur-3xl pointer-events-none" />
+      
+      <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col min-h-0 space-y-4 z-10">
         
         <div className="flex items-center justify-between">
-          <Button variant="ghost" asChild>
+          <Button variant="ghost" asChild className="bg-white/10 text-white hover:bg-white/20">
             <Link href="/game">
               <ArrowLeft className="mr-2 h-4 w-4" /> Back to Game
             </Link>
           </Button>
         </div>
 
-        <Card className="bg-background/60 backdrop-blur-md border-primary/20 shadow-xl">
-          <CardHeader className="border-b border-border/50 pb-6">
+        <Card className="bg-white/95 backdrop-blur-md border-4 border-purple-300/40 shadow-2xl rounded-[2rem] flex-1 flex flex-col min-h-0 overflow-hidden text-slate-900">
+          <CardHeader className="border-b border-border/50 pb-4">
             <div className="flex items-center gap-3">
-              <div className="p-3 rounded-xl bg-primary/10 text-primary">
-                <History className="w-8 h-8" />
+              <div className="p-3 rounded-xl bg-purple-100 text-purple-700">
+                <History className="w-6 h-6" />
               </div>
               <div>
-                <CardTitle className="text-3xl font-extrabold text-primary">Match History</CardTitle>
-                <CardDescription>Recent matches played across the globe</CardDescription>
+                <CardTitle className="text-2xl font-black font-orbitron text-purple-900">Match History</CardTitle>
+                <CardDescription className="text-xs font-semibold text-purple-600">Recent match results</CardDescription>
               </div>
             </div>
           </CardHeader>
-          <CardContent className="pt-6">
+          <CardContent className="pt-4 flex-1 min-h-0 overflow-y-auto">
             
             {isLoading ? (
               <div className="text-center p-8 text-muted-foreground animate-pulse">

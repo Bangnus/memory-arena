@@ -30,7 +30,7 @@ export function LeaderboardTable() {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-4 flex-1 overflow-y-auto max-h-[580px] px-4 md:px-6">
+      <CardContent className="pt-4 flex-1 min-h-0 overflow-y-auto px-4 md:px-6">
         <div className="flex flex-col gap-2.5">
           {isLoading ? (
             Array.from({ length: 5 }).map((_, i) => (
