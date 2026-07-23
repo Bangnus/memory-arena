@@ -181,3 +181,28 @@ memory-arena/
 ├── pnpm-workspace.yaml
 ├── turbo.json
 └── README.md
+
+
+Project Overview
+
+Architecture
+
+Features
+
+Screenshots
+
+Hardware
+
+Software
+
+Installation
+
+Folder Structure
+
+Tech Stack
+
+API
+
+License
+
+Authors

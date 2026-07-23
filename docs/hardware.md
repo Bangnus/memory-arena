@@ -1,0 +1,31 @@
+ESP32 DevKit V1
+
+GPIO 2
+
+LED Strip
+
+GPIO 4
+
+Player1 Buttons
+
+GPIO 16
+GPIO 17
+GPIO 18
+GPIO 19
+
+Player2 Buttons
+
+GPIO 21
+GPIO 22
+GPIO 23
+GPIO 25
+
+Control Buttons
+
+GPIO 26
+GPIO 27
+GPIO 14
+
+Buzzer
+
+GPIO 13
