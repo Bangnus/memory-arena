@@ -1,0 +1,53 @@
+#pragma once
+
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include "../config/constants.h"
+
+struct GameStateData {
+    String status;
+    String difficulty;
+    int round;
+};
+
+struct GameSequenceData {
+    int round;
+    int displaySpeed;
+    String sequence[MAX_SEQUENCE_LENGTH];
+    int length;
+};
+
+struct PlayerInputData {
+    String inputs[MAX_SEQUENCE_LENGTH];
+    int length;
+    int time;
+};
+
+struct RoundResultData {
+    int roundWinner;
+    int player1Score;
+    int player2Score;
+    bool matchFinished;
+    int nextRound;
+};
+
+class ApiClient {
+public:
+    void init();
+    void loop();
+    
+    bool checkBackendStatus();
+    
+    bool getCurrentState(GameStateData& state);
+    bool getSequence(GameSequenceData& seq);
+    bool submitInput(String sessionId, int round, const PlayerInputData& p1, const PlayerInputData& p2, RoundResultData& res);
+
+private:
+    unsigned long lastHeartbeat = 0;
+    void sendHeartbeat();
+    
+    String httpGet(const char* endpoint);
+    String httpPost(const char* endpoint, const String& payload);
+};
+
+extern ApiClient apiClient;

@@ -1,52 +1,36 @@
-#ifndef CONSTANTS_H
-#define CONSTANTS_H
+#pragma once
 
-// Game States
 enum class GameState {
-  BOOT,
-  CONNECT_WIFI,
-  WAIT_SERVER,
-  SELECT_MODE,
-  WAIT_PLAYERS,
-  COUNTDOWN,
-  SHOW_SEQUENCE,
-  PLAYER_INPUT,
-  ROUND_RESULT,
-  GAME_RESULT,
-  RESET
+    BOOT,
+    CONNECT_WIFI,
+    WAIT_SERVER,
+    SELECT_MODE,
+    WAIT_PLAYERS, // WAITING
+    COUNTDOWN,
+    SHOW_SEQUENCE,
+    PLAYER_INPUT,
+    ROUND_RESULT,
+    GAME_RESULT,
+    RESET
 };
 
-// LED Colors
-#define COLOR_RED 0xFF0000
-#define COLOR_BLUE 0x0000FF
-#define COLOR_GREEN 0x00FF00
-#define COLOR_YELLOW 0xFFFF00
-#define COLOR_OFF 0x000000
+enum class LedColor {
+    NONE = 0,
+    RED,
+    GREEN,
+    BLUE,
+    YELLOW,
+    ALL
+};
 
-// Timeouts (ms)
-#define DEBOUNCE_DELAY 50
-#define SEQUENCE_DELAY 800
-#define COUNTDOWN_DELAY 1000
+enum class ButtonType {
+    NONE = 0,
+    P1_RED, P1_GREEN, P1_BLUE, P1_YELLOW,
+    P2_RED, P2_GREEN, P2_BLUE, P2_YELLOW,
+    CTRL_UP, CTRL_DOWN, CTRL_START
+};
 
-// GPIO Pins
-#define PIN_LED_DATA 5
-#define PIN_BUZZER 18
-
-// Player 1 Buttons
-#define PIN_P1_RED 2
-#define PIN_P1_BLUE 3
-#define PIN_P1_GREEN 4
-#define PIN_P1_YELLOW 15
-
-// Player 2 Buttons
-#define PIN_P2_RED 16
-#define PIN_P2_BLUE 17
-#define PIN_P2_GREEN 21
-#define PIN_P2_YELLOW 22
-
-// Control Buttons
-#define PIN_START 23
-#define PIN_NEXT 25
-#define PIN_PREVIOUS 26
-
-#endif // CONSTANTS_H
+constexpr int MAX_SEQUENCE_LENGTH = 20;
+constexpr unsigned long HTTP_TIMEOUT_MS = 5000;
+constexpr unsigned long DEBOUNCE_DELAY_MS = 50;
+constexpr unsigned long INPUT_TIMEOUT_MS = 15000;

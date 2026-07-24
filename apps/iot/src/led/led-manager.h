@@ -1,0 +1,25 @@
+#pragma once
+
+#include <Arduino.h>
+#include "../config/constants.h"
+#include "../config/pins.h"
+
+class LedManager {
+public:
+    void init();
+    void turnOffAll();
+    void turnOn(LedColor color);
+    
+    void loop();
+    
+    void startBlinking();
+    void startCycling();
+    void stopAnimation();
+
+private:
+    unsigned long lastUpdate = 0;
+    int animationStep = 0;
+    enum class Animation { NONE, BLINKING, CYCLING } currentAnimation = Animation::NONE;
+};
+
+extern LedManager ledManager;

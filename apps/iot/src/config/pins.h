@@ -1,27 +1,27 @@
-#ifndef PINS_H
-#define PINS_H
+#pragma once
 
-// LED
-#define PIN_LED_DATA 5
-
-// Buzzer
-#define PIN_BUZZER 18
+// LED Pins
+constexpr int PIN_LED_RED = 2;
+constexpr int PIN_LED_GREEN = 4;
+constexpr int PIN_LED_BLUE = 5;
+constexpr int PIN_LED_YELLOW = 12;
 
 // Player 1 Buttons
-#define PIN_P1_RED 2
-#define PIN_P1_BLUE 3
-#define PIN_P1_GREEN 4
-#define PIN_P1_YELLOW 15
+constexpr int PIN_P1_RED = 16;
+constexpr int PIN_P1_GREEN = 17;
+constexpr int PIN_P1_BLUE = 18;
+constexpr int PIN_P1_YELLOW = 19;
 
 // Player 2 Buttons
-#define PIN_P2_RED 16
-#define PIN_P2_BLUE 17
-#define PIN_P2_GREEN 21
-#define PIN_P2_YELLOW 22
+constexpr int PIN_P2_RED = 21;
+constexpr int PIN_P2_GREEN = 22;
+constexpr int PIN_P2_BLUE = 23;
+constexpr int PIN_P2_YELLOW = 25;
 
 // Control Buttons
-#define PIN_START 23
-#define PIN_NEXT 25
-#define PIN_PREVIOUS 26
+constexpr int PIN_BTN_UP = 26;
+constexpr int PIN_BTN_DOWN = 27;
+constexpr int PIN_BTN_START = 14;
 
-#endif // PINS_H
+// Buzzer
+constexpr int PIN_BUZZER = 13;

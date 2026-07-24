@@ -4,7 +4,7 @@ services:
     container_name: memory-battle-db-dev
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: memory_arena
       POSTGRES_USER: postgres
