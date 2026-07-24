@@ -56,3 +56,12 @@ pids
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
+
+# AI agent config
+CLAUDE.md
+GEMINI.md
+PROMPT.md
+.claude/
+.agents/
+.windsurf/
+skills-lock.json
