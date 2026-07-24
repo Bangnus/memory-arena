@@ -1,142 +1,14 @@
-backend/
-├── prisma/
-│   ├── schema.prisma
-│   └── migrations/
-├── src/
-│   ├── common/
-│   ├── config/
-│   ├── gateway/
-│   ├── modules/
-│   │   ├── admin/
-│   │   ├── auth/
-│   │   ├── game/
-│   │   ├── leaderboard/
-│   │   ├── line/
-│   │   └── player/
-│   ├── prisma/
-│   ├── app.module.ts
-│   └── main.ts
-├── .env
-├── package.json
-└── AGENTS.md
+# Memory Arena
 
+A two-player IoT memory game built for exhibition and portfolio purposes.
 
+## Project Overview
 
-reflex-arena/
+Players authenticate using LINE Login via a Next.js web application. The game hardware is controlled by an ESP32 running Arduino Framework with PlatformIO. Backend services are implemented using NestJS and PostgreSQL.
 
-│
-├── frontend/
-│
-├── backend/
-│
-├── iot/
-│
-├── docs/
-│   ├── api/
-│   ├── database/
-│   ├── images/
-│   ├── circuit/
-│   └── meeting/
-│
-├── docker/
-│
-├── .gitignore
-│
-├── README.md
-│
-└── LICENSE
+## Architecture
 
-
-
-Tech Stack
-Frontend
-Next.js 15
-React 19
-TypeScript
-Tailwind CSS v4
-shadcn/ui
-TanStack Query
-Axios
-Socket.IO Client
-React Hook Form
-Zod
-Framer Motion
-Lucide React
-Backend
-NestJS
-Prisma
-PostgreSQL
-Socket.IO
-Passport
-JWT
-LINE Login
-Swagger
-class-validator
-Docker (ภายหลัง)
-IoT
-ESP32 Dev Module
-Arduino Framework
-HTTP REST API
-ArduinoJson
-Hardware
-ESP32
-RGB LED / WS2812B
-Push Button × 8
-Buzzer
-Display
-
-
-
-Player
-│
-├── id
-├── lineId
-├── displayName
-├── pictureUrl
-└── createdAt
-
-Game
-│
-├── id
-├── difficulty
-├── winnerId
-├── loserId
-└── createdAt
-
-Round
-│
-├── id
-├── gameId
-├── round
-├── ledColor
-├── winnerId
-├── reactionTime
-└── createdAt
-
-Statistics
-│
-├── playerId
-├── win
-├── lose
-├── totalGame
-├── bestReaction
-└── averageReaction
-
-
-
-
-docs/
-├── requirements.md       # รายละเอียดความต้องการของระบบ
-├── use-case.md           # Use Case Diagram และคำอธิบาย
-├── er-diagram.md         # ER Diagram และโครงสร้างฐานข้อมูล
-├── api-spec.md           # เอกสาร REST API
-├── sequence-diagram.md   # ลำดับการทำงานของระบบ
-├── hardware.md           # รายการอุปกรณ์และการต่อวงจร
-├── deployment.md         # วิธีติดตั้งและรันระบบ
-└── ui-flow.md            # Flow ของหน้าจอและการใช้งาน
-
-
-
+```
 Frontend (Next.js)
         │
 Socket.IO / REST
@@ -146,63 +18,114 @@ Backend (NestJS)
 REST
         │
 ESP32
+```
 
+## Tech Stack
 
+### Frontend
+- Next.js 15 + React 19
+- TypeScript
+- Tailwind CSS v4
+- shadcn/ui
+- TanStack Query
+- Socket.IO Client
 
+### Backend
+- NestJS
+- Prisma ORM
+- PostgreSQL
+- Socket.IO
+- JWT + LINE Login
+- Swagger
 
-memory-arena/
-│
+### IoT
+- ESP32 Dev Module
+- Arduino Framework
+- PlatformIO
+
+## Quick Start
+
+### Prerequisites
+- Node.js 20+
+- Docker & Docker Compose
+- PlatformIO (for IoT development)
+
+### Development with Docker
+
+1. Clone the repository
+```bash
+git clone <repository-url>
+cd Memory-Battle
+```
+
+2. Start development environment
+```bash
+make dev
+```
+
+3. Run database migrations
+```bash
+make db-migrate
+```
+
+4. Access the application
+- Frontend: http://localhost:3001
+- Backend API: http://localhost:3000
+- Swagger docs: http://localhost:3000/api
+
+### Production with Docker
+
+1. Create environment file
+```bash
+cp .env.docker .env
+# Edit .env with your production values
+```
+
+2. Start production environment
+```bash
+make start
+```
+
+## Docker Commands
+
+| Command | Description |
+|---------|-------------|
+| `make dev` | Start development environment |
+| `make start` | Start production environment |
+| `make stop` | Stop all containers |
+| `make restart` | Restart all containers |
+| `make logs` | View logs |
+| `make build` | Build all images |
+| `make clean` | Remove all containers and volumes |
+| `make db-reset` | Reset database |
+| `make db-migrate` | Run database migrations |
+| `make db-seed` | Seed database |
+
+## Folder Structure
+
+```
+Memory-Battle/
 ├── apps/
-│   ├── frontend/          # Next.js
-│   ├── backend/           # NestJS
-│   └── firmware/          # ESP32 (PlatformIO)
-│
+│   ├── frontend/          # Next.js 15
+│   ├── backend/           # NestJS + Prisma
+│   └── iot/               # ESP32 PlatformIO
 ├── packages/
-│   └── shared/
-│       ├── enums/
-│       ├── types/
-│       ├── dto/
-│       ├── constants/
-│       ├── socket/
-│       └── api/
-│
-├── docs/
-│   ├── game-spec.md
-│   ├── database-spec.md
-│   ├── backend-architecture.md
-│   ├── game-engine.md
-│   ├── api-spec.md
-│   ├── socket-spec.md
-│   ├── esp32-protocol.md
-│   ├── state-machine.md
-│   └── coding-standard.md
-│
-├── docker-compose.yml
-├── pnpm-workspace.yaml
-├── turbo.json
+│   └── shared/            # Shared types, DTOs, constants
+├── docs/                  # Documentation
+├── docker-compose.yml     # Production Docker
+├── docker-compose.dev.yml # Development Docker
+├── Makefile               # Docker commands
 └── README.md
+```
 
+## Environment Variables
 
-Project Overview
+See `.env.docker` for available configuration options.
 
-Architecture
+## License
 
-Features
+MIT
 
-Screenshots
+## Authors
 
-Hardware
-
-Software
-
-Installation
-
-Folder Structure
-
-Tech Stack
-
-API
-
-License
-
-Authors
+Nus Peerapat
