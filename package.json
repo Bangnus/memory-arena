@@ -1,0 +1,8 @@
+{
+  "name": "memory-battle-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ]
+}
