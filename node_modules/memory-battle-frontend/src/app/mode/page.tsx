@@ -56,12 +56,31 @@ export default function ModePage() {
     };
   }, [socket]);
 
+  const handleSelectMode = async (index: number) => {
+    setSelectedIndex(index);
+    try {
+      await gameService.setDifficulty(MODES[index].name);
+    } catch {
+      // Backend sync error fallback
+    }
+  };
+
   const handleSelectPrev = () => {
-    setSelectedIndex((prev) => (prev - 1 + MODES.length) % MODES.length);
+    const newIdx = (selectedIndex - 1 + MODES.length) % MODES.length;
+    handleSelectMode(newIdx);
   };
 
   const handleSelectNext = () => {
-    setSelectedIndex((prev) => (prev + 1) % MODES.length);
+    const newIdx = (selectedIndex + 1) % MODES.length;
+    handleSelectMode(newIdx);
+  };
+
+  const handleCardClick = (index: number) => {
+    if (index === selectedIndex) {
+      handleStart();
+    } else {
+      handleSelectMode(index);
+    }
   };
 
   const handleStart = async () => {
@@ -127,7 +146,7 @@ export default function ModePage() {
               return (
                 <button
                   key={mode.name}
-                  onClick={() => setSelectedIndex(index)}
+                  onClick={() => handleCardClick(index)}
                   className={`
                     relative w-48 h-48 sm:w-56 sm:h-56 rounded-3xl border-4 transition-all duration-300 cursor-pointer
                     flex flex-col items-center justify-center space-y-3
