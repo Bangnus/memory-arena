@@ -6,14 +6,14 @@ export const GAME_CONSTANTS = {
   INPUT_TIMEOUT_MS: 15000,
   WINNER_SCREEN_DURATION_MS: 5000,
   SEQUENCE_LENGTH: {
-    [Difficulty.EASY]: 3,
-    [Difficulty.MEDIUM]: 4,
-    [Difficulty.HARD]: 6,
+    [Difficulty.EASY]: 2,
+    [Difficulty.MEDIUM]: 3,
+    [Difficulty.HARD]: 4,
   },
   DISPLAY_SPEED_MS: {
-    [Difficulty.EASY]: 800,
-    [Difficulty.MEDIUM]: 500,
-    [Difficulty.HARD]: 300,
+    [Difficulty.EASY]: 1200,
+    [Difficulty.MEDIUM]: 800,
+    [Difficulty.HARD]: 500,
   },
   COLOR_MAP: [Color.RED, Color.BLUE],
   COLOR_TO_INT: {

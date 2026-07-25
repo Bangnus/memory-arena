@@ -91,9 +91,16 @@ void GameEngine::pollBackend() {
         GameStateData state;
         if (apiClient.getCurrentState(state)) {
             currentSessionId = state.id; // Store session ID
-            if ((state.status == "COUNTDOWN" || state.status == "READY") && currentState != GameState::COUNTDOWN && currentState != GameState::SHOW_SEQUENCE && currentState != GameState::PLAYER_INPUT) {
+            currentRound = state.round;
+
+            if ((state.status == "COUNTDOWN" || state.status == "READY") && 
+                currentState != GameState::COUNTDOWN && 
+                currentState != GameState::SHOW_SEQUENCE && 
+                currentState != GameState::PLAYER_INPUT) {
                 changeState(GameState::COUNTDOWN);
-            } else if (state.status == "WAITING" && currentState != GameState::WAIT_PLAYERS) {
+            } else if (state.status == "SHOW_SEQUENCE" && currentState == GameState::ROUND_RESULT) {
+                changeState(GameState::SHOW_SEQUENCE);
+            } else if (state.status == "WAITING" && currentState != GameState::WAIT_PLAYERS && currentState != GameState::SELECT_MODE) {
                 changeState(GameState::WAIT_PLAYERS);
             }
         }

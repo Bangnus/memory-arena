@@ -1,14 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COLOR } from '@/constants/game';
 import { cn } from '@/lib/utils';
-import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trophy, CheckCircle2, XCircle } from 'lucide-react';
-import type { GameSession, PlayerState } from '@/hooks/useGameEngine';
+import type { GameSession } from '@/hooks/useGameEngine';
 
 const COLOR_MAP = {
   [COLOR.RED]: 'bg-red-500 shadow-red-500/50',
@@ -45,32 +44,50 @@ export function GameScreen({
   onReady,
   onSubmitSequence,
 }: GameScreenProps) {
-  const [activeColorIndex, setActiveColorIndex] = useState<number | null>(null);
+  const [activeColor, setActiveColor] = useState<string | null>(null);
+  const [activeStep, setActiveStep] = useState<number | null>(null);
   const [playerInput, setPlayerInput] = useState<string[]>([]);
   const players = session?.players ?? [];
 
   const me = players.find(p => p.id === currentUserId);
   const isSpectator = !me;
   
-  // Sequence Animation Effect
+  // Sequence Animation Effect matching ESP32 ON/OFF pulse timing
   useEffect(() => {
     if (sequence.length > 0 && !isInputPhase) {
-      let index = 0;
-      setActiveColorIndex(index);
-      
-      const interval = setInterval(() => {
-        index++;
-        if (index < sequence.length) {
-          setActiveColorIndex(index);
+      let step = 0;
+      const speed = displaySpeedMs > 0 ? displaySpeedMs : 600;
+      const pulseOnDuration = Math.floor(speed * 0.65);
+
+      const runStep = () => {
+        if (step < sequence.length) {
+          const color = sequence[step];
+          setActiveColor(color);
+          setActiveStep(step + 1);
+
+          setTimeout(() => {
+            setActiveColor(null);
+          }, pulseOnDuration);
+
+          step++;
         } else {
-          setActiveColorIndex(null);
+          setActiveColor(null);
+          setActiveStep(null);
           clearInterval(interval);
         }
-      }, displaySpeedMs);
+      };
 
-      return () => clearInterval(interval);
+      runStep();
+      const interval = setInterval(runStep, speed);
+
+      return () => {
+        clearInterval(interval);
+        setActiveColor(null);
+        setActiveStep(null);
+      };
     } else {
-      setActiveColorIndex(null);
+      setActiveColor(null);
+      setActiveStep(null);
     }
   }, [sequence, displaySpeedMs, isInputPhase]);
 
@@ -94,11 +111,11 @@ export function GameScreen({
   };
 
   if (!session || !session.players) {
-    return <div className="text-center p-8">Waiting for session data...</div>;
+    return <div className="text-center p-8 text-white font-orbitron">Waiting for session data...</div>;
   }
 
   const renderColorPad = (color: string) => {
-    const isActive = sequence[activeColorIndex ?? -1] === color && !isInputPhase;
+    const isActive = activeColor === color && !isInputPhase;
     const baseColorClass = COLOR_MAP[color as keyof typeof COLOR_MAP];
     const ringColorClass = COLOR_RING[color as keyof typeof COLOR_RING];
     
@@ -109,10 +126,12 @@ export function GameScreen({
         onClick={() => handleColorClick(color)}
         disabled={!isInputPhase || isSpectator}
         className={cn(
-          "w-32 h-32 md:w-40 md:h-40 rounded-3xl transition-all duration-200 cursor-default",
+          "w-32 h-32 md:w-40 md:h-40 rounded-3xl transition-all duration-150 cursor-default",
           baseColorClass,
-          isActive ? `opacity-100 scale-110 shadow-2xl ring-4 ring-offset-4 ring-offset-background ${ringColorClass}` : "opacity-40 shadow-sm",
-          isInputPhase && !isSpectator ? "cursor-pointer hover:opacity-80 active:opacity-100 opacity-60 shadow-lg" : ""
+          isActive 
+            ? `opacity-100 scale-110 shadow-[0_0_50px_rgba(255,255,255,0.8)] ring-4 ring-offset-4 ring-offset-slate-900 ${ringColorClass}` 
+            : "opacity-30 shadow-sm",
+          isInputPhase && !isSpectator ? "cursor-pointer hover:opacity-90 active:opacity-100 opacity-70 shadow-lg" : ""
         )}
       />
     );
@@ -121,6 +140,20 @@ export function GameScreen({
   return (
     <div className="flex flex-col items-center justify-between w-full max-w-4xl mx-auto flex-1 min-h-0 py-1">
       
+      {/* Best of 3 Badge */}
+      <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
+        <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 text-slate-950 font-black font-orbitron text-xs md:text-sm tracking-wider shadow-lg border border-amber-300/50 flex items-center gap-1.5">
+          <Trophy className="w-4 h-4 fill-slate-950" />
+          <span>BEST OF 3 MATCH</span>
+        </div>
+        <div className="px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white font-black font-orbitron text-xs md:text-sm tracking-wider border border-white/30">
+          MODE: {session.difficulty || 'MEDIUM'}
+        </div>
+        <div className="px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-cyan-300 font-black font-orbitron text-xs md:text-sm tracking-wider border border-cyan-400/30">
+          ROUND {session.currentRound || 1} / 3
+        </div>
+      </div>
+
       {/* Top Bar: Players & Scores */}
       <div className="flex flex-col md:flex-row justify-between w-full px-4 gap-4">
         {players.map((player) => {
@@ -178,6 +211,22 @@ export function GameScreen({
       {/* Center Game Area */}
       <div className="relative w-full aspect-square max-w-[400px] md:max-w-[440px] flex items-center justify-center my-auto">
         
+        {/* Sequence Status Text */}
+        {!isInputPhase && activeStep && (
+          <div className="absolute -top-10 font-orbitron font-black text-amber-300 text-sm md:text-base tracking-wider animate-pulse flex items-center gap-2 bg-slate-900/80 px-5 py-1.5 rounded-full border border-amber-400/40 backdrop-blur-md shadow-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+            SHOWING SEQUENCE ({activeStep}/{sequence.length})
+          </div>
+        )}
+
+        {/* Input Phase Text */}
+        {isInputPhase && (
+          <div className="absolute -top-10 font-orbitron font-black text-emerald-400 text-sm md:text-base tracking-wider animate-bounce flex items-center gap-2 bg-slate-900/80 px-5 py-1.5 rounded-full border border-emerald-400/40 backdrop-blur-md shadow-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+            YOUR TURN! PRESS BUTTONS
+          </div>
+        )}
+
         {/* Countdown Overlay */}
         <AnimatePresence>
           {countdown !== null && (

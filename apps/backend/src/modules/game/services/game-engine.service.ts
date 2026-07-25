@@ -225,7 +225,7 @@ export class GameEngineService {
         ? session.currentRound
         : session.currentRound + 1;
 
-      await this.prisma.gameSession.update({
+      const updatedSession = await this.prisma.gameSession.update({
         where: { id: session.id },
         data: {
           player1Score: newP1Score,
@@ -236,6 +236,8 @@ export class GameEngineService {
         },
       });
 
+      const sessionWithPlayers = await this.getCurrentSession();
+
       this.broadcast.emit(SocketEvent.ROUND_RESULT, {
         round: dto.round,
         winnerPlayerNumber: evalResult.winnerPlayerNumber,
@@ -244,6 +246,8 @@ export class GameEngineService {
         shouldRestart: evalResult.shouldRestartRound,
         nextRound: nextRoundNumber,
       });
+
+      this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
 
       return {
         winner: evalResult.winnerPlayerNumber,

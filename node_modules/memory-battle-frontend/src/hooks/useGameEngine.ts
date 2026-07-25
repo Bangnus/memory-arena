@@ -23,6 +23,7 @@ export interface GameSession {
   player2Id?: string | null;
   player1Score?: number;
   player2Score?: number;
+  currentRound?: number;
 }
 
 export function useGameEngine() {
