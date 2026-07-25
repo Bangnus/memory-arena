@@ -57,7 +57,7 @@ services:
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
       NGROK_ARGS: --log=stdout
-    command: "http frontend:3000"
+    command: "http backend:3000"
     depends_on:
       - backend
 
@@ -72,10 +72,10 @@ services:
       - "3001:3000"
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_URL: ${NGROK_URL:-http://localhost:3001}/api/v1
-      NEXT_PUBLIC_SOCKET_URL: ${NGROK_URL:-http://localhost:3001}
+      NEXT_PUBLIC_API_URL: http://${LOCAL_IP:-localhost}:3000/api/v1
+      NEXT_PUBLIC_SOCKET_URL: http://${LOCAL_IP:-localhost}:3000
       NEXT_PUBLIC_LINE_CLIENT_ID: ${LINE_CLIENT_ID:-}
-      NEXT_PUBLIC_LINE_CALLBACK_URL: ${NGROK_URL:-http://localhost:3001}/login
+      NEXT_PUBLIC_LINE_CALLBACK_URL: ${NGROK_URL:-http://localhost:3000}/api/v1/auth/line/callback
       BACKEND_INTERNAL_URL: http://backend:3000
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"

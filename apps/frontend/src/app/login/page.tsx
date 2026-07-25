@@ -97,8 +97,8 @@ function CentralDisplayContent() {
   const [qrUrls, setQrUrls] = useState<{ p1: string, p2: string } | null>(null);
 
   useEffect(() => {
-    // Reset session on mount to ensure fresh state
-    gameService.resetSession().catch(console.error);
+    // Fetch active session without deleting chosen mode
+    gameService.getCurrentSession().catch(console.error);
 
     const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || '';
     const redirectUri = process.env.NEXT_PUBLIC_LINE_CALLBACK_URL || (typeof window !== 'undefined' ? `${window.location.origin}/login` : '');

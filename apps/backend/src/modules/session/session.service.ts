@@ -111,22 +111,28 @@ export class SessionService {
   async setDifficulty(dto: SelectDifficultyDto) {
     const session = await this.getOrCreateSession();
 
+    const updateData: any = { difficulty: dto.difficulty };
+
+    // If session was in finished/stale state, reset to WAITING upon difficulty selection
     if (
       session.status !== SessionStatus.WAITING &&
       session.status !== SessionStatus.LOGIN &&
       session.status !== SessionStatus.READY
     ) {
-      throw new BadRequestException(
-        'Cannot change difficulty during active match',
-      );
+      updateData.status = SessionStatus.WAITING;
+      updateData.currentRound = 1;
+      updateData.player1Score = 0;
+      updateData.player2Score = 0;
+      updateData.currentSequence = null;
     }
 
     const updatedSession = await this.prisma.gameSession.update({
       where: { id: session.id },
-      data: { difficulty: dto.difficulty },
+      data: updateData,
     });
 
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
+    this.logger.log(`Difficulty updated to ${dto.difficulty} for session: ${session.id}`);
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
     return sessionWithPlayers;
   }

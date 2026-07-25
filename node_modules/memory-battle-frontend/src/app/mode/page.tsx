@@ -24,7 +24,12 @@ export default function ModePage() {
   useEffect(() => {
     if (!socket) return;
 
-    const handleDeviceStart = () => {
+    const handleDeviceStart = async () => {
+      try {
+        await gameService.setDifficulty(MODES[selectedIndex].name);
+      } catch (err) {
+        console.error('Failed to set difficulty on device start', err);
+      }
       setSelecting(true);
       toast.success(`Starting ${MODES[selectedIndex].name} mode!`);
       setTimeout(() => {
@@ -56,30 +61,19 @@ export default function ModePage() {
     };
   }, [socket]);
 
-  const handleSelectMode = async (index: number) => {
-    setSelectedIndex(index);
-    try {
-      await gameService.setDifficulty(MODES[index].name);
-    } catch {
-      // Backend sync error fallback
-    }
-  };
-
   const handleSelectPrev = () => {
-    const newIdx = (selectedIndex - 1 + MODES.length) % MODES.length;
-    handleSelectMode(newIdx);
+    setSelectedIndex((prev) => (prev - 1 + MODES.length) % MODES.length);
   };
 
   const handleSelectNext = () => {
-    const newIdx = (selectedIndex + 1) % MODES.length;
-    handleSelectMode(newIdx);
+    setSelectedIndex((prev) => (prev + 1) % MODES.length);
   };
 
   const handleCardClick = (index: number) => {
     if (index === selectedIndex) {
       handleStart();
     } else {
-      handleSelectMode(index);
+      setSelectedIndex(index);
     }
   };
 

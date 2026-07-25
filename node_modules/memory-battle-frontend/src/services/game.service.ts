@@ -75,6 +75,6 @@ export const gameService = {
 
   setDifficulty: async (difficulty: string): Promise<GameSession> => {
     const response = await api.post('/session/difficulty', { difficulty });
-    return response.data;
+    return response.data.data || response.data;
   },
 };
