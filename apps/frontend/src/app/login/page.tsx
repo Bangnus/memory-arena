@@ -132,6 +132,10 @@ function CentralDisplayContent() {
   const p2Ready = !!session?.player2Id;
   const bothReady = p1Ready && p2Ready;
 
+  // ดึงข้อมูล player จาก session
+  const player1 = session?.players?.find(p => p.id === session.player1Id);
+  const player2 = session?.players?.find(p => p.id === session.player2Id);
+
   return (
     <div className="w-full max-w-5xl">
       <div className="text-center mb-10">
@@ -148,8 +152,13 @@ function CentralDisplayContent() {
           <CardContent className="flex flex-col items-center pb-8">
             {p1Ready ? (
               <div className="flex flex-col items-center justify-center py-10 space-y-4 animate-in zoom-in duration-500">
-                <CheckCircle2 className="h-32 w-32 text-green-500" />
-                <h3 className="text-3xl font-bold text-slate-800">READY</h3>
+                {player1?.pictureUrl ? (
+                  <img src={player1.pictureUrl} alt={player1.displayName} className="w-24 h-24 rounded-full border-4 border-green-400 shadow-lg object-cover" />
+                ) : (
+                  <CheckCircle2 className="h-24 w-24 text-green-500" />
+                )}
+                <h3 className="text-2xl font-bold text-slate-800">{player1?.displayName || 'Player 1'}</h3>
+                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">READY</span>
               </div>
             ) : qrUrls?.p1 ? (
               <div className="bg-white p-4 rounded-3xl shadow-inner">
@@ -169,8 +178,13 @@ function CentralDisplayContent() {
           <CardContent className="flex flex-col items-center pb-8">
             {p2Ready ? (
               <div className="flex flex-col items-center justify-center py-10 space-y-4 animate-in zoom-in duration-500">
-                <CheckCircle2 className="h-32 w-32 text-green-500" />
-                <h3 className="text-3xl font-bold text-slate-800">READY</h3>
+                {player2?.pictureUrl ? (
+                  <img src={player2.pictureUrl} alt={player2.displayName} className="w-24 h-24 rounded-full border-4 border-green-400 shadow-lg object-cover" />
+                ) : (
+                  <CheckCircle2 className="h-24 w-24 text-green-500" />
+                )}
+                <h3 className="text-2xl font-bold text-slate-800">{player2?.displayName || 'Player 2'}</h3>
+                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">READY</span>
               </div>
             ) : qrUrls?.p2 ? (
               <div className="bg-white p-4 rounded-3xl shadow-inner">
