@@ -45,7 +45,7 @@ function MobileLoginContent({ code, role }: { code: string, role: number }) {
 
   useEffect(() => {
     if (code) {
-      const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/login` : '';
+      const redirectUri = process.env.NEXT_PUBLIC_LINE_CALLBACK_URL || (typeof window !== 'undefined' ? `${window.location.origin}/login` : '');
       loginMutation.mutate({ code, redirectUri });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -101,7 +101,7 @@ function CentralDisplayContent() {
     gameService.resetSession().catch(console.error);
 
     const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || '';
-    const redirectUri = typeof window !== 'undefined' ? `${window.location.origin}/login` : '';
+    const redirectUri = process.env.NEXT_PUBLIC_LINE_CALLBACK_URL || (typeof window !== 'undefined' ? `${window.location.origin}/login` : '');
     
     if (!clientId) {
       toast.error('LINE Client ID is missing!');
@@ -149,7 +149,6 @@ function CentralDisplayContent() {
               </div>
             ) : qrUrls?.p1 ? (
               <div className="bg-white p-4 rounded-3xl shadow-inner">
-                {/* @ts-expect-error React 19 typing compatibility */}
                 <QRCode value={qrUrls.p1} size={250} level="H" />
               </div>
             ) : (
@@ -171,7 +170,6 @@ function CentralDisplayContent() {
               </div>
             ) : qrUrls?.p2 ? (
               <div className="bg-white p-4 rounded-3xl shadow-inner">
-                {/* @ts-expect-error React 19 typing compatibility */}
                 <QRCode value={qrUrls.p2} size={250} level="H" />
               </div>
             ) : (

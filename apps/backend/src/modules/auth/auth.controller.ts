@@ -1,4 +1,6 @@
-import { Controller, Post, Get, Body, UseGuards } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Query, Res } from '@nestjs/common';
+import type { Response } from 'express';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiTags,
   ApiOperation,
@@ -14,7 +16,10 @@ import type { IJwtPayload } from '../../common/interfaces/api-response.interface
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('line')
   @ApiOperation({
@@ -26,6 +31,30 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Invalid LINE authorization code' })
   async loginWithLine(@Body() dto: LineLoginDto) {
     return this.authService.loginWithLine(dto);
+  }
+
+  @Get('line/callback')
+  @ApiOperation({
+    summary: 'LINE OAuth Callback Redirect',
+    description: 'Handles GET redirect from LINE and redirects back to frontend',
+  })
+  async lineCallback(
+    @Query('code') code: string,
+    @Query('state') state: string,
+    @Query('error') error: string,
+    @Res() res: Response,
+  ) {
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL') || 'http://localhost:3001';
+    
+    if (error) {
+      return res.redirect(`${frontendUrl}/login?error=${encodeURIComponent(error)}`);
+    }
+    
+    if (!code) {
+      return res.redirect(`${frontendUrl}/login?error=NoCode`);
+    }
+
+    return res.redirect(`${frontendUrl}/login?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}`);
   }
 
   @Get('me')

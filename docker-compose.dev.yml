@@ -34,8 +34,8 @@ services:
       JWT_EXPIRES_IN: 1d
       LINE_CHANNEL_ID: ${LINE_CHANNEL_ID:-}
       LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET:-}
-      LINE_CALLBACK_URL: ${LINE_CALLBACK_URL:-http://192.168.1.5:3000/auth/line/callback}
-      FRONTEND_URL: http://192.168.1.5:3001
+      LINE_CALLBACK_URL: ${NGROK_URL:-http://localhost:3000}/auth/line/callback
+      FRONTEND_URL: http://${LOCAL_IP:-localhost}:3001
     volumes:
       - ./apps/backend/src:/app/src
       - ./apps/backend/prisma:/app/prisma
@@ -56,9 +56,10 @@ services:
       - "3001:3000"
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:3000
-      NEXT_PUBLIC_SOCKET_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://${LOCAL_IP:-localhost}:3000
+      NEXT_PUBLIC_SOCKET_URL: http://${LOCAL_IP:-localhost}:3000
       NEXT_PUBLIC_LINE_CLIENT_ID: ${LINE_CLIENT_ID:-}
+      NEXT_PUBLIC_LINE_CALLBACK_URL: ${NGROK_URL:-http://localhost:3000}/auth/line/callback
       WATCHPACK_POLLING: "true"
       CHOKIDAR_USEPOLLING: "true"
     volumes:
