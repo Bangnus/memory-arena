@@ -94,9 +94,11 @@ export function useGameEngine() {
       }
     });
 
-    socket.on(SOCKET_EVENTS.ROUND_RESULT, (data: { winnerPlayerNumber: number; winnerId?: string; player1Score: number; player2Score: number }) => {
+    socket.on(SOCKET_EVENTS.ROUND_RESULT, (data: { winnerPlayerNumber: number; winnerId?: string; nextRound?: number; player1Score: number; player2Score: number }) => {
       setRoundWinner(data.winnerId || (data.winnerPlayerNumber === 1 ? '1' : data.winnerPlayerNumber === 2 ? '2' : null));
       setIsInputPhase(false);
+      setP1LiveInputs([]);
+      setP2LiveInputs([]);
       setSession(prev => {
         if (!prev) return null;
         const updatedPlayers = prev.players?.map((p, idx) => {
@@ -106,6 +108,7 @@ export function useGameEngine() {
         });
         return {
           ...prev,
+          currentRound: data.nextRound || (data.player1Score + data.player2Score + 1),
           player1Score: data.player1Score,
           player2Score: data.player2Score,
           players: updatedPlayers,

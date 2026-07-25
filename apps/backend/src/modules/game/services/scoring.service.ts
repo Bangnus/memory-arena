@@ -35,8 +35,9 @@ export class ScoringService {
       return { winnerPlayerNumber, shouldRestartRound: false };
     }
 
-    // Both failed or timed out -> restart round
-    return { winnerPlayerNumber: null, shouldRestartRound: true };
+    // Both failed or timed out -> Tie-breaker by faster response time (or P1 if equal)
+    const winnerPlayerNumber = (player1Time > 0 && (player2Time === 0 || player1Time <= player2Time)) ? 1 : 2;
+    return { winnerPlayerNumber, shouldRestartRound: false };
   }
 
   /**

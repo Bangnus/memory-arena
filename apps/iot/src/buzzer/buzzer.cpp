@@ -34,10 +34,10 @@ void BuzzerManager::play(BuzzerSound sound) {
             playTone(1000, 100);
             break;
         case BuzzerSound::BEEP:
-            playTone(800, 100);
+            playTone(800, 50);
             break;
         case BuzzerSound::CORRECT:
-            playTone(1200, 200);
+            playTone(1200, 80);
             break;
         case BuzzerSound::WRONG:
             playTone(300, 500);

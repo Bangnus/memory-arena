@@ -120,7 +120,7 @@ function CentralDisplayContent() {
   useEffect(() => {
     if (session?.player1Id && session?.player2Id) {
       if (redirectCountdown === null) {
-        setRedirectCountdown(3);
+        setRedirectCountdown(5);
       }
     }
   }, [session, redirectCountdown]);

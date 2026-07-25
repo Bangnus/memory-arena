@@ -37,7 +37,7 @@ void GameEngine::changeState(GameState newState) {
         case GameState::COUNTDOWN:
             Serial.println("COUNTDOWN");
             ledManager.stopAnimation();
-            countdownStep = 3;
+            countdownStep = 5;
             lastCountdownTime = 0;
             buttonManager.disablePlayerButtons();
             break;
@@ -116,11 +116,23 @@ void GameEngine::loop() {
     switch (currentState) {
         case GameState::BOOT:
             if (wifiManager.isConnected() && apiClient.checkBackendStatus()) {
-                changeState(GameState::SELECT_MODE);
+                GameStateData state;
+                if (apiClient.getCurrentState(state) && state.id.length() > 0) {
+                    if (state.status == "COUNTDOWN" || state.status == "READY") {
+                        changeState(GameState::COUNTDOWN);
+                    } else if (state.status == "SHOW_SEQUENCE") {
+                        changeState(GameState::SHOW_SEQUENCE);
+                    } else {
+                        changeState(GameState::WAIT_PLAYERS);
+                    }
+                } else {
+                    changeState(GameState::WAIT_PLAYERS);
+                }
             }
             break;
         case GameState::SELECT_MODE:
             handleSelectMode();
+            pollBackend();
             break;
         case GameState::WAIT_PLAYERS:
             if (buttonManager.isStartPressed()) {
@@ -211,13 +223,11 @@ void GameEngine::handleShowSequence() {
             ledManager.turnOn(color);
             buzzerManager.play(BuzzerSound::BEEP);
             sequenceDisplayIndex++;
-        } else if (sequenceDisplayIndex == currentSequence.length) {
-            ledManager.turnOffAll();
-            sequenceDisplayIndex++;
         } else {
+            ledManager.turnOffAll();
             changeState(GameState::PLAYER_INPUT);
         }
-    } else if (now - lastSequenceDisplayTime >= speed / 2) {
+    } else if (now - lastSequenceDisplayTime >= (speed * 65) / 100) {
         ledManager.turnOffAll();
     }
 }
@@ -242,10 +252,8 @@ void GameEngine::handlePlayerInput() {
                 isP1 ? p1Input.length + 1 : p2Input.length + 1, 
                 currentSequence.length);
 
-            LedColor color = LedColor::NONE;
-            if (colorStr == "RED") color = LedColor::RED;
-            else if (colorStr == "BLUE") color = LedColor::BLUE;
-            ledManager.turnOn(color);
+            // LEDs remain OFF during player input (LEDs are ONLY for sequence display)
+            buzzerManager.play(BuzzerSound::BEEP);
             
             if (isP1 && !p1Finished) {
                 if (p1Input.length < currentSequence.length) {

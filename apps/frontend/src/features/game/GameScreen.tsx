@@ -173,108 +173,129 @@ export function GameScreen({
 
   const activeCountdown = roundCountdown ?? countdown;
 
+  const player1 = players[0];
+  const player2 = players[1];
+
   return (
-    <div className="flex flex-col items-center justify-between w-full max-w-4xl mx-auto flex-1 min-h-0 py-1">
+    <div className="w-full h-full flex flex-col justify-between items-center relative overflow-hidden py-1 px-4 select-none">
       
-      {/* Best of 3 Badge */}
-      <div className="flex items-center justify-center gap-2 mb-2 flex-wrap">
-        <div className="px-4 py-1.5 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 text-slate-950 font-black font-orbitron text-xs md:text-sm tracking-wider shadow-lg border border-amber-300/50 flex items-center gap-1.5">
-          <Trophy className="w-4 h-4 fill-slate-950" />
-          <span>BEST OF 3 MATCH</span>
-        </div>
-        <div className="px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-white font-black font-orbitron text-xs md:text-sm tracking-wider border border-white/30">
-          MODE: {session.difficulty || 'MEDIUM'}
-        </div>
-        <div className="px-3.5 py-1.5 rounded-full bg-white/20 backdrop-blur-md text-cyan-300 font-black font-orbitron text-xs md:text-sm tracking-wider border border-cyan-400/30">
-          ROUND {session.currentRound || 1} / 3
-        </div>
-      </div>
-
-      {/* Top Bar: Players & Scores */}
-      <div className="flex flex-col md:flex-row justify-between w-full px-4 gap-4">
-        {players.map((player, idx) => {
-          const isMe = player.id === currentUserId;
-          const playerNum = idx + 1;
-          const liveInputs = playerNum === 1 ? p1LiveInputs : p2LiveInputs;
-
-          return (
-            <div key={player.id} className={cn(
-              "flex-1 relative overflow-hidden rounded-[2rem] border-3 bg-white/95 backdrop-blur-xl transition-all duration-300 text-slate-900 shadow-xl",
-              isMe ? "border-cyan-400 bg-cyan-50/40 ring-4 ring-cyan-300/30" : "border-purple-200"
-            )}>
-              <div className="p-4 md:p-5 flex items-center gap-4 relative z-10">
-                <Avatar className={cn(
-                  "h-16 w-16 md:h-18 md:w-18 border-4 shadow-md",
-                  isMe ? "border-cyan-400" : "border-purple-200"
-                )}>
-                  <AvatarImage src={player.pictureUrl || ''} />
-                  <AvatarFallback className="bg-purple-100 text-purple-800 font-black font-orbitron">
-                    {player.displayName.substring(0,2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                
-                <div className="flex flex-col flex-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-orbitron font-black text-lg md:text-xl text-slate-900 truncate">
-                      {player.displayName} {isMe && <span className="text-cyan-600 text-xs font-bold">(You)</span>}
-                    </span>
-                    <span className={cn(
-                      "text-[10px] font-black font-orbitron px-2 py-0.5 rounded-full border",
-                      playerNum === 1 ? "bg-cyan-100 text-cyan-800 border-cyan-300" : "bg-orange-100 text-orange-800 border-orange-300"
-                    )}>
-                      P{playerNum}
-                    </span>
+      {/* Top Bar: Corner Player Cards & Center Badges */}
+      <div className="w-full max-w-6xl flex items-start justify-between gap-4 z-10">
+        
+        {/* Top Left Corner: Player 1 Card */}
+        {player1 ? (
+          <div className={cn(
+            "w-60 md:w-72 relative overflow-hidden rounded-3xl border-3 bg-white/95 backdrop-blur-xl p-3 shadow-xl transition-all duration-300 text-slate-900",
+            player1.id === currentUserId ? "border-cyan-400 bg-cyan-50/40 ring-4 ring-cyan-300/30" : "border-cyan-200"
+          )}>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 md:h-14 md:w-14 border-3 border-cyan-400 shadow-md">
+                <AvatarImage src={player1.pictureUrl || ''} />
+                <AvatarFallback className="bg-cyan-100 text-cyan-800 font-black font-orbitron">P1</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex justify-between items-center">
+                  <span className="font-orbitron font-black text-sm md:text-base text-slate-900 truncate">
+                    {player1.displayName}
+                  </span>
+                  <span className="text-[10px] font-black font-orbitron px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">P1</span>
+                </div>
+                <div className="flex justify-between items-end mt-0.5">
+                  <div className="flex items-center gap-1">
+                    <Trophy className="w-4 h-4 text-amber-500 fill-amber-400" />
+                    <span className="text-xl md:text-2xl font-black text-purple-700 font-orbitron">{player1.score}</span>
                   </div>
-                  
-                  <div className="flex justify-between items-end mt-1">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] text-purple-600 font-bold uppercase tracking-wider font-orbitron">Wins</span>
-                      <div className="flex items-center gap-1.5">
-                        <Trophy className="w-5 h-5 text-amber-500 fill-amber-400" />
-                        <span className="text-3xl font-black text-purple-700 font-orbitron">
-                          {player.score}
-                        </span>
-                      </div>
+                  {/* Live progress dots inside P1 card */}
+                  {showInputArea && (
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-full border border-slate-200">
+                      {Array.from({ length: effectiveSequence.length }).map((_, i) => (
+                        <motion.div
+                          key={i}
+                          animate={p1LiveInputs[i] ? { scale: [1, 1.3, 1] } : {}}
+                          className={cn("w-4 h-4 rounded-full border transition-all duration-200", p1LiveInputs[i] ? COLOR_MAP[p1LiveInputs[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-white")}
+                        />
+                      ))}
                     </div>
-                    
-                    {/* Live Progress Dots inside Card */}
-                    {showInputArea && (
-                      <div className="flex gap-1.5 bg-slate-100 p-1.5 rounded-full border border-slate-200">
-                        {Array.from({ length: effectiveSequence.length }).map((_, i) => (
-                          <motion.div
-                            key={i}
-                            animate={liveInputs[i] ? { scale: [1, 1.3, 1] } : {}}
-                            className={cn(
-                              "w-5 h-5 rounded-full border transition-all duration-200",
-                              liveInputs[i] ? COLOR_MAP[liveInputs[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-white"
-                            )}
-                          />
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             </div>
-          )
-        })}
+          </div>
+        ) : <div className="w-60 md:w-72" />}
+
+        {/* Top Center: Match Status Badges */}
+        <div className="flex flex-col items-center gap-1 pt-1">
+          <div className="px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-400 via-orange-400 to-red-500 text-slate-950 font-black font-orbitron text-xs tracking-wider shadow-md border border-amber-300/50 flex items-center gap-1">
+            <Trophy className="w-3.5 h-3.5 fill-slate-950" />
+            <span>BEST OF 3</span>
+          </div>
+          <div className="flex gap-2">
+            <div className="px-3 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-white font-black font-orbitron text-[11px] border border-white/30">
+              MODE: {session.difficulty || 'MEDIUM'}
+            </div>
+            <div className="px-3 py-0.5 rounded-full bg-white/20 backdrop-blur-md text-cyan-300 font-black font-orbitron text-[11px] border border-cyan-400/30">
+              ROUND {Math.min(3, session.currentRound || ((players[0]?.score || 0) + (players[1]?.score || 0) + 1))} / 3
+            </div>
+          </div>
+        </div>
+
+        {/* Top Right Corner: Player 2 Card */}
+        {player2 ? (
+          <div className={cn(
+            "w-60 md:w-72 relative overflow-hidden rounded-3xl border-3 bg-white/95 backdrop-blur-xl p-3 shadow-xl transition-all duration-300 text-slate-900",
+            player2.id === currentUserId ? "border-orange-400 bg-orange-50/40 ring-4 ring-orange-300/30" : "border-orange-200"
+          )}>
+            <div className="flex items-center gap-3">
+              <Avatar className="h-12 w-12 md:h-14 md:w-14 border-3 border-orange-400 shadow-md">
+                <AvatarImage src={player2.pictureUrl || ''} />
+                <AvatarFallback className="bg-orange-100 text-orange-800 font-black font-orbitron">P2</AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col flex-1 min-w-0">
+                <div className="flex justify-between items-center">
+                  <span className="font-orbitron font-black text-sm md:text-base text-slate-900 truncate">
+                    {player2.displayName}
+                  </span>
+                  <span className="text-[10px] font-black font-orbitron px-2 py-0.5 rounded-full bg-orange-100 text-orange-800 border border-orange-300">P2</span>
+                </div>
+                <div className="flex justify-between items-end mt-0.5">
+                  <div className="flex items-center gap-1">
+                    <Trophy className="w-4 h-4 text-amber-500 fill-amber-400" />
+                    <span className="text-xl md:text-2xl font-black text-purple-700 font-orbitron">{player2.score}</span>
+                  </div>
+                  {/* Live progress dots inside P2 card */}
+                  {showInputArea && (
+                    <div className="flex gap-1 bg-slate-100 p-1 rounded-full border border-slate-200">
+                      {Array.from({ length: effectiveSequence.length }).map((_, i) => (
+                        <motion.div
+                          key={i}
+                          animate={p2LiveInputs[i] ? { scale: [1, 1.3, 1] } : {}}
+                          className={cn("w-4 h-4 rounded-full border transition-all duration-200", p2LiveInputs[i] ? COLOR_MAP[p2LiveInputs[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-white")}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : <div className="w-60 md:w-72" />}
       </div>
 
-      {/* Center Game Area */}
-      <div className="relative w-full aspect-square max-w-[400px] md:max-w-[440px] flex items-center justify-center my-auto">
+      {/* Center Game Arena Pads */}
+      <div className="relative w-full aspect-square max-w-[340px] md:max-w-[380px] flex items-center justify-center my-auto z-10">
         
         {/* Sequence Status Text */}
         {!isInputPhase && activeStep && (
-          <div className="absolute -top-10 font-orbitron font-black text-amber-300 text-sm md:text-base tracking-wider animate-pulse flex items-center gap-2 bg-slate-900/80 px-5 py-1.5 rounded-full border border-amber-400/40 backdrop-blur-md shadow-lg">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
+          <div className="absolute -top-9 font-orbitron font-black text-amber-300 text-xs md:text-sm tracking-wider animate-pulse flex items-center gap-2 bg-slate-900/80 px-4 py-1 rounded-full border border-amber-400/40 backdrop-blur-md shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
             SHOWING SEQUENCE ({activeStep}/{effectiveSequence.length})
           </div>
         )}
 
         {/* Input Phase Text */}
         {isInputPhase && (
-          <div className="absolute -top-10 font-orbitron font-black text-emerald-400 text-sm md:text-base tracking-wider animate-bounce flex items-center gap-2 bg-slate-900/80 px-5 py-1.5 rounded-full border border-emerald-400/40 backdrop-blur-md shadow-lg">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping" />
+          <div className="absolute -top-9 font-orbitron font-black text-emerald-400 text-xs md:text-sm tracking-wider animate-bounce flex items-center gap-2 bg-slate-900/80 px-4 py-1 rounded-full border border-emerald-400/40 backdrop-blur-md shadow-lg">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
             YOUR TURN! PRESS BUTTONS
           </div>
         )}
@@ -288,10 +309,10 @@ export function GameScreen({
               exit={{ scale: 1.5, opacity: 0 }}
               className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md rounded-[3rem]"
             >
-              <div className="text-xl font-black font-orbitron text-amber-300 uppercase tracking-widest mb-2">
+              <div className="text-lg font-black font-orbitron text-amber-300 uppercase tracking-widest mb-1">
                 {roundCountdown !== null ? 'NEXT ROUND STARTING...' : 'GET READY!'}
               </div>
-              <span className="text-9xl font-black font-orbitron text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.6)] animate-pulse">
+              <span className="text-8xl font-black font-orbitron text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.6)] animate-pulse">
                 {activeCountdown === 0 ? 'GO!' : activeCountdown}
               </span>
             </motion.div>
@@ -306,17 +327,17 @@ export function GameScreen({
               animate={{ y: 0, opacity: 1 }}
               className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-xl rounded-[3rem] border-4 border-amber-400 shadow-2xl p-6 text-center text-slate-900"
             >
-              <div className="w-24 h-24 bg-amber-400 text-amber-950 rounded-3xl flex items-center justify-center mb-4 shadow-xl border-4 border-amber-300 transform -rotate-3">
-                <Trophy className="w-14 h-14 fill-amber-950" />
+              <div className="w-20 h-20 bg-amber-400 text-amber-950 rounded-3xl flex items-center justify-center mb-3 shadow-xl border-4 border-amber-300 transform -rotate-3">
+                <Trophy className="w-12 h-12 fill-amber-950" />
               </div>
-              <h2 className="text-4xl md:text-5xl font-black font-orbitron mb-2 tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-amber-500 to-orange-600">
+              <h2 className="text-3xl md:text-4xl font-black font-orbitron mb-1 tracking-wide bg-clip-text text-transparent bg-gradient-to-r from-amber-500 to-orange-600">
                 MATCH FINISHED
               </h2>
-              <p className="text-2xl font-bold font-inter mb-6 text-purple-900">
+              <p className="text-xl font-bold font-inter mb-5 text-purple-900">
                 {matchWinner === currentUserId ? '🎉 YOU WON THE MATCH! 🎉' : `${players.find((p, idx) => p.id === matchWinner || (idx + 1).toString() === matchWinner)?.displayName || 'Player'} WON!`}
               </p>
-              <Button onClick={() => window.location.reload()} size="lg" className="h-16 px-10 text-xl font-orbitron font-black rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 shadow-lg hover:scale-105">
-                PLAY AGAIN
+              <Button onClick={() => window.location.href = '/'} size="lg" className="h-14 px-8 text-lg font-orbitron font-black rounded-2xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 text-slate-950 shadow-lg hover:scale-105">
+                RETURN TO HOME
               </Button>
             </motion.div>
           )}
@@ -329,32 +350,32 @@ export function GameScreen({
              initial={{ y: -50, opacity: 0 }}
              animate={{ y: 0, opacity: 1 }}
              exit={{ y: -50, opacity: 0 }}
-             className="absolute top-4 z-40 px-8 py-3 bg-white text-slate-900 rounded-full shadow-xl border-4 border-purple-300 flex items-center gap-3"
+             className="absolute top-2 z-40 px-6 py-2 bg-white text-slate-900 rounded-full shadow-xl border-3 border-purple-300 flex items-center gap-2"
            >
              {roundWinner === currentUserId ? (
-               <><CheckCircle2 className="text-emerald-500 w-8 h-8" /><span className="text-xl font-black text-emerald-600 font-orbitron tracking-wide">ROUND WON!</span></>
+               <><CheckCircle2 className="text-emerald-500 w-6 h-6" /><span className="text-lg font-black text-emerald-600 font-orbitron tracking-wide">ROUND WON!</span></>
              ) : (
-               <><XCircle className="text-rose-500 w-8 h-8" /><span className="text-xl font-black text-rose-600 font-orbitron tracking-wide">ROUND LOST!</span></>
+               <><XCircle className="text-rose-500 w-6 h-6" /><span className="text-lg font-black text-rose-600 font-orbitron tracking-wide">ROUND LOST!</span></>
              )}
            </motion.div>
           )}
         </AnimatePresence>
 
         {/* Game Pads Container */}
-        <div className="grid grid-cols-2 gap-5 md:gap-8 p-7 md:p-9 bg-white/95 backdrop-blur-xl rounded-[3rem] border-4 border-purple-300/40 shadow-2xl relative">
+        <div className="grid grid-cols-2 gap-4 md:gap-6 p-6 md:p-8 bg-white/95 backdrop-blur-xl rounded-[3rem] border-4 border-purple-300/40 shadow-2xl relative">
           {renderColorPad(COLOR.RED)}
           {renderColorPad(COLOR.BLUE)}
         </div>
       </div>
 
       {/* Bottom Action Area */}
-      <div className="h-24 flex items-center justify-center w-full mt-2">
+      <div className="h-16 flex items-center justify-center w-full z-10">
         {session.status === 'WAITING' && !isSpectator && (
           <Button 
             size="lg" 
             onClick={onReady}
             className={cn(
-              "text-2xl h-20 px-16 rounded-[2rem] font-black font-orbitron tracking-wider transition-all duration-300 shadow-xl border-4 border-white/20",
+              "text-xl h-14 px-12 rounded-[1.5rem] font-black font-orbitron tracking-wider transition-all duration-300 shadow-xl border-4 border-white/20",
               me?.isReady 
                 ? "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/40"
                 : "bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 text-slate-950 hover:scale-105 active:scale-95 shadow-cyan-400/40"
@@ -366,17 +387,17 @@ export function GameScreen({
 
         {/* Real-time Side-by-Side Live Inputs for Player 1 & Player 2 */}
         {showInputArea && (
-          <div className="flex flex-col md:flex-row gap-4 bg-white/95 p-4 rounded-[2rem] border-4 border-purple-300/50 shadow-2xl items-center">
+          <div className="flex gap-4 bg-white/95 px-5 py-2 rounded-full border-3 border-purple-300/50 shadow-xl items-center">
             {/* Player 1 Live Progress */}
-            <div className="flex items-center gap-3 bg-cyan-50/80 px-4 py-2 rounded-2xl border-2 border-cyan-300">
-              <span className="font-orbitron font-black text-xs text-cyan-700">P1:</span>
-              <div className="flex gap-2">
+            <div className="flex items-center gap-2 bg-cyan-50/80 px-3 py-1 rounded-xl border border-cyan-300">
+              <span className="font-orbitron font-black text-[11px] text-cyan-700">P1:</span>
+              <div className="flex gap-1.5">
                 {Array.from({ length: effectiveSequence.length }).map((_, i) => (
                   <motion.div
                     key={i}
                     animate={p1LiveInputs[i] ? { scale: [1, 1.3, 1] } : {}}
                     className={cn(
-                      "w-8 h-8 rounded-full border-2 transition-all duration-200 shadow-sm",
+                      "w-6 h-6 rounded-full border-2 transition-all duration-200 shadow-sm",
                       p1LiveInputs[i] ? COLOR_MAP[p1LiveInputs[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-white"
                     )}
                   />
@@ -384,18 +405,18 @@ export function GameScreen({
               </div>
             </div>
 
-            <div className="hidden md:block w-px h-8 bg-purple-200" />
+            <div className="w-px h-6 bg-purple-200" />
 
             {/* Player 2 Live Progress */}
-            <div className="flex items-center gap-3 bg-orange-50/80 px-4 py-2 rounded-2xl border-2 border-orange-300">
-              <span className="font-orbitron font-black text-xs text-orange-700">P2:</span>
-              <div className="flex gap-2">
+            <div className="flex items-center gap-2 bg-orange-50/80 px-3 py-1 rounded-xl border border-orange-300">
+              <span className="font-orbitron font-black text-[11px] text-orange-700">P2:</span>
+              <div className="flex gap-1.5">
                 {Array.from({ length: effectiveSequence.length }).map((_, i) => (
                   <motion.div
                     key={i}
                     animate={p2LiveInputs[i] ? { scale: [1, 1.3, 1] } : {}}
                     className={cn(
-                      "w-8 h-8 rounded-full border-2 transition-all duration-200 shadow-sm",
+                      "w-6 h-6 rounded-full border-2 transition-all duration-200 shadow-sm",
                       p2LiveInputs[i] ? COLOR_MAP[p2LiveInputs[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-white"
                     )}
                   />
