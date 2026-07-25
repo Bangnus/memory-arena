@@ -1,14 +1,19 @@
-import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
+import { Controller, Post, Get, Body, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { DeviceService } from './device.service';
 import { HeartbeatDto } from './dto/heartbeat.dto';
+import { BroadcastService } from '../socket/broadcast.service';
+import { SocketEvent } from '../../common/enums';
 
 @ApiTags('Device Interface')
 @Controller('device')
 export class DeviceController {
   private readonly logger = new Logger(DeviceController.name);
 
-  constructor(private readonly deviceService: DeviceService) {}
+  constructor(
+    private readonly deviceService: DeviceService,
+    private readonly broadcast: BroadcastService,
+  ) {}
 
   @Get('status')
   @ApiOperation({
@@ -32,5 +37,18 @@ export class DeviceController {
     this.logger.debug(`Heartbeat received from device: ${deviceId}`);
     this.deviceService.updateHeartbeat(deviceId);
     return { acknowledged: true, serverTime: new Date().toISOString() };
+  }
+
+  @Post('start')
+  @ApiOperation({
+    summary: 'IoT START button pressed',
+    description: 'ESP32 signals that START button was pressed, triggers game flow on frontend',
+  })
+  @ApiResponse({ status: 200, description: 'Start signal broadcasted' })
+  handleStart() {
+    this.logger.log('START button pressed from IoT device');
+    this.broadcast.emit(SocketEvent.SYSTEM_RESET, { reset: true });
+    this.broadcast.emit('device:start', { timestamp: new Date().toISOString() });
+    return { success: true };
   }
 }

@@ -116,13 +116,17 @@ function CentralDisplayContent() {
   }, []);
 
   useEffect(() => {
+    let timer: NodeJS.Timeout;
     if (session?.player1Id && session?.player2Id) {
-      // Both ready! 
-      setTimeout(() => {
-        router.push('/game');
+      // Both ready!
+      timer = setTimeout(() => {
+        window.location.href = '/game';
       }, 1500);
     }
-  }, [session, router]);
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [session]);
 
   const p1Ready = !!session?.player1Id;
   const p2Ready = !!session?.player2Id;
@@ -180,11 +184,18 @@ function CentralDisplayContent() {
       </div>
 
       {bothReady && (
-        <div className="mt-12 text-center animate-in slide-in-from-bottom-8 duration-700">
-          <div className="inline-flex items-center px-8 py-4 bg-white/20 backdrop-blur-md rounded-full border border-white/40 shadow-xl">
+        <div className="mt-12 text-center animate-in slide-in-from-bottom-8 duration-700 flex flex-col items-center">
+          <div className="inline-flex items-center px-8 py-4 bg-white/20 backdrop-blur-md rounded-full border border-white/40 shadow-xl mb-6">
             <Loader2 className="h-8 w-8 animate-spin text-white mr-4" />
             <span className="text-2xl font-bold text-white tracking-widest uppercase">Match Starting...</span>
           </div>
+          
+          <button 
+            onClick={() => window.location.href = '/game'}
+            className="px-6 py-2 bg-white/90 hover:bg-white text-blue-600 font-bold rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 cursor-pointer z-50"
+          >
+            Click here if not redirected automatically
+          </button>
         </div>
       )}
     </div>

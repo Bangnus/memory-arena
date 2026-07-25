@@ -52,4 +52,4 @@ export type Difficulty = 'EASY' | 'NORMAL' | 'HARD';
 
 export type GameStatus = 'WAITING' | 'COUNTDOWN' | 'PLAYING' | 'FINISHED';
 
-export type LedColor = 'RED' | 'GREEN' | 'BLUE' | 'YELLOW';
+export type LedColor = 'RED' | 'BLUE';

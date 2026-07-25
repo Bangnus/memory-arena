@@ -13,7 +13,5 @@ export const DIFFICULTY = {
 
 export const COLOR = {
   RED: 'RED',
-  GREEN: 'GREEN',
   BLUE: 'BLUE',
-  YELLOW: 'YELLOW',
 } as const;

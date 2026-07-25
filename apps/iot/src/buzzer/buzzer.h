@@ -27,11 +27,12 @@ public:
 private:
     unsigned long currentToneStart = 0;
     unsigned long currentToneDuration = 0;
-    
+
     int melodyStep = 0;
     BuzzerSound currentSound = BuzzerSound::NONE;
-    
+
     void playTone(unsigned int frequency, unsigned long duration);
+    void stopTone();
 };
 
 extern BuzzerManager buzzerManager;

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import { Controller, Get, Post, Body, Logger } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { GameEngineService } from './services/game-engine.service';
 import { SubmitInputDto } from './dto/submit-input.dto';
@@ -6,6 +6,8 @@ import { SubmitInputDto } from './dto/submit-input.dto';
 @ApiTags('Game Engine')
 @Controller('game')
 export class GameController {
+  private readonly logger = new Logger(GameController.name);
+
   constructor(private readonly gameEngine: GameEngineService) {}
 
   @Get('current')
@@ -14,6 +16,7 @@ export class GameController {
     description: 'Returns details of current active game session',
   })
   async getCurrentState() {
+    this.logger.debug('ESP32 Polling /game/current');
     return this.gameEngine.getCurrentSession();
   }
 
@@ -24,6 +27,7 @@ export class GameController {
       'ESP32 calls this endpoint to fetch the memory sequence and display speed',
   })
   async getSequence() {
+    this.logger.debug('ESP32 Polling /game/sequence');
     return this.gameEngine.getCurrentSequence();
   }
 
@@ -38,6 +42,7 @@ export class GameController {
     description: 'Inputs processed and round result returned',
   })
   async submitInput(@Body() dto: SubmitInputDto) {
+    this.logger.debug(`ESP32 Submit Input: ${JSON.stringify(dto)}`);
     return this.gameEngine.processRoundInput(dto);
   }
 

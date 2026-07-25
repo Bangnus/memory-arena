@@ -1,9 +1,34 @@
+'use client';
+
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Gamepad2, Play, Sparkles, Trophy, Cpu } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LeaderboardTable } from '@/features/leaderboard/LeaderboardTable';
+import { useSocket } from '@/hooks/useSocket';
+import { SOCKET_EVENTS } from '@/constants/socket';
+import { toast } from 'sonner';
 
 export default function Home() {
+  const router = useRouter();
+  const { socket, isConnected } = useSocket();
+
+  useEffect(() => {
+    if (!socket) return;
+
+    const handleDeviceStart = () => {
+      toast.info('Game starting from IoT device!');
+      router.push('/login');
+    };
+
+    socket.on(SOCKET_EVENTS.DEVICE_START, handleDeviceStart);
+
+    return () => {
+      socket.off(SOCKET_EVENTS.DEVICE_START, handleDeviceStart);
+    };
+  }, [socket, router]);
+
   return (
     <main className="flex h-screen max-h-screen w-screen flex-col items-center justify-between bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden text-white py-4 px-4">
       

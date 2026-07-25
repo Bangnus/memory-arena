@@ -14,18 +14,15 @@ public:
     void init();
     void enablePlayerButtons();
     void disablePlayerButtons();
-    
+
     bool hasEvent();
     ButtonEvent popEvent();
 
-    bool isUpPressed();
-    bool isDownPressed();
     bool isStartPressed();
 
     void handleInterrupt(uint8_t pin);
 
 private:
-    static void IRAM_ATTR isrHandler();
     void setupPin(uint8_t pin);
 };
 

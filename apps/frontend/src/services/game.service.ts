@@ -34,6 +34,11 @@ export const gameService = {
     return response.data.data;
   },
 
+  getCurrentSession: async (): Promise<GameSession> => {
+    const response = await api.get('/session');
+    return response.data.data;
+  },
+
   joinPlayer: async (playerNumber: number): Promise<GameSession> => {
     const response = await api.post('/session/player', { playerNumber });
     return response.data;

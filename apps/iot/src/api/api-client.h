@@ -5,12 +5,14 @@
 #include "../config/constants.h"
 
 struct GameStateData {
+    String id;
     String status;
     String difficulty;
     int round;
 };
 
 struct GameSequenceData {
+    String sessionId;
     int round;
     int displaySpeed;
     String sequence[MAX_SEQUENCE_LENGTH];
@@ -41,6 +43,8 @@ public:
     bool getCurrentState(GameStateData& state);
     bool getSequence(GameSequenceData& seq);
     bool submitInput(String sessionId, int round, const PlayerInputData& p1, const PlayerInputData& p2, RoundResultData& res);
+    bool startGame();
+    bool signalStart();
 
 private:
     unsigned long lastHeartbeat = 0;

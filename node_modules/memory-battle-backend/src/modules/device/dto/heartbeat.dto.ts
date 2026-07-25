@@ -9,4 +9,20 @@ export class HeartbeatDto {
   @IsString()
   @IsOptional()
   deviceId?: string;
+
+  @ApiProperty({
+    description: 'Firmware version',
+    example: '1.0.0',
+  })
+  @IsString()
+  @IsOptional()
+  firmwareVersion?: string;
+
+  @ApiProperty({
+    description: 'Device status',
+    example: 'ONLINE',
+  })
+  @IsString()
+  @IsOptional()
+  status?: string;
 }

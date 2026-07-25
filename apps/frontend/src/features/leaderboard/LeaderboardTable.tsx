@@ -44,7 +44,7 @@ export function LeaderboardTable() {
               
               return (
                 <div 
-                  key={entry.id} 
+                  key={entry.playerId || idx} 
                   className={cn(
                     "flex items-center gap-3 p-3 md:p-3.5 rounded-2xl transition-all duration-300 border-2",
                     isTop 

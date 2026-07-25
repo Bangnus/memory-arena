@@ -12,16 +12,12 @@ import type { GameSession, PlayerState } from '@/hooks/useGameEngine';
 
 const COLOR_MAP = {
   [COLOR.RED]: 'bg-red-500 shadow-red-500/50',
-  [COLOR.GREEN]: 'bg-green-500 shadow-green-500/50',
   [COLOR.BLUE]: 'bg-blue-500 shadow-blue-500/50',
-  [COLOR.YELLOW]: 'bg-yellow-400 shadow-yellow-500/50',
 };
 
 const COLOR_RING = {
   [COLOR.RED]: 'ring-red-500',
-  [COLOR.GREEN]: 'ring-green-500',
   [COLOR.BLUE]: 'ring-blue-500',
-  [COLOR.YELLOW]: 'ring-yellow-400',
 };
 
 interface GameScreenProps {
@@ -51,8 +47,10 @@ export function GameScreen({
 }: GameScreenProps) {
   const [activeColorIndex, setActiveColorIndex] = useState<number | null>(null);
   const [playerInput, setPlayerInput] = useState<string[]>([]);
-  const isSpectator = !session?.players.find(p => p.id === currentUserId);
-  const me = session?.players.find(p => p.id === currentUserId);
+  const players = session?.players ?? [];
+
+  const me = players.find(p => p.id === currentUserId);
+  const isSpectator = !me;
   
   // Sequence Animation Effect
   useEffect(() => {
@@ -95,7 +93,7 @@ export function GameScreen({
     }
   };
 
-  if (!session) {
+  if (!session || !session.players) {
     return <div className="text-center p-8">Waiting for session data...</div>;
   }
 
@@ -125,7 +123,7 @@ export function GameScreen({
       
       {/* Top Bar: Players & Scores */}
       <div className="flex flex-col md:flex-row justify-between w-full px-4 gap-4">
-        {session.players.map((player) => {
+        {players.map((player) => {
           const isMe = player.id === currentUserId;
           return (
             <div key={player.id} className={cn(
@@ -211,7 +209,7 @@ export function GameScreen({
                 MATCH FINISHED
               </h2>
               <p className="text-2xl font-bold font-inter mb-6 text-purple-900">
-                {matchWinner === currentUserId ? '🎉 YOU WON THE MATCH! 🎉' : `${session.players.find(p=>p.id === matchWinner)?.displayName} WON!`}
+                {matchWinner === currentUserId ? '🎉 YOU WON THE MATCH! 🎉' : `${players.find(p=>p.id === matchWinner)?.displayName || 'Player'} WON!`}
               </p>
               <Button onClick={() => window.location.reload()} size="lg" className="h-16 px-10 text-xl font-orbitron font-black rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 shadow-lg hover:scale-105">
                 PLAY AGAIN
@@ -241,8 +239,6 @@ export function GameScreen({
         {/* Game Pads Container */}
         <div className="grid grid-cols-2 gap-5 md:gap-8 p-7 md:p-9 bg-white/95 backdrop-blur-xl rounded-[3rem] border-4 border-purple-300/40 shadow-2xl relative">
           {renderColorPad(COLOR.RED)}
-          {renderColorPad(COLOR.GREEN)}
-          {renderColorPad(COLOR.YELLOW)}
           {renderColorPad(COLOR.BLUE)}
         </div>
       </div>

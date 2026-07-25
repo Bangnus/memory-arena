@@ -16,6 +16,19 @@ export class SessionService {
     private readonly sequenceService: SequenceService,
   ) {}
 
+  private async attachPlayers(session: any) {
+    const players: any[] = [];
+    if (session.player1Id) {
+      const p1 = await this.prisma.player.findUnique({ where: { id: session.player1Id } });
+      if (p1) players.push({ id: p1.id, displayName: p1.displayName, pictureUrl: p1.pictureUrl, score: session.player1Score, isReady: true });
+    }
+    if (session.player2Id) {
+      const p2 = await this.prisma.player.findUnique({ where: { id: session.player2Id } });
+      if (p2) players.push({ id: p2.id, displayName: p2.displayName, pictureUrl: p2.pictureUrl, score: session.player2Score, isReady: true });
+    }
+    return { ...session, players };
+  }
+
   /**
    * Gets or creates the active game session
    */
@@ -37,7 +50,7 @@ export class SessionService {
       this.logger.log(`Created new GameSession: ${session.id}`);
     }
 
-    return session;
+    return this.attachPlayers(session);
   }
 
   /**
@@ -81,8 +94,15 @@ export class SessionService {
       data: updateData,
     });
 
-    this.broadcast.emit(SocketEvent.SESSION_UPDATE, updatedSession);
-    return updatedSession;
+    const sessionWithPlayers = await this.attachPlayers(updatedSession);
+    this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
+
+    if (hasP1 && hasP2) {
+      this.logger.log(`Both players joined. Automatically starting match for session: ${session.id}`);
+      return this.startMatch();
+    }
+
+    return sessionWithPlayers;
   }
 
   /**
@@ -106,8 +126,9 @@ export class SessionService {
       data: { difficulty: dto.difficulty },
     });
 
-    this.broadcast.emit(SocketEvent.SESSION_UPDATE, updatedSession);
-    return updatedSession;
+    const sessionWithPlayers = await this.attachPlayers(updatedSession);
+    this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
+    return sessionWithPlayers;
   }
 
   /**
@@ -137,13 +158,15 @@ export class SessionService {
       },
     });
 
+    const sessionWithPlayers = await this.attachPlayers(updatedSession);
+
     this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
       sessionId: updatedSession.id,
       countdownSeconds: 3,
     });
 
-    this.broadcast.emit(SocketEvent.SESSION_UPDATE, updatedSession);
-    return updatedSession;
+    this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
+    return sessionWithPlayers;
   }
 
   /**

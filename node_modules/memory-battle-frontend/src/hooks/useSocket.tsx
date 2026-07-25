@@ -11,7 +11,13 @@ interface SocketContextType {
 
 const SocketContext = React.createContext<SocketContextType | undefined>(undefined);
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
+const getSocketUrl = () => {
+  let url = process.env.NEXT_PUBLIC_SOCKET_URL || '';
+  if (!url && typeof window !== 'undefined') {
+    url = `${window.location.protocol}//${window.location.hostname}:3000`;
+  }
+  return url || 'http://localhost:3000';
+};
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
@@ -19,9 +25,10 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
   const [isConnected, setIsConnected] = React.useState(false);
 
   React.useEffect(() => {
-    const newSocket = io(SOCKET_URL, {
+    const socketUrl = getSocketUrl();
+    const newSocket = io(socketUrl, {
       auth: token ? { token } : undefined,
-      transports: ['websocket'],
+      transports: ['websocket', 'polling'],
     });
 
     newSocket.on('connect', () => {

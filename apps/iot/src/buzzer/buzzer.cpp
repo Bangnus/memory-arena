@@ -3,14 +3,19 @@
 BuzzerManager buzzerManager;
 
 void BuzzerManager::init() {
-    pinMode(PIN_BUZZER, OUTPUT);
+    ledcSetup(0, 2000, 8);
+    ledcAttachPin(PIN_BUZZER, 0);
     digitalWrite(PIN_BUZZER, LOW);
 }
 
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
-    tone(PIN_BUZZER, frequency);
+    ledcWriteTone(0, frequency);
     currentToneStart = millis();
     currentToneDuration = duration;
+}
+
+void BuzzerManager::stopTone() {
+    ledcWriteTone(0, 0);
 }
 
 void BuzzerManager::playBoot() { play(BuzzerSound::BOOT); }
@@ -23,7 +28,7 @@ void BuzzerManager::playReset() { play(BuzzerSound::NONE); }
 void BuzzerManager::play(BuzzerSound sound) {
     currentSound = sound;
     melodyStep = 0;
-    
+
     switch (sound) {
         case BuzzerSound::BOOT:
             playTone(1000, 100);
@@ -42,19 +47,19 @@ void BuzzerManager::play(BuzzerSound sound) {
             break;
         case BuzzerSound::NONE:
         default:
-            noTone(PIN_BUZZER);
+            stopTone();
             break;
     }
 }
 
 void BuzzerManager::loop() {
     if (currentSound == BuzzerSound::NONE) return;
-    
+
     unsigned long now = millis();
     if (currentToneDuration > 0 && now - currentToneStart >= currentToneDuration) {
-        noTone(PIN_BUZZER);
+        stopTone();
         currentToneDuration = 0;
-        
+
         if (currentSound == BuzzerSound::VICTORY) {
             melodyStep++;
             if (melodyStep == 1) {

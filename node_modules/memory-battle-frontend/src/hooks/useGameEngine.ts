@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useSocket } from './useSocket';
+import { gameService } from '@/services/game.service';
 import { GAME_STATUS, COLOR } from '@/constants/game';
 import { SOCKET_EVENTS } from '@/constants/socket';
 
@@ -17,9 +18,11 @@ export interface GameSession {
   id: string;
   status: string;
   difficulty: string;
-  players: PlayerState[];
+  players?: PlayerState[];
   player1Id?: string | null;
   player2Id?: string | null;
+  player1Score?: number;
+  player2Score?: number;
 }
 
 export function useGameEngine() {
@@ -33,6 +36,13 @@ export function useGameEngine() {
   const [matchWinner, setMatchWinner] = useState<string | null>(null);
 
 
+
+  // Always fetch current session on mount and when connection status changes
+  useEffect(() => {
+    gameService.getCurrentSession().then((currentSession) => {
+      if (currentSession) setSession(currentSession);
+    }).catch(() => {});
+  }, [isConnected]);
 
   useEffect(() => {
     if (!socket) return;

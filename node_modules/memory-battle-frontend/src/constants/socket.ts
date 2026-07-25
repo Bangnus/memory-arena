@@ -12,6 +12,7 @@ export const SOCKET_EVENTS = {
   MATCH_RESULT: 'match:result',
   GAME_FINISHED: 'game_finished',
   SYSTEM_RESET: 'system:reset',
+  DEVICE_START: 'device:start',
   LEADERBOARD_UPDATE: 'leaderboard:update',
   ERROR: 'error',
 } as const;
