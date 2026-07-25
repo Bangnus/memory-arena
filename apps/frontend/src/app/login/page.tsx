@@ -101,7 +101,7 @@ function CentralDisplayContent() {
     gameService.getCurrentSession().catch(console.error);
 
     const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || '';
-    const redirectUri = process.env.NEXT_PUBLIC_LINE_CALLBACK_URL || (typeof window !== 'undefined' ? `${window.location.origin}/login` : '');
+    const redirectUri = process.env.NEXT_PUBLIC_LINE_CALLBACK_URL || 'https://equivocal-unmapped-pecan.ngrok-free.dev/api/v1/auth/line/callback';
     
     if (!clientId) {
       toast.error('LINE Client ID is missing!');

@@ -80,25 +80,139 @@ export class AuthController {
 
       return res.send(`
         <!DOCTYPE html>
-        <html>
+        <html lang="en">
         <head>
-          <meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Joined Memory Arena!</title>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Memory Arena - Player ${playerNumber}</title>
+          <link rel="preconnect" href="https://fonts.googleapis.com">
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+          <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; text-align: center; background: #090d16; color: white; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-            .card { background: #1e293b; border: 2px solid #38bdf8; border-radius: 24px; padding: 32px; max-width: 360px; width: 100%; box-shadow: 0 0 40px rgba(56,189,248,0.3); margin: auto; }
-            .avatar { width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 16px; border: 3px solid #38bdf8; object-fit: cover; }
-            .badge { display: inline-block; background: #0284c7; color: white; font-weight: bold; padding: 6px 16px; border-radius: 20px; font-size: 14px; margin-bottom: 12px; }
-            h1 { font-size: 24px; margin: 8px 0; }
-            p { color: #94a3b8; font-size: 15px; margin: 4px 0 0; }
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body {
+              font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+              min-height: 100vh;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              background: linear-gradient(135deg, #38bdf8 0%, #3b82f6 50%, #fb923c 100%);
+              padding: 20px;
+            }
+            .card {
+              background: #ffffff;
+              border-radius: 32px;
+              padding: 44px 28px;
+              max-width: 380px;
+              width: 100%;
+              box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+              border: 4px solid #bae6fd;
+              text-align: center;
+              animation: zoomIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            @keyframes zoomIn {
+              from { opacity: 0; transform: scale(0.9); }
+              to { opacity: 1; transform: scale(1); }
+            }
+            .title {
+              font-family: 'Orbitron', sans-serif;
+              font-size: 34px;
+              font-weight: 900;
+              color: #0f172a;
+              letter-spacing: -0.5px;
+            }
+            .subtitle {
+              font-size: 17px;
+              font-weight: 600;
+              color: #64748b;
+              margin-top: 6px;
+              margin-bottom: 32px;
+            }
+            .check-icon {
+              width: 88px;
+              height: 88px;
+              border-radius: 50%;
+              border: 5px solid #22c55e;
+              background: #ffffff;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin: 0 auto 28px;
+            }
+            .check-icon svg {
+              width: 48px;
+              height: 48px;
+              color: #22c55e;
+            }
+            .avatar-wrapper {
+              position: relative;
+              width: 96px;
+              height: 96px;
+              margin: 0 auto 20px;
+            }
+            .avatar {
+              width: 96px;
+              height: 96px;
+              border-radius: 50%;
+              border: 4px solid #22c55e;
+              object-fit: cover;
+              box-shadow: 0 10px 25px rgba(34, 197, 94, 0.3);
+            }
+            .check-badge {
+              position: absolute;
+              bottom: -2px;
+              right: -2px;
+              width: 32px;
+              height: 32px;
+              background: #22c55e;
+              border: 3px solid #ffffff;
+              border-radius: 50%;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+            }
+            .player-name {
+              font-size: 20px;
+              font-weight: 700;
+              color: #0284c7;
+              margin-bottom: 16px;
+            }
+            .ready-heading {
+              font-family: 'Orbitron', sans-serif;
+              font-size: 26px;
+              font-weight: 900;
+              color: #0f172a;
+              margin-bottom: 8px;
+            }
+            .subtext {
+              font-size: 17px;
+              font-weight: 600;
+              color: #475569;
+              line-height: 1.5;
+            }
           </style>
         </head>
         <body>
           <div class="card">
-            ${authResult.player.pictureUrl ? `<img src="${authResult.player.pictureUrl}" class="avatar" />` : ''}
-            <div class="badge">PLAYER ${playerNumber} READY</div>
-            <h1>${authResult.player.displayName}</h1>
-            <p>You have joined the Memory Arena match. Look at the arena display screen!</p>
+            <h1 class="title">Player ${playerNumber}</h1>
+            <div class="subtitle">Mobile Authentication</div>
+            
+            ${authResult.player.pictureUrl ? `
+              <div class="avatar-wrapper">
+                <img src="${authResult.player.pictureUrl}" alt="${authResult.player.displayName}" class="avatar" />
+                <div class="check-badge">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+              </div>
+              <div class="player-name">${authResult.player.displayName}</div>
+            ` : `
+              <div class="check-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+            `}
+
+            <div class="ready-heading">You are Ready!</div>
+            <div class="subtext">Please look at the main screen.</div>
           </div>
         </body>
         </html>
