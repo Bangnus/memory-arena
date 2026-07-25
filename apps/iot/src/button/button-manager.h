@@ -19,6 +19,8 @@ public:
     ButtonEvent popEvent();
 
     bool isStartPressed();
+    bool isNextPressed();
+    bool isPrevPressed();
 
     void handleInterrupt(uint8_t pin);
 

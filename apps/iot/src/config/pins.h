@@ -14,6 +14,8 @@ constexpr int PIN_P2_BLUE = 22;
 
 // Control Buttons
 constexpr int PIN_BTN_START = 14;
+constexpr int PIN_BTN_NEXT = 26;
+constexpr int PIN_BTN_PREV = 27;
 
 // Buzzer
 constexpr int PIN_BUZZER = 13;

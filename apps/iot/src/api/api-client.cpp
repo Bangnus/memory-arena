@@ -177,3 +177,25 @@ bool ApiClient::signalStart() {
     String response = httpPost("/device/start", "{}");
     return response.length() > 0;
 }
+
+bool ApiClient::signalModeChange(int mode) {
+    JsonDocument doc;
+    doc["mode"] = mode;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    String response = httpPost("/device/mode", payload);
+    return response.length() > 0;
+}
+
+bool ApiClient::setDifficulty(const char* difficulty) {
+    JsonDocument doc;
+    doc["difficulty"] = difficulty;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    String response = httpPost("/session/difficulty", payload);
+    return response.length() > 0;
+}

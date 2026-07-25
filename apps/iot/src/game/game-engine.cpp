@@ -22,6 +22,12 @@ void GameEngine::changeState(GameState newState) {
             buzzerManager.playBoot();
             buttonManager.disablePlayerButtons();
             break;
+        case GameState::SELECT_MODE:
+            Serial.println("SELECT_MODE");
+            selectedMode = 1;
+            ledManager.turnOffAll();
+            buzzerManager.play(BuzzerSound::BEEP);
+            break;
         case GameState::WAIT_PLAYERS:
             Serial.println("WAIT_PLAYERS");
             ledManager.startBlinking(); // Breathing/Blinking White
@@ -103,8 +109,11 @@ void GameEngine::loop() {
     switch (currentState) {
         case GameState::BOOT:
             if (wifiManager.isConnected() && apiClient.checkBackendStatus()) {
-                changeState(GameState::WAIT_PLAYERS);
+                changeState(GameState::SELECT_MODE);
             }
+            break;
+        case GameState::SELECT_MODE:
+            handleSelectMode();
             break;
         case GameState::WAIT_PLAYERS:
             if (buttonManager.isStartPressed()) {
@@ -132,6 +141,36 @@ void GameEngine::loop() {
             break;
         default:
             break;
+    }
+}
+
+void GameEngine::handleSelectMode() {
+    unsigned long now = millis();
+    if (now - lastButtonTime < 200) return;
+
+    if (buttonManager.isNextPressed()) {
+        lastButtonTime = now;
+        selectedMode = (selectedMode + 1) % 3;
+        buzzerManager.play(BuzzerSound::BEEP);
+        Serial.printf("[SELECT_MODE] Mode: %s\n", modes[selectedMode]);
+        apiClient.signalModeChange(selectedMode);
+    }
+
+    if (buttonManager.isPrevPressed()) {
+        lastButtonTime = now;
+        selectedMode = (selectedMode + 2) % 3;
+        buzzerManager.play(BuzzerSound::BEEP);
+        Serial.printf("[SELECT_MODE] Mode: %s\n", modes[selectedMode]);
+        apiClient.signalModeChange(selectedMode);
+    }
+
+    if (buttonManager.isStartPressed()) {
+        lastButtonTime = now;
+        buzzerManager.playCorrect();
+        Serial.printf("[SELECT_MODE] Selected: %s\n", modes[selectedMode]);
+        if (apiClient.setDifficulty(modes[selectedMode])) {
+            changeState(GameState::WAIT_PLAYERS);
+        }
     }
 }
 

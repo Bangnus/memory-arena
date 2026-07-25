@@ -10,7 +10,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useGameEngine } from '@/hooks/useGameEngine';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import QRCode from 'react-qr-code';
+import GameQRCode from '@/components/game/GameQRCode';
 
 function MobileLoginContent({ code, role }: { code: string, role: number }) {
   const { login } = useAuth();
@@ -161,9 +161,7 @@ function CentralDisplayContent() {
                 <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">READY</span>
               </div>
             ) : qrUrls?.p1 ? (
-              <div className="bg-white p-4 rounded-3xl shadow-inner">
-                <QRCode value={qrUrls.p1} size={250} level="H" />
-              </div>
+              <GameQRCode value={qrUrls.p1} size={220} accentColor="cyan" />
             ) : (
               <Loader2 className="h-16 w-16 animate-spin text-sky-500" />
             )}
@@ -187,9 +185,7 @@ function CentralDisplayContent() {
                 <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">READY</span>
               </div>
             ) : qrUrls?.p2 ? (
-              <div className="bg-white p-4 rounded-3xl shadow-inner">
-                <QRCode value={qrUrls.p2} size={250} level="H" />
-              </div>
+              <GameQRCode value={qrUrls.p2} size={220} accentColor="orange" />
             ) : (
               <Loader2 className="h-16 w-16 animate-spin text-orange-500" />
             )}

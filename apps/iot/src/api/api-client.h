@@ -45,6 +45,8 @@ public:
     bool submitInput(String sessionId, int round, const PlayerInputData& p1, const PlayerInputData& p2, RoundResultData& res);
     bool startGame();
     bool signalStart();
+    bool signalModeChange(int mode);
+    bool setDifficulty(const char* difficulty);
 
 private:
     unsigned long lastHeartbeat = 0;

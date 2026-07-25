@@ -51,4 +51,16 @@ export class DeviceController {
     this.broadcast.emit('device:start', { timestamp: new Date().toISOString() });
     return { success: true, message: 'Start signal broadcasted' };
   }
+
+  @Post('mode')
+  @ApiOperation({
+    summary: 'IoT mode change',
+    description: 'ESP32 signals mode selection change',
+  })
+  @ApiResponse({ status: 200, description: 'Mode change broadcasted' })
+  handleModeChange(@Body() body: { mode: number }) {
+    this.logger.log(`Mode changed to: ${body.mode}`);
+    this.broadcast.emit('device:mode_change', { mode: body.mode });
+    return { success: true };
+  }
 }

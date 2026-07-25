@@ -48,6 +48,8 @@ void ButtonManager::init() {
     setupPin(PIN_P2_RED);
     setupPin(PIN_P2_BLUE);
     setupPin(PIN_BTN_START);
+    setupPin(PIN_BTN_NEXT);
+    setupPin(PIN_BTN_PREV);
 
     attachInterrupt(digitalPinToInterrupt(PIN_P1_RED), isr_p1_red, FALLING);
     attachInterrupt(digitalPinToInterrupt(PIN_P1_BLUE), isr_p1_blue, FALLING);
@@ -80,4 +82,12 @@ ButtonEvent ButtonManager::popEvent() {
 
 bool ButtonManager::isStartPressed() {
     return digitalRead(PIN_BTN_START) == LOW;
+}
+
+bool ButtonManager::isNextPressed() {
+    return digitalRead(PIN_BTN_NEXT) == LOW;
+}
+
+bool ButtonManager::isPrevPressed() {
+    return digitalRead(PIN_BTN_PREV) == LOW;
 }

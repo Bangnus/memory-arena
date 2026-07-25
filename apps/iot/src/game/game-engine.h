@@ -13,26 +13,32 @@ private:
     GameState currentState = GameState::BOOT;
     unsigned long stateStartTime = 0;
     unsigned long lastPollTime = 0;
-    
+
     String currentSessionId = "";
     int currentRound = 1;
     GameSequenceData currentSequence;
-    
+
     PlayerInputData p1Input;
     PlayerInputData p2Input;
     unsigned long inputStartTime = 0;
     bool p1Finished = false;
     bool p2Finished = false;
-    
+
     int sequenceDisplayIndex = 0;
     unsigned long lastSequenceDisplayTime = 0;
-    
+
     int countdownStep = 3;
     unsigned long lastCountdownTime = 0;
-    
+
+    // Mode selection
+    int selectedMode = 0;
+    const char* modes[3] = {"EASY", "MEDIUM", "HARD"};
+    unsigned long lastButtonTime = 0;
+
     void changeState(GameState newState);
     void pollBackend();
-    
+
+    void handleSelectMode();
     void handleCountdown();
     void handleShowSequence();
     void handlePlayerInput();
