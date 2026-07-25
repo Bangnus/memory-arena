@@ -21,14 +21,18 @@ const getSocketUrl = () => {
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
-  const [socket, setSocket] = React.useState<Socket | null>(null);
+  const socketRef = React.useRef<Socket | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
 
   React.useEffect(() => {
     const socketUrl = getSocketUrl();
+
     const newSocket = io(socketUrl, {
       auth: token ? { token } : undefined,
       transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
     });
 
     newSocket.on('connect', () => {
@@ -41,12 +45,14 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       console.log('Socket disconnected');
     });
 
-    setSocket(newSocket);
+    socketRef.current = newSocket;
 
     return () => {
       newSocket.disconnect();
     };
   }, [token]);
+
+  const socket = socketRef.current;
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

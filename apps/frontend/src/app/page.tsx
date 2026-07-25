@@ -15,9 +15,15 @@ export default function Home() {
   const { socket, isConnected } = useSocket();
 
   useEffect(() => {
-    if (!socket) return;
+    if (!socket) {
+      console.log('Home: Socket not available');
+      return;
+    }
+
+    console.log('Home: Socket connected:', isConnected, 'Socket ID:', socket.id);
 
     const handleDeviceStart = () => {
+      console.log('Home: device:start event received!');
       toast.info('Game starting from IoT device!');
       router.push('/login');
     };
@@ -27,7 +33,7 @@ export default function Home() {
     return () => {
       socket.off(SOCKET_EVENTS.DEVICE_START, handleDeviceStart);
     };
-  }, [socket, router]);
+  }, [socket, isConnected, router]);
 
   return (
     <main className="flex h-screen max-h-screen w-screen flex-col items-center justify-between bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden text-white py-4 px-4">

@@ -49,6 +49,6 @@ export class DeviceController {
     this.logger.log('START button pressed from IoT device');
     this.broadcast.emit(SocketEvent.SYSTEM_RESET, { reset: true });
     this.broadcast.emit('device:start', { timestamp: new Date().toISOString() });
-    return { success: true };
+    return { success: true, message: 'Start signal broadcasted' };
   }
 }

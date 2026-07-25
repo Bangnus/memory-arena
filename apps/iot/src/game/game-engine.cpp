@@ -232,7 +232,7 @@ void GameEngine::handlePlayerInput() {
         RoundResultData res;
         if (apiClient.submitInput(currentSessionId, currentRound, p1Input, p2Input, res)) {
             Serial.printf("[INPUT] Backend Accepted! MatchFinished: %s, Winner: %d, P1Score: %d, P2Score: %d\n",
-                res.matchFinished ? "YES" : "NO", res.winner, res.player1Score, res.player2Score);
+                res.matchFinished ? "YES" : "NO", res.roundWinner, res.player1Score, res.player2Score);
             if (res.matchFinished) {
                 changeState(GameState::GAME_RESULT);
             } else {
