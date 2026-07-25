@@ -52,12 +52,14 @@ export function GameScreen({
   const [activeStep, setActiveStep] = useState<number | null>(null);
   const [playerInput, setPlayerInput] = useState<string[]>([]);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
+  const [isLocalInputPhase, setIsLocalInputPhase] = useState(false);
   const players = session?.players ?? [];
 
   const me = players.find(p => p.id === currentUserId);
   const isSpectator = !me;
   
   const effectiveSequence = sequence.length > 0 ? sequence : (session?.currentSequence || []);
+  const showInputArea = isInputPhase || isLocalInputPhase || p1LiveInputs.length > 0 || p2LiveInputs.length > 0;
 
   // Round countdown effect when roundWinner appears
   useEffect(() => {
@@ -85,6 +87,7 @@ export function GameScreen({
   // Sequence Animation Effect matching ESP32 ON/OFF pulse timing
   useEffect(() => {
     if (effectiveSequence.length > 0 && !isInputPhase && roundCountdown === null) {
+      setIsLocalInputPhase(false);
       let step = 0;
       const speed = displaySpeedMs > 0 ? displaySpeedMs : 600;
       const pulseOnDuration = Math.floor(speed * 0.65);
@@ -104,6 +107,7 @@ export function GameScreen({
           setActiveColor(null);
           setActiveStep(null);
           clearInterval(interval);
+          setIsLocalInputPhase(true);
         }
       };
 
@@ -129,7 +133,7 @@ export function GameScreen({
   }, [isInputPhase]);
 
   const handleColorClick = (color: string) => {
-    if (!isInputPhase || isSpectator) return;
+    if (!showInputArea || isSpectator) return;
     
     const newInput = [...playerInput, color];
     setPlayerInput(newInput);
@@ -145,23 +149,23 @@ export function GameScreen({
   }
 
   const renderColorPad = (color: string) => {
-    const isActive = activeColor === color && !isInputPhase;
+    const isActive = activeColor === color && !showInputArea;
     const baseColorClass = COLOR_MAP[color as keyof typeof COLOR_MAP];
     const ringColorClass = COLOR_RING[color as keyof typeof COLOR_RING];
     
     return (
       <motion.button
-        whileHover={isInputPhase ? { scale: 1.05 } : {}}
-        whileTap={isInputPhase ? { scale: 0.95 } : {}}
+        whileHover={showInputArea ? { scale: 1.05 } : {}}
+        whileTap={showInputArea ? { scale: 0.95 } : {}}
         onClick={() => handleColorClick(color)}
-        disabled={!isInputPhase || isSpectator}
+        disabled={!showInputArea || isSpectator}
         className={cn(
           "w-32 h-32 md:w-40 md:h-40 rounded-3xl transition-all duration-150 cursor-default",
           baseColorClass,
           isActive 
             ? `opacity-100 scale-110 shadow-[0_0_50px_rgba(255,255,255,0.8)] ring-4 ring-offset-4 ring-offset-slate-900 ${ringColorClass}` 
             : "opacity-30 shadow-sm",
-          isInputPhase && !isSpectator ? "cursor-pointer hover:opacity-90 active:opacity-100 opacity-70 shadow-lg" : ""
+          showInputArea && !isSpectator ? "cursor-pointer hover:opacity-90 active:opacity-100 opacity-70 shadow-lg" : ""
         )}
       />
     );
@@ -234,7 +238,7 @@ export function GameScreen({
                     </div>
                     
                     {/* Live Progress Dots inside Card */}
-                    {isInputPhase && (
+                    {showInputArea && (
                       <div className="flex gap-1.5 bg-slate-100 p-1.5 rounded-full border border-slate-200">
                         {Array.from({ length: effectiveSequence.length }).map((_, i) => (
                           <motion.div
@@ -309,7 +313,7 @@ export function GameScreen({
                 MATCH FINISHED
               </h2>
               <p className="text-2xl font-bold font-inter mb-6 text-purple-900">
-                {matchWinner === currentUserId ? '🎉 YOU WON THE MATCH! 🎉' : `${players.find(p=>p.id === matchWinner)?.displayName || 'Player'} WON!`}
+                {matchWinner === currentUserId ? '🎉 YOU WON THE MATCH! 🎉' : `${players.find((p, idx) => p.id === matchWinner || (idx + 1).toString() === matchWinner)?.displayName || 'Player'} WON!`}
               </p>
               <Button onClick={() => window.location.reload()} size="lg" className="h-16 px-10 text-xl font-orbitron font-black rounded-2xl bg-gradient-to-r from-emerald-400 to-cyan-400 text-slate-950 shadow-lg hover:scale-105">
                 PLAY AGAIN
@@ -361,7 +365,7 @@ export function GameScreen({
         )}
 
         {/* Real-time Side-by-Side Live Inputs for Player 1 & Player 2 */}
-        {isInputPhase && (
+        {showInputArea && (
           <div className="flex flex-col md:flex-row gap-4 bg-white/95 p-4 rounded-[2rem] border-4 border-purple-300/50 shadow-2xl items-center">
             {/* Player 1 Live Progress */}
             <div className="flex items-center gap-3 bg-cyan-50/80 px-4 py-2 rounded-2xl border-2 border-cyan-300">

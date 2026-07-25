@@ -86,6 +86,7 @@ export function useGameEngine() {
     });
 
     socket.on(SOCKET_EVENTS.PLAYER_PROGRESS, (data: { playerNumber: number; color: string }) => {
+      setIsInputPhase(true);
       if (data.playerNumber === 1) {
         setP1LiveInputs(prev => [...prev, data.color]);
       } else if (data.playerNumber === 2) {
@@ -93,15 +94,42 @@ export function useGameEngine() {
       }
     });
 
-    socket.on(SOCKET_EVENTS.ROUND_RESULT, (data: { winnerId: string; players: PlayerState[] }) => {
-      setRoundWinner(data.winnerId);
+    socket.on(SOCKET_EVENTS.ROUND_RESULT, (data: { winnerPlayerNumber: number; winnerId?: string; player1Score: number; player2Score: number }) => {
+      setRoundWinner(data.winnerId || (data.winnerPlayerNumber === 1 ? '1' : data.winnerPlayerNumber === 2 ? '2' : null));
       setIsInputPhase(false);
-      setSession(prev => prev ? { ...prev, players: data.players } : null);
+      setSession(prev => {
+        if (!prev) return null;
+        const updatedPlayers = prev.players?.map((p, idx) => {
+          if (idx === 0) return { ...p, score: data.player1Score };
+          if (idx === 1) return { ...p, score: data.player2Score };
+          return p;
+        });
+        return {
+          ...prev,
+          player1Score: data.player1Score,
+          player2Score: data.player2Score,
+          players: updatedPlayers,
+        };
+      });
     });
 
-    socket.on(SOCKET_EVENTS.MATCH_RESULT, (data: { winnerId: string; isGameOver: boolean }) => {
-      setMatchWinner(data.winnerId);
+    socket.on(SOCKET_EVENTS.MATCH_RESULT, (data: { winnerId: string; winnerPlayerNumber?: number; player1Score: number; player2Score: number }) => {
+      setMatchWinner(data.winnerId || (data.winnerPlayerNumber === 1 ? '1' : '2'));
       setIsInputPhase(false);
+      setSession(prev => {
+        if (!prev) return null;
+        const updatedPlayers = prev.players?.map((p, idx) => {
+          if (idx === 0) return { ...p, score: data.player1Score };
+          if (idx === 1) return { ...p, score: data.player2Score };
+          return p;
+        });
+        return {
+          ...prev,
+          player1Score: data.player1Score,
+          player2Score: data.player2Score,
+          players: updatedPlayers,
+        };
+      });
     });
 
     socket.on(SOCKET_EVENTS.GAME_FINISHED, () => {
