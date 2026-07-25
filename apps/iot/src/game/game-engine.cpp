@@ -234,6 +234,8 @@ void GameEngine::handlePlayerInput() {
         else if (evt.button == ButtonType::P2_BLUE) { colorStr = "BLUE"; isP1 = false; }
         
         if (colorStr != "") {
+            apiClient.sendButtonPress(isP1 ? 1 : 2, colorStr);
+
             Serial.printf("[INPUT] %s pressed: %s (%d/%d)\n", 
                 isP1 ? "Player 1" : "Player 2", 
                 colorStr.c_str(), 

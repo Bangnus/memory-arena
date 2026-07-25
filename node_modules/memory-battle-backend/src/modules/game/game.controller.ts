@@ -55,4 +55,14 @@ export class GameController {
   async playRound(@Body() dto: SubmitInputDto) {
     return this.gameEngine.processRoundInput(dto);
   }
+
+  @Post('press')
+  @ApiOperation({
+    summary: 'Report real-time button press from ESP32',
+    description: 'ESP32 calls this whenever Player 1 or Player 2 presses a button',
+  })
+  async reportPress(@Body() dto: { playerNumber: number; color: string }) {
+    this.logger.debug(`ESP32 Button Press: P${dto.playerNumber} -> ${dto.color}`);
+    return this.gameEngine.broadcastPress(dto.playerNumber, dto.color);
+  }
 }

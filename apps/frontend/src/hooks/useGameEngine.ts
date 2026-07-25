@@ -24,6 +24,7 @@ export interface GameSession {
   player1Score?: number;
   player2Score?: number;
   currentRound?: number;
+  currentSequence?: string[] | null;
 }
 
 export function useGameEngine() {
@@ -38,10 +39,18 @@ export function useGameEngine() {
 
 
 
+  const [p1LiveInputs, setP1LiveInputs] = useState<string[]>([]);
+  const [p2LiveInputs, setP2LiveInputs] = useState<string[]>([]);
+
   // Always fetch current session on mount and when connection status changes
   useEffect(() => {
     gameService.getCurrentSession().then((currentSession) => {
-      if (currentSession) setSession(currentSession);
+      if (currentSession) {
+        setSession(currentSession);
+        if (currentSession.currentSequence && Array.isArray(currentSession.currentSequence) && currentSession.currentSequence.length > 0) {
+          setSequence(currentSession.currentSequence);
+        }
+      }
     }).catch(() => {});
   }, [isConnected]);
 
@@ -50,10 +59,15 @@ export function useGameEngine() {
 
     socket.on(SOCKET_EVENTS.SESSION_UPDATE, (updatedSession: GameSession) => {
       setSession(updatedSession);
+      if (updatedSession.currentSequence && Array.isArray(updatedSession.currentSequence) && updatedSession.currentSequence.length > 0) {
+        setSequence(updatedSession.currentSequence);
+      }
     });
 
     socket.on(SOCKET_EVENTS.COUNTDOWN_START, (data: { count: number }) => {
       setCountdown(data.count);
+      setP1LiveInputs([]);
+      setP2LiveInputs([]);
     });
 
     socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeedMs: number }) => {
@@ -61,10 +75,22 @@ export function useGameEngine() {
       setDisplaySpeedMs(data.displaySpeedMs);
       setIsInputPhase(false);
       setRoundWinner(null);
+      setP1LiveInputs([]);
+      setP2LiveInputs([]);
     });
 
     socket.on(SOCKET_EVENTS.INPUT_ENABLED, () => {
       setIsInputPhase(true);
+      setP1LiveInputs([]);
+      setP2LiveInputs([]);
+    });
+
+    socket.on(SOCKET_EVENTS.PLAYER_PROGRESS, (data: { playerNumber: number; color: string }) => {
+      if (data.playerNumber === 1) {
+        setP1LiveInputs(prev => [...prev, data.color]);
+      } else if (data.playerNumber === 2) {
+        setP2LiveInputs(prev => [...prev, data.color]);
+      }
     });
 
     socket.on(SOCKET_EVENTS.ROUND_RESULT, (data: { winnerId: string; players: PlayerState[] }) => {
@@ -82,6 +108,8 @@ export function useGameEngine() {
       setSequence([]);
       setIsInputPhase(false);
       setCountdown(null);
+      setP1LiveInputs([]);
+      setP2LiveInputs([]);
     });
 
     socket.on(SOCKET_EVENTS.SYSTEM_RESET, () => {
@@ -91,6 +119,8 @@ export function useGameEngine() {
       setCountdown(null);
       setRoundWinner(null);
       setMatchWinner(null);
+      setP1LiveInputs([]);
+      setP2LiveInputs([]);
     });
 
     return () => {
@@ -98,6 +128,7 @@ export function useGameEngine() {
       socket.off(SOCKET_EVENTS.COUNTDOWN_START);
       socket.off(SOCKET_EVENTS.SEQUENCE_SHOW);
       socket.off(SOCKET_EVENTS.INPUT_ENABLED);
+      socket.off(SOCKET_EVENTS.PLAYER_PROGRESS);
       socket.off(SOCKET_EVENTS.ROUND_RESULT);
       socket.off(SOCKET_EVENTS.MATCH_RESULT);
       socket.off(SOCKET_EVENTS.GAME_FINISHED);
@@ -127,6 +158,8 @@ export function useGameEngine() {
     isInputPhase,
     roundWinner,
     matchWinner,
+    p1LiveInputs,
+    p2LiveInputs,
     toggleReady,
     submitSequence
   };

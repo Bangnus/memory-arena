@@ -14,5 +14,6 @@ export const SOCKET_EVENTS = {
   SYSTEM_RESET: 'system:reset',
   DEVICE_START: 'device:start',
   LEADERBOARD_UPDATE: 'leaderboard:update',
+  PLAYER_PROGRESS: 'player:progress',
   ERROR: 'error',
 } as const;

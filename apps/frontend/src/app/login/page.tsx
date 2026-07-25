@@ -96,6 +96,8 @@ function CentralDisplayContent() {
   const { session } = useGameEngine();
   const [qrUrls, setQrUrls] = useState<{ p1: string, p2: string } | null>(null);
 
+  const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
+
   useEffect(() => {
     // Fetch active session without deleting chosen mode
     gameService.getCurrentSession().catch(console.error);
@@ -116,17 +118,25 @@ function CentralDisplayContent() {
   }, []);
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
     if (session?.player1Id && session?.player2Id) {
-      // Both ready!
-      timer = setTimeout(() => {
-        window.location.href = '/game';
-      }, 1500);
+      if (redirectCountdown === null) {
+        setRedirectCountdown(3);
+      }
     }
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [session]);
+  }, [session, redirectCountdown]);
+
+  useEffect(() => {
+    if (redirectCountdown === null) return;
+
+    if (redirectCountdown > 0) {
+      const timer = setTimeout(() => {
+        setRedirectCountdown(redirectCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      window.location.href = '/game';
+    }
+  }, [redirectCountdown]);
 
   const p1Ready = !!session?.player1Id;
   const p2Ready = !!session?.player2Id;
@@ -139,7 +149,7 @@ function CentralDisplayContent() {
   return (
     <div className="w-full max-w-5xl">
       <div className="text-center mb-10">
-        <h1 className="text-5xl font-black text-white drop-shadow-lg mb-2">Memory Arena</h1>
+        <h1 className="text-5xl font-black text-white drop-shadow-lg mb-2 font-orbitron">Memory Arena</h1>
         <p className="text-xl text-white/90 font-medium drop-shadow">Scan QR Code to Join the Battle</p>
       </div>
 
@@ -147,7 +157,7 @@ function CentralDisplayContent() {
         {/* Player 1 Card */}
         <Card className={`relative overflow-hidden border-4 transition-all duration-500 ${p1Ready ? 'border-green-400 shadow-[0_0_40px_rgba(74,222,128,0.4)]' : 'border-sky-300 shadow-2xl'} bg-white/95 backdrop-blur-xl rounded-[2.5rem]`}>
           <CardHeader className="text-center pb-4">
-            <CardTitle className={`text-4xl font-black ${p1Ready ? 'text-green-500' : 'text-sky-500'}`}>Player 1</CardTitle>
+            <CardTitle className={`text-4xl font-black font-orbitron ${p1Ready ? 'text-green-500' : 'text-sky-500'}`}>Player 1</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center pb-8">
             {p1Ready ? (
@@ -157,8 +167,8 @@ function CentralDisplayContent() {
                 ) : (
                   <CheckCircle2 className="h-24 w-24 text-green-500" />
                 )}
-                <h3 className="text-2xl font-bold text-slate-800">{player1?.displayName || 'Player 1'}</h3>
-                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">READY</span>
+                <h3 className="text-2xl font-bold text-slate-800 font-orbitron">{player1?.displayName || 'Player 1'}</h3>
+                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold font-orbitron">READY</span>
               </div>
             ) : qrUrls?.p1 ? (
               <GameQRCode value={qrUrls.p1} size={220} accentColor="cyan" />
@@ -171,7 +181,7 @@ function CentralDisplayContent() {
         {/* Player 2 Card */}
         <Card className={`relative overflow-hidden border-4 transition-all duration-500 ${p2Ready ? 'border-green-400 shadow-[0_0_40px_rgba(74,222,128,0.4)]' : 'border-orange-300 shadow-2xl'} bg-white/95 backdrop-blur-xl rounded-[2.5rem]`}>
           <CardHeader className="text-center pb-4">
-            <CardTitle className={`text-4xl font-black ${p2Ready ? 'text-green-500' : 'text-orange-500'}`}>Player 2</CardTitle>
+            <CardTitle className={`text-4xl font-black font-orbitron ${p2Ready ? 'text-green-500' : 'text-orange-500'}`}>Player 2</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col items-center pb-8">
             {p2Ready ? (
@@ -181,8 +191,8 @@ function CentralDisplayContent() {
                 ) : (
                   <CheckCircle2 className="h-24 w-24 text-green-500" />
                 )}
-                <h3 className="text-2xl font-bold text-slate-800">{player2?.displayName || 'Player 2'}</h3>
-                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold">READY</span>
+                <h3 className="text-2xl font-bold text-slate-800 font-orbitron">{player2?.displayName || 'Player 2'}</h3>
+                <span className="bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold font-orbitron">READY</span>
               </div>
             ) : qrUrls?.p2 ? (
               <GameQRCode value={qrUrls.p2} size={220} accentColor="orange" />
@@ -194,17 +204,24 @@ function CentralDisplayContent() {
       </div>
 
       {bothReady && (
-        <div className="mt-12 text-center animate-in slide-in-from-bottom-8 duration-700 flex flex-col items-center">
-          <div className="inline-flex items-center px-8 py-4 bg-white/20 backdrop-blur-md rounded-full border border-white/40 shadow-xl mb-6">
-            <Loader2 className="h-8 w-8 animate-spin text-white mr-4" />
-            <span className="text-2xl font-bold text-white tracking-widest uppercase">Match Starting...</span>
+        <div className="mt-10 text-center animate-in slide-in-from-bottom-8 duration-700 flex flex-col items-center">
+          <div className="inline-flex items-center px-10 py-4 bg-white/25 backdrop-blur-xl rounded-full border-2 border-white/50 shadow-2xl mb-5">
+            <div className="w-14 h-14 rounded-full bg-amber-400 text-slate-950 flex items-center justify-center font-orbitron font-black text-3xl mr-4 shadow-lg animate-bounce">
+              {redirectCountdown === 0 ? 'GO!' : redirectCountdown}
+            </div>
+            <div className="flex flex-col text-left">
+              <span className="text-2xl font-black font-orbitron text-white tracking-wider uppercase">
+                {redirectCountdown === 0 ? 'STARTING MATCH!' : `MATCH STARTING IN ${redirectCountdown}S`}
+              </span>
+              <span className="text-xs font-bold text-white/90">Both players ready! Look at the display screen</span>
+            </div>
           </div>
           
           <button 
             onClick={() => window.location.href = '/game'}
-            className="px-6 py-2 bg-white/90 hover:bg-white text-blue-600 font-bold rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 cursor-pointer z-50"
+            className="px-6 py-2 bg-white/90 hover:bg-white text-blue-600 font-bold rounded-full shadow-lg transition-all transform hover:scale-105 active:scale-95 cursor-pointer z-50 text-sm font-orbitron"
           >
-            Click here if not redirected automatically
+            Click here to enter game immediately
           </button>
         </div>
       )}

@@ -260,4 +260,9 @@ export class GameEngineService {
       };
     }
   }
+
+  broadcastPress(playerNumber: number, color: string) {
+    this.broadcast.emit(SocketEvent.PLAYER_PROGRESS, { playerNumber, color });
+    return { success: true };
+  }
 }

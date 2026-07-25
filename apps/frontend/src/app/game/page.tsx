@@ -18,6 +18,8 @@ export default function GamePage() {
     isInputPhase,
     roundWinner,
     matchWinner,
+    p1LiveInputs,
+    p2LiveInputs,
     toggleReady,
     submitSequence
   } = useGameEngine();
@@ -55,6 +57,8 @@ export default function GamePage() {
             isInputPhase={isInputPhase}
             roundWinner={roundWinner}
             matchWinner={matchWinner}
+            p1LiveInputs={p1LiveInputs}
+            p2LiveInputs={p2LiveInputs}
             currentUserId={player?.id}
             onReady={toggleReady}
             onSubmitSequence={submitSequence}

@@ -47,6 +47,7 @@ public:
     bool signalStart();
     bool signalModeChange(int mode);
     bool setDifficulty(const char* difficulty);
+    void sendButtonPress(int playerNumber, const String& color);
 
 private:
     unsigned long lastHeartbeat = 0;

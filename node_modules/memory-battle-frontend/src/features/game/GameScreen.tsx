@@ -27,6 +27,8 @@ interface GameScreenProps {
   isInputPhase: boolean;
   roundWinner: string | null;
   matchWinner: string | null;
+  p1LiveInputs?: string[];
+  p2LiveInputs?: string[];
   currentUserId: string | undefined;
   onReady: () => void;
   onSubmitSequence: (seq: string[]) => void;
@@ -40,6 +42,8 @@ export function GameScreen({
   isInputPhase,
   roundWinner,
   matchWinner,
+  p1LiveInputs = [],
+  p2LiveInputs = [],
   currentUserId,
   onReady,
   onSubmitSequence,
@@ -47,21 +51,47 @@ export function GameScreen({
   const [activeColor, setActiveColor] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<number | null>(null);
   const [playerInput, setPlayerInput] = useState<string[]>([]);
+  const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
   const players = session?.players ?? [];
 
   const me = players.find(p => p.id === currentUserId);
   const isSpectator = !me;
   
+  const effectiveSequence = sequence.length > 0 ? sequence : (session?.currentSequence || []);
+
+  // Round countdown effect when roundWinner appears
+  useEffect(() => {
+    if (roundWinner && !matchWinner) {
+      const timer = setTimeout(() => {
+        setRoundCountdown(3);
+      }, 1800);
+      return () => clearTimeout(timer);
+    }
+  }, [roundWinner, matchWinner]);
+
+  useEffect(() => {
+    if (roundCountdown === null) return;
+
+    if (roundCountdown > 0) {
+      const timer = setTimeout(() => {
+        setRoundCountdown(roundCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setRoundCountdown(null);
+    }
+  }, [roundCountdown]);
+
   // Sequence Animation Effect matching ESP32 ON/OFF pulse timing
   useEffect(() => {
-    if (sequence.length > 0 && !isInputPhase) {
+    if (effectiveSequence.length > 0 && !isInputPhase && roundCountdown === null) {
       let step = 0;
       const speed = displaySpeedMs > 0 ? displaySpeedMs : 600;
       const pulseOnDuration = Math.floor(speed * 0.65);
 
       const runStep = () => {
-        if (step < sequence.length) {
-          const color = sequence[step];
+        if (step < effectiveSequence.length) {
+          const color = effectiveSequence[step];
           setActiveColor(color);
           setActiveStep(step + 1);
 
@@ -89,7 +119,7 @@ export function GameScreen({
       setActiveColor(null);
       setActiveStep(null);
     }
-  }, [sequence, displaySpeedMs, isInputPhase]);
+  }, [effectiveSequence, displaySpeedMs, isInputPhase, roundCountdown]);
 
   // Handle Input Phase reset
   useEffect(() => {
@@ -105,7 +135,7 @@ export function GameScreen({
     setPlayerInput(newInput);
     
     // Auto submit when length matches
-    if (newInput.length === sequence.length) {
+    if (newInput.length === effectiveSequence.length) {
       onSubmitSequence(newInput);
     }
   };
@@ -137,6 +167,8 @@ export function GameScreen({
     );
   };
 
+  const activeCountdown = roundCountdown ?? countdown;
+
   return (
     <div className="flex flex-col items-center justify-between w-full max-w-4xl mx-auto flex-1 min-h-0 py-1">
       
@@ -156,8 +188,11 @@ export function GameScreen({
 
       {/* Top Bar: Players & Scores */}
       <div className="flex flex-col md:flex-row justify-between w-full px-4 gap-4">
-        {players.map((player) => {
+        {players.map((player, idx) => {
           const isMe = player.id === currentUserId;
+          const playerNum = idx + 1;
+          const liveInputs = playerNum === 1 ? p1LiveInputs : p2LiveInputs;
+
           return (
             <div key={player.id} className={cn(
               "flex-1 relative overflow-hidden rounded-[2rem] border-3 bg-white/95 backdrop-blur-xl transition-all duration-300 text-slate-900 shadow-xl",
@@ -169,15 +204,23 @@ export function GameScreen({
                   isMe ? "border-cyan-400" : "border-purple-200"
                 )}>
                   <AvatarImage src={player.pictureUrl || ''} />
-                  <AvatarFallback className="bg-purple-100 text-purple-800 font-black">
+                  <AvatarFallback className="bg-purple-100 text-purple-800 font-black font-orbitron">
                     {player.displayName.substring(0,2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div className="flex flex-col flex-1">
-                  <span className="font-orbitron font-black text-lg md:text-xl text-slate-900 truncate">
-                    {player.displayName} {isMe && <span className="text-cyan-600 text-xs font-bold">(You)</span>}
-                  </span>
+                  <div className="flex justify-between items-center">
+                    <span className="font-orbitron font-black text-lg md:text-xl text-slate-900 truncate">
+                      {player.displayName} {isMe && <span className="text-cyan-600 text-xs font-bold">(You)</span>}
+                    </span>
+                    <span className={cn(
+                      "text-[10px] font-black font-orbitron px-2 py-0.5 rounded-full border",
+                      playerNum === 1 ? "bg-cyan-100 text-cyan-800 border-cyan-300" : "bg-orange-100 text-orange-800 border-orange-300"
+                    )}>
+                      P{playerNum}
+                    </span>
+                  </div>
                   
                   <div className="flex justify-between items-end mt-1">
                     <div className="flex flex-col">
@@ -190,14 +233,19 @@ export function GameScreen({
                       </div>
                     </div>
                     
-                    {session.status === 'WAITING' && (
-                      <div className={cn(
-                        "px-3 py-1 rounded-full text-xs font-black font-orbitron border-2 shadow-sm",
-                        player.isReady 
-                          ? "bg-emerald-400 text-emerald-950 border-emerald-300" 
-                          : "bg-slate-100 border-slate-200 text-slate-500"
-                      )}>
-                        {player.isReady ? 'READY' : 'WAITING'}
+                    {/* Live Progress Dots inside Card */}
+                    {isInputPhase && (
+                      <div className="flex gap-1.5 bg-slate-100 p-1.5 rounded-full border border-slate-200">
+                        {Array.from({ length: effectiveSequence.length }).map((_, i) => (
+                          <motion.div
+                            key={i}
+                            animate={liveInputs[i] ? { scale: [1, 1.3, 1] } : {}}
+                            className={cn(
+                              "w-5 h-5 rounded-full border transition-all duration-200",
+                              liveInputs[i] ? COLOR_MAP[liveInputs[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-white"
+                            )}
+                          />
+                        ))}
                       </div>
                     )}
                   </div>
@@ -215,7 +263,7 @@ export function GameScreen({
         {!isInputPhase && activeStep && (
           <div className="absolute -top-10 font-orbitron font-black text-amber-300 text-sm md:text-base tracking-wider animate-pulse flex items-center gap-2 bg-slate-900/80 px-5 py-1.5 rounded-full border border-amber-400/40 backdrop-blur-md shadow-lg">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-            SHOWING SEQUENCE ({activeStep}/{sequence.length})
+            SHOWING SEQUENCE ({activeStep}/{effectiveSequence.length})
           </div>
         )}
 
@@ -227,17 +275,20 @@ export function GameScreen({
           </div>
         )}
 
-        {/* Countdown Overlay */}
+        {/* Countdown Overlay (Start & Next Round) */}
         <AnimatePresence>
-          {countdown !== null && (
+          {activeCountdown !== null && (
             <motion.div 
               initial={{ scale: 0.5, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 1.5, opacity: 0 }}
-              className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md rounded-[3rem]"
+              className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md rounded-[3rem]"
             >
-              <span className="text-9xl font-black font-orbitron text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.6)]">
-                {countdown === 0 ? 'GO!' : countdown}
+              <div className="text-xl font-black font-orbitron text-amber-300 uppercase tracking-widest mb-2">
+                {roundCountdown !== null ? 'NEXT ROUND STARTING...' : 'GET READY!'}
+              </div>
+              <span className="text-9xl font-black font-orbitron text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.6)] animate-pulse">
+                {activeCountdown === 0 ? 'GO!' : activeCountdown}
               </span>
             </motion.div>
           )}
@@ -309,17 +360,44 @@ export function GameScreen({
           </Button>
         )}
 
-        {isInputPhase && !isSpectator && (
-          <div className="flex gap-3 bg-white/90 p-4 rounded-full border-4 border-purple-300/50 shadow-xl">
-            {Array.from({ length: sequence.length }).map((_, i) => (
-              <div 
-                key={i} 
-                className={cn(
-                  "w-10 h-10 rounded-full border-3 transition-all duration-300 shadow-inner",
-                  playerInput[i] ? COLOR_MAP[playerInput[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-slate-100"
-                )}
-              />
-            ))}
+        {/* Real-time Side-by-Side Live Inputs for Player 1 & Player 2 */}
+        {isInputPhase && (
+          <div className="flex flex-col md:flex-row gap-4 bg-white/95 p-4 rounded-[2rem] border-4 border-purple-300/50 shadow-2xl items-center">
+            {/* Player 1 Live Progress */}
+            <div className="flex items-center gap-3 bg-cyan-50/80 px-4 py-2 rounded-2xl border-2 border-cyan-300">
+              <span className="font-orbitron font-black text-xs text-cyan-700">P1:</span>
+              <div className="flex gap-2">
+                {Array.from({ length: effectiveSequence.length }).map((_, i) => (
+                  <motion.div
+                    key={i}
+                    animate={p1LiveInputs[i] ? { scale: [1, 1.3, 1] } : {}}
+                    className={cn(
+                      "w-8 h-8 rounded-full border-2 transition-all duration-200 shadow-sm",
+                      p1LiveInputs[i] ? COLOR_MAP[p1LiveInputs[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-white"
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="hidden md:block w-px h-8 bg-purple-200" />
+
+            {/* Player 2 Live Progress */}
+            <div className="flex items-center gap-3 bg-orange-50/80 px-4 py-2 rounded-2xl border-2 border-orange-300">
+              <span className="font-orbitron font-black text-xs text-orange-700">P2:</span>
+              <div className="flex gap-2">
+                {Array.from({ length: effectiveSequence.length }).map((_, i) => (
+                  <motion.div
+                    key={i}
+                    animate={p2LiveInputs[i] ? { scale: [1, 1.3, 1] } : {}}
+                    className={cn(
+                      "w-8 h-8 rounded-full border-2 transition-all duration-200 shadow-sm",
+                      p2LiveInputs[i] ? COLOR_MAP[p2LiveInputs[i] as keyof typeof COLOR_MAP] : "border-slate-300 bg-white"
+                    )}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

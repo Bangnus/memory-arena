@@ -199,3 +199,14 @@ bool ApiClient::setDifficulty(const char* difficulty) {
     String response = httpPost("/session/difficulty", payload);
     return response.length() > 0;
 }
+
+void ApiClient::sendButtonPress(int playerNumber, const String& color) {
+    JsonDocument doc;
+    doc["playerNumber"] = playerNumber;
+    doc["color"] = color;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    httpPost("/game/press", payload);
+}

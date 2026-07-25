@@ -9,6 +9,7 @@ export interface GameSession {
   currentRound: number;
   player1Score: number;
   player2Score: number;
+  currentSequence?: string[] | null;
 }
 
 export interface CreateSessionResponse {
