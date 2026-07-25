@@ -14,22 +14,13 @@ const SocketContext = React.createContext<SocketContextType | undefined>(undefin
 const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
-  const { token, isAuthenticated } = useAuth();
+  const { token } = useAuth();
   const [socket, setSocket] = React.useState<Socket | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
 
   React.useEffect(() => {
-    if (!isAuthenticated || !token) {
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-        setIsConnected(false);
-      }
-      return;
-    }
-
     const newSocket = io(SOCKET_URL, {
-      auth: { token },
+      auth: token ? { token } : undefined,
       transports: ['websocket'],
     });
 
@@ -48,7 +39,7 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
     return () => {
       newSocket.disconnect();
     };
-  }, [isAuthenticated, token]);
+  }, [token]);
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

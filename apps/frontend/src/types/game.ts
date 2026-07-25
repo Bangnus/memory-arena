@@ -2,7 +2,19 @@ export interface Player {
   id: string;
   displayName: string;
   avatar: string;
+  pictureUrl: string | null;
   score: number;
+}
+
+export interface LeaderboardEntry {
+  rank: number;
+  playerId: string;
+  displayName: string;
+  pictureUrl: string | null;
+  wins: number;
+  games: number;
+  winRate: number;
+  avgTimeMs: number;
 }
 
 export interface Round {
@@ -34,17 +46,6 @@ export interface MatchHistory {
   rounds: number;
   duration: number;
   createdAt: string;
-}
-
-export interface LeaderboardEntry {
-  rank: number;
-  player: Player;
-  wins: number;
-  losses: number;
-  gamesPlayed: number;
-  winRate: number;
-  bestTime: number;
-  averageTime: number;
 }
 
 export type Difficulty = 'EASY' | 'NORMAL' | 'HARD';

@@ -6,7 +6,7 @@ export interface LineLoginRequest {
 }
 
 export interface AuthResponse {
-  accessToken: string;
+  token: string;
   player: {
     id: string;
     lineId: string;

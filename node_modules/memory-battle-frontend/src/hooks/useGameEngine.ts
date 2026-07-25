@@ -37,50 +37,60 @@ export function useGameEngine() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on('session_updated', (updatedSession: GameSession) => {
+    socket.on(SOCKET_EVENTS.SESSION_UPDATE, (updatedSession: GameSession) => {
       setSession(updatedSession);
     });
 
-    socket.on('countdown', (data: { count: number }) => {
+    socket.on(SOCKET_EVENTS.COUNTDOWN_START, (data: { count: number }) => {
       setCountdown(data.count);
     });
 
-    socket.on('show_sequence', (data: { sequence: string[]; displaySpeedMs: number }) => {
+    socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeedMs: number }) => {
       setSequence(data.sequence);
       setDisplaySpeedMs(data.displaySpeedMs);
       setIsInputPhase(false);
       setRoundWinner(null);
     });
 
-    socket.on('input_phase', () => {
+    socket.on(SOCKET_EVENTS.INPUT_ENABLED, () => {
       setIsInputPhase(true);
     });
 
-    socket.on('round_result', (data: { winnerId: string; players: PlayerState[] }) => {
+    socket.on(SOCKET_EVENTS.ROUND_RESULT, (data: { winnerId: string; players: PlayerState[] }) => {
       setRoundWinner(data.winnerId);
       setIsInputPhase(false);
       setSession(prev => prev ? { ...prev, players: data.players } : null);
     });
 
-    socket.on('match_result', (data: { winnerId: string; isGameOver: boolean }) => {
+    socket.on(SOCKET_EVENTS.MATCH_RESULT, (data: { winnerId: string; isGameOver: boolean }) => {
       setMatchWinner(data.winnerId);
       setIsInputPhase(false);
     });
 
-    socket.on('game_finished', () => {
+    socket.on(SOCKET_EVENTS.GAME_FINISHED, () => {
       setSequence([]);
       setIsInputPhase(false);
       setCountdown(null);
     });
 
+    socket.on(SOCKET_EVENTS.SYSTEM_RESET, () => {
+      setSession(null);
+      setSequence([]);
+      setIsInputPhase(false);
+      setCountdown(null);
+      setRoundWinner(null);
+      setMatchWinner(null);
+    });
+
     return () => {
-      socket.off('session_updated');
-      socket.off('countdown');
-      socket.off('show_sequence');
-      socket.off('input_phase');
-      socket.off('round_result');
-      socket.off('match_result');
-      socket.off('game_finished');
+      socket.off(SOCKET_EVENTS.SESSION_UPDATE);
+      socket.off(SOCKET_EVENTS.COUNTDOWN_START);
+      socket.off(SOCKET_EVENTS.SEQUENCE_SHOW);
+      socket.off(SOCKET_EVENTS.INPUT_ENABLED);
+      socket.off(SOCKET_EVENTS.ROUND_RESULT);
+      socket.off(SOCKET_EVENTS.MATCH_RESULT);
+      socket.off(SOCKET_EVENTS.GAME_FINISHED);
+      socket.off(SOCKET_EVENTS.SYSTEM_RESET);
     };
   }, [socket]);
 

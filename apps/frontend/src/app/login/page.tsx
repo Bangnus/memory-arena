@@ -32,7 +32,7 @@ function MobileLoginContent({ code, role }: { code: string, role: number }) {
   const loginMutation = useMutation({
     mutationFn: authService.loginWithLine,
     onSuccess: (data) => {
-      login(data.accessToken, data.player);
+      login(data.token, data.player);
       setStatus('joining');
       joinSessionMutation.mutate(role);
     },

@@ -4,18 +4,14 @@ export const SOCKET_EVENTS = {
   SUBMIT_SEQUENCE: 'submit_sequence',
 
   // Server to Client
-  GAME_STARTED: 'game_started',
-  COUNTDOWN: 'countdown',
-  ROUND_STARTED: 'round_started',
-  SHOW_SEQUENCE: 'show_sequence',
-  INPUT_PHASE: 'input_phase',
-  ROUND_RESULT: 'round_result',
-  MATCH_RESULT: 'match_result',
+  SESSION_UPDATE: 'session:update',
+  COUNTDOWN_START: 'countdown:start',
+  SEQUENCE_SHOW: 'sequence:show',
+  INPUT_ENABLED: 'input:enabled',
+  ROUND_RESULT: 'round:result',
+  MATCH_RESULT: 'match:result',
   GAME_FINISHED: 'game_finished',
-  SESSION_UPDATED: 'session_updated',
+  SYSTEM_RESET: 'system:reset',
+  LEADERBOARD_UPDATE: 'leaderboard:update',
   ERROR: 'error',
-  
-  // Admin & Global
-  SYSTEM_RESET: 'system_reset',
-  LEADERBOARD_UPDATE: 'leaderboard_update',
 } as const;
