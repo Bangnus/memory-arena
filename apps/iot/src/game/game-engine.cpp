@@ -258,17 +258,7 @@ void GameEngine::handleSelectMode() {
 void GameEngine::handleCountdown() {
     unsigned long now = millis();
     
-    // Fetch sequence on first call
-    if (currentSequence.length == 0) {
-        GameSequenceData seq;
-        if (apiClient.getSequence(seq)) {
-            currentSequence = seq;
-        } else {
-            return;
-        }
-    }
-    
-    // Run the countdown immediately (synced with frontend via state change)
+    // Run the countdown immediately (sequence is received via socket)
     if (now - lastCountdownTime >= 1000) {
         lastCountdownTime = now;
         if (countdownStep > 0) {
@@ -284,9 +274,10 @@ void GameEngine::handleCountdown() {
 void GameEngine::handleShowSequence() {
     unsigned long now = millis();
     
+    // Check if we have sequence data from socket
     if (!sequenceFetched) {
         if (currentSequence.length == 0) {
-            changeState(GameState::WAIT_PLAYERS);
+            // No sequence yet, wait for socket event
             return;
         }
         sequenceFetched = true;

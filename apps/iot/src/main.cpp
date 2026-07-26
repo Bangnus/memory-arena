@@ -4,6 +4,7 @@
 #include "buzzer/buzzer.h"
 #include "wifi/wifi-manager.h"
 #include "api/api-client.h"
+#include "api/socket-client.h"
 #include "game/game-engine.h"
 
 void setup() {
