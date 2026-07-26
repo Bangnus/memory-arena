@@ -17,7 +17,6 @@ export default function GamePage() {
   const { player } = useAuth();
   const { socket } = useSocket();
   const [iotStatus, setIotStatus] = useState<'checking' | 'connected' | 'error'>('checking');
-  const [enterCountdown, setEnterCountdown] = useState<number | null>(null);
   const {
     isConnected,
     session,
@@ -65,23 +64,6 @@ export default function GamePage() {
 
     checkIot();
   }, [isConnected]);
-
-  // IoT connected → start 3-second countdown
-  useEffect(() => {
-    if (iotStatus !== 'connected') return;
-    setEnterCountdown(3);
-  }, [iotStatus]);
-
-  // Countdown 3 → 0
-  useEffect(() => {
-    if (enterCountdown === null) return;
-    if (enterCountdown > 0) {
-      const timer = setTimeout(() => setEnterCountdown(enterCountdown - 1), 1000);
-      return () => clearTimeout(timer);
-    } else {
-      setEnterCountdown(null);
-    }
-  }, [enterCountdown]);
 
   // IoT START button → go home
   useEffect(() => {
@@ -153,30 +135,6 @@ export default function GamePage() {
         )}
       </AnimatePresence>
 
-      {/* Enter Countdown Overlay (after IoT connected) */}
-      <AnimatePresence>
-        {enterCountdown !== null && (
-          <motion.div 
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md"
-          >
-            <div className="text-lg font-black font-orbitron text-amber-300 uppercase tracking-widest mb-4">
-              GET READY!
-            </div>
-            <motion.span 
-              key={enterCountdown}
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 1.5, opacity: 0 }}
-              className="text-9xl font-black font-orbitron text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.6)]"
-            >
-              {enterCountdown === 0 ? 'GO!' : enterCountdown}
-            </motion.span>
-          </motion.div>
-        )}
-      </AnimatePresence>
       <div className="w-full max-w-5xl flex justify-between items-center mb-2 z-10">
         <h1 className="text-2xl font-black text-amber-300 font-orbitron tracking-wide drop-shadow-md">MEMORY ARENA</h1>
         <Button variant="ghost" asChild className="bg-white/10 text-white hover:bg-white/20">

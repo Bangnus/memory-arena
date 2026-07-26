@@ -56,6 +56,7 @@ void GameEngine::changeState(GameState newState) {
             break;
         case GameState::COUNTDOWN:
             Serial.printf("[DEBUG][IOT][%lu] STATE -> COUNTDOWN (3s countdown)\n", millis());
+            waitingCountdownActive = false;
             ledManager.stopAnimation();
             countdownStep = 3;
             lastCountdownTime = 0;
@@ -159,6 +160,7 @@ void GameEngine::loop() {
             waitingCountdownStep--;
         } else if (event == "countdown:start") {
             Serial.printf("[DEBUG][IOT][%lu] countdown:start received, currentState=%d\n", millis(), (int)currentState);
+            waitingCountdownActive = false;
             if (currentState != GameState::COUNTDOWN && 
                 currentState != GameState::SHOW_SEQUENCE && 
                 currentState != GameState::PLAYER_INPUT) {

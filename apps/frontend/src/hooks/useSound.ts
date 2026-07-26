@@ -23,6 +23,9 @@ export function useSound() {
     if (!audioCtxRef.current) {
       audioCtxRef.current = new AudioContext();
     }
+    if (audioCtxRef.current.state === 'suspended') {
+      audioCtxRef.current.resume();
+    }
     return audioCtxRef.current;
   }, []);
 
@@ -40,7 +43,7 @@ export function useSound() {
       oscillator.frequency.value = config.frequency;
       oscillator.type = (config.type || 'sine') as OscillatorType;
       
-      gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
+      gainNode.gain.setValueAtTime(1.0, ctx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + config.duration / 1000);
       
       oscillator.start(ctx.currentTime);
@@ -67,8 +70,27 @@ export function useSound() {
   }, [playSound]);
 
   const playInputReady = useCallback(() => {
-    playSound('inputReady');
-  }, [playSound]);
+    try {
+      const ctx = getAudioContext();
+      // Rising two-tone fanfare: low then high
+      const tones = [
+        { freq: 600, start: 0, dur: 0.15 },
+        { freq: 1200, start: 0.15, dur: 0.4 },
+      ];
+      tones.forEach(({ freq, start, dur }) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(1.0, ctx.currentTime + start);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + dur);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + dur);
+      });
+    } catch {}
+  }, [getAudioContext]);
 
   const playGameStart = useCallback(() => {
     playSound('gameStart');

@@ -81,6 +81,6 @@ export const gameService = {
 
   getIotStatus: async (): Promise<{ connected: boolean }> => {
     const response = await api.get('/device/iot-status');
-    return response.data;
+    return response.data.data ?? response.data;
   },
 };

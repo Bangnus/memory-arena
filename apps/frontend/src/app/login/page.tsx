@@ -9,7 +9,6 @@ import { gameService } from '@/services/game.service';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameEngine } from '@/hooks/useGameEngine';
 import { useSocket } from '@/hooks/useSocket';
-import { useSound } from '@/hooks/useSound';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import GameQRCode from '@/components/game/GameQRCode';
@@ -97,7 +96,6 @@ function CentralDisplayContent() {
   const router = useRouter();
   const { session } = useGameEngine();
   const { socket } = useSocket();
-  const { playCountdownBeep } = useSound();
   const [qrUrls, setQrUrls] = useState<{ p1: string, p2: string } | null>(null);
 
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
@@ -142,9 +140,6 @@ function CentralDisplayContent() {
   useEffect(() => {
     if (redirectCountdown === null) return;
 
-    // Play countdown beep
-    playCountdownBeep(redirectCountdown);
-
     if (redirectCountdown > 0) {
       console.log(`[DEBUG][LOGIN][${Date.now()}] countdown tick: ${redirectCountdown}`);
       const timer = setTimeout(() => {
@@ -155,7 +150,7 @@ function CentralDisplayContent() {
       console.log(`[DEBUG][LOGIN][${Date.now()}] countdown=0, redirecting to /game`);
       window.location.href = '/game';
     }
-  }, [redirectCountdown, playCountdownBeep]);
+  }, [redirectCountdown]);
 
   const p1Ready = !!session?.player1Id;
   const p2Ready = !!session?.player2Id;

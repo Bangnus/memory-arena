@@ -52,7 +52,7 @@ export function GameScreen({
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
   const [lastClickTime, setLastClickTime] = useState(0);
   const players = session?.players ?? [];
-  const { playButtonPress, playInputReady, playCorrect, playWrong } = useSound();
+  const { playButtonPress, playCorrect, playWrong } = useSound();
 
   // Round countdown effect when roundWinner appears
   useEffect(() => {
@@ -93,9 +93,8 @@ export function GameScreen({
   useEffect(() => {
     if (isInputPhase) {
       setPlayerInput([]);
-      playInputReady(); // Double beep — signals "buttons active"
     }
-  }, [isInputPhase, playInputReady]);
+  }, [isInputPhase]);
 
   const handleColorClick = (color: string) => {
     if (!showInputArea || isSpectator) return;

@@ -48,8 +48,7 @@ void BuzzerManager::play(BuzzerSound sound) {
             playTone(2000, 20);
             break;
         case BuzzerSound::INPUT_READY:
-            // Single quick high-pitch — signals "buttons active"
-            playTone(3000, 50);
+            currentSound = BuzzerSound::NONE;
             break;
         case BuzzerSound::GAME_START:
             // Rising 3-note game start fanfare
@@ -89,8 +88,6 @@ void BuzzerManager::loop() {
                 currentSound = BuzzerSound::NONE;
             }
         } else if (currentSound == BuzzerSound::BUTTON_PRESS) {
-            currentSound = BuzzerSound::NONE;
-        } else if (currentSound == BuzzerSound::INPUT_READY) {
             currentSound = BuzzerSound::NONE;
         } else if (currentSound == BuzzerSound::GAME_START) {
             melodyStep++;

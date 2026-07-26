@@ -7,23 +7,6 @@ import { GAME_STATUS, COLOR } from '@/constants/game';
 import { SOCKET_EVENTS } from '@/constants/socket';
 import { DIFFICULTY_CONFIG } from '@/constants/game.config';
 
-// Inline sound function to avoid hook dependency issues
-function playBeepSound(frequency: number, duration: number) {
-  try {
-    const ctx = new AudioContext();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-    osc.frequency.value = frequency;
-    osc.type = 'sine';
-    gain.gain.setValueAtTime(0.5, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + duration / 1000);
-  } catch {}
-}
-
 export interface PlayerState {
   id: string;
   displayName: string;
@@ -116,17 +99,14 @@ export function useGameEngine() {
       // Animate countdown from count to 0
       let current = data.count;
       setCountdown(current);
-      playBeepSound(800, 150);
 
       const tick = () => {
         if (current > 0) {
           current--;
           setCountdown(current);
           if (current > 0) {
-            playBeepSound(800, 150);
             setTimeout(tick, 1000);
           } else {
-            playBeepSound(1200, 200);
             setTimeout(() => setCountdown(null), 500);
           }
         }
