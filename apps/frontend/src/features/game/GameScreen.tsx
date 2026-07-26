@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COLOR } from '@/constants/game';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,7 @@ interface GameScreenProps {
   onReady: () => void;
   onSubmitSequence: (seq: string[]) => void;
   sequenceStartAt?: number | null;
+  sequenceId?: number;
 }
 
 export function GameScreen({
@@ -50,6 +51,7 @@ export function GameScreen({
   onReady,
   onSubmitSequence,
   sequenceStartAt,
+  sequenceId = 0,
 }: GameScreenProps) {
   const [activeColor, setActiveColor] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<number | null>(null);
@@ -57,6 +59,8 @@ export function GameScreen({
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
   const [isLocalInputPhase, setIsLocalInputPhase] = useState(false);
   const [lastClickTime, setLastClickTime] = useState(0);
+  const seqGenRef = useRef(0);
+  const lastSeqIdRef = useRef<number>(-1);
   const players = session?.players ?? [];
   const { playCountdownBeep, playSequenceBeep, playButtonPress, playInputReady, playCorrect, playWrong } = useSound();
 
@@ -97,25 +101,44 @@ export function GameScreen({
 
   // Sequence Animation Effect matching ESP32 ON/OFF pulse timing
   useEffect(() => {
-    if (effectiveSequence.length > 0 && displaySpeedMs > 0 && !isInputPhase && roundCountdown === null) {
+    // Only run when a NEW sequence:show arrives (sequenceId incremented)
+    // Prevents phantom re-runs from countdown:start, roundCountdown transition, etc.
+    if (sequenceId === lastSeqIdRef.current) return;
+    lastSeqIdRef.current = sequenceId;
+
+    if (effectiveSequence.length > 0 && displaySpeedMs > 0 && sequenceStartAt) {
       setIsLocalInputPhase(false);
       let step = 0;
       const speed = displaySpeedMs > 0 ? displaySpeedMs : 600;
       const pulseOnDuration = Math.floor(speed * 0.65);
+      const delayMs = sequenceStartAt ? Math.max(0, sequenceStartAt - Date.now()) : 0;
+
+      // Increment generation to cancel any stale animation from previous effect run
+      const gen = ++seqGenRef.current;
+
+      console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} preparing: seq=${JSON.stringify(effectiveSequence)}, speed=${speed}ms, pulseOn=${pulseOnDuration}ms, startAt=${sequenceStartAt}, delay=${delayMs}ms`);
+
+      const timeouts: ReturnType<typeof setTimeout>[] = [];
 
       const runStep = () => {
+        // Cancel if a newer animation has started
+        if (gen !== seqGenRef.current) return;
+
         if (step < effectiveSequence.length) {
           const color = effectiveSequence[step];
           setActiveColor(color);
           setActiveStep(step + 1);
-          playSequenceBeep(); // Sync beep with LED
+          console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} step ${step + 1}/${effectiveSequence.length}: ${color}`);
+          playSequenceBeep();
 
-          setTimeout(() => {
-            setActiveColor(null);
+          const offTimer = setTimeout(() => {
+            if (gen === seqGenRef.current) setActiveColor(null);
           }, pulseOnDuration);
+          timeouts.push(offTimer);
 
           step++;
         } else {
+          console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} complete, entering input phase`);
           setActiveColor(null);
           setActiveStep(null);
           if (interval) clearInterval(interval);
@@ -125,13 +148,20 @@ export function GameScreen({
 
       // Wait until startAt before beginning animation (synchronized with IoT)
       let interval: ReturnType<typeof setInterval> | null = null;
-      const delayMs = sequenceStartAt ? Math.max(0, sequenceStartAt - Date.now()) : 0;
+      console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} waiting ${delayMs}ms before start`);
       const startTimeout = setTimeout(() => {
+        if (gen !== seqGenRef.current) return;
+        console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} START`);
         runStep();
-        interval = setInterval(runStep, speed);
+        interval = setInterval(() => {
+          if (gen !== seqGenRef.current) { clearInterval(interval!); return; }
+          runStep();
+        }, speed);
       }, delayMs);
+      timeouts.push(startTimeout);
 
       return () => {
+        timeouts.forEach(clearTimeout);
         clearTimeout(startTimeout);
         if (interval) clearInterval(interval);
         setActiveColor(null);
@@ -141,7 +171,7 @@ export function GameScreen({
       setActiveColor(null);
       setActiveStep(null);
     }
-  }, [effectiveSequence, displaySpeedMs, isInputPhase, roundCountdown, sequenceStartAt, playSequenceBeep]);
+  }, [sequenceId, effectiveSequence, displaySpeedMs, sequenceStartAt, playSequenceBeep]);
 
   // Handle Input Phase reset
   useEffect(() => {

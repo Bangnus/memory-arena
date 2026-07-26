@@ -33,6 +33,11 @@ private:
     int countdownStep = 3;
     unsigned long lastCountdownTime = 0;
 
+    // Waiting countdown (game:waiting 5s sync with web)
+    bool waitingCountdownActive = false;
+    int waitingCountdownStep = 0;
+    unsigned long lastWaitingCountdownTime = 0;
+
     // Mode selection
     int selectedMode = 0;
     const char* modes[3] = {"EASY", "MEDIUM", "HARD"};
@@ -47,6 +52,7 @@ private:
     void pollBackend();
 
     void handleSelectMode();
+    void handleWaitingCountdown();
     void handleCountdown();
     void handleShowSequence();
     void handlePlayerInput();

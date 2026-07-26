@@ -29,6 +29,7 @@ export default function GamePage() {
     p1LiveInputs,
     p2LiveInputs,
     sequenceStartAt,
+    sequenceId,
     toggleReady,
     submitSequence
   } = useGameEngine();
@@ -128,6 +129,7 @@ export default function GamePage() {
             onReady={toggleReady}
             onSubmitSequence={submitSequence}
             sequenceStartAt={sequenceStartAt}
+            sequenceId={sequenceId}
           />
         ) : (
           <div className="text-xl text-muted-foreground">

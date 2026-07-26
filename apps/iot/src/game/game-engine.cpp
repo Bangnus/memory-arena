@@ -4,6 +4,7 @@
 #include "../button/button-manager.h"
 #include "../wifi/wifi-manager.h"
 #include <ArduinoJson.h>
+#include <time.h>
 
 GameEngine gameEngine;
 
@@ -50,9 +51,11 @@ void GameEngine::changeState(GameState newState) {
             ledManager.startBlinking();
             buzzerManager.playReset();
             buttonManager.disablePlayerButtons();
+            currentSequence.length = 0;
+            currentSequence.sequenceStartAt = 0;
             break;
         case GameState::COUNTDOWN:
-            Serial.println("[STATE] COUNTDOWN");
+            Serial.printf("[DEBUG][IOT][%lu] STATE -> COUNTDOWN (3s countdown)\n", millis());
             ledManager.stopAnimation();
             countdownStep = 3;
             lastCountdownTime = 0;
@@ -60,11 +63,13 @@ void GameEngine::changeState(GameState newState) {
             buttonManager.disablePlayerButtons();
             break;
         case GameState::SHOW_SEQUENCE:
-            Serial.println("[STATE] SHOW_SEQUENCE");
+            Serial.printf("[DEBUG][IOT][%lu] STATE -> SHOW_SEQUENCE (startAt=%lu)\n", millis(), currentSequence.sequenceStartAt);
             ledManager.stopAnimation();
             sequenceDisplayIndex = 0;
             lastSequenceDisplayTime = 0;
             sequenceFetched = false;
+            currentSequence.length = 0;
+            currentSequence.sequenceStartAt = 0;
             buttonManager.disablePlayerButtons();
             break;
         case GameState::PLAYER_INPUT:
@@ -147,21 +152,22 @@ void GameEngine::loop() {
         
         // Handle game events from socket
         if (event == "game:waiting") {
-            // Both players ready — play countdown beeps to sync with web
-            Serial.println("[WAITING] Players ready, countdown 5s...");
-            for (int i = 0; i < 5; i++) {
-                buzzerManager.play(BuzzerSound::BEEP);
-                delay(1000);
-                yield();
-            }
-            buzzerManager.playGameStart();
+            // Both players ready — start non-blocking 5s countdown to sync with web
+            Serial.printf("[DEBUG][IOT][%lu] game:waiting received\n", millis());
+            waitingCountdownActive = true;
+            waitingCountdownStep = 5;
+            lastWaitingCountdownTime = now;
+            buzzerManager.play(BuzzerSound::BEEP);
+            waitingCountdownStep--;
         } else if (event == "countdown:start") {
+            Serial.printf("[DEBUG][IOT][%lu] countdown:start received, currentState=%d\n", millis(), (int)currentState);
             if (currentState != GameState::COUNTDOWN && 
                 currentState != GameState::SHOW_SEQUENCE && 
                 currentState != GameState::PLAYER_INPUT) {
                 changeState(GameState::COUNTDOWN);
             }
         } else if (event == "sequence:show") {
+            Serial.printf("[DEBUG][IOT][%lu] sequence:show received\n", millis());
             JsonDocument doc;
             DeserializationError error = deserializeJson(doc, payload);
             if (!error) {
@@ -176,6 +182,22 @@ void GameEngine::loop() {
                     currentSequence.displaySpeed = doc["displaySpeed"] | 500;
                     currentSequence.sessionId = doc["sessionId"].as<String>();
                     currentRound = doc["round"] | 1;
+
+                    // Convert absolute startAt (server Date.now()) to relative millis() timestamp
+                    if (wifiManager.isTimeSynced()) {
+                        long long startAt = doc["startAt"] | 0LL;
+                        time_t now;
+                        time(&now);
+                        long long serverNow = (long long)now * 1000;
+                        long long delayMs = startAt - serverNow;
+                        currentSequence.sequenceStartAt = millis() + (delayMs > 0 ? delayMs : 0);
+                        Serial.printf("[DEBUG][IOT][%lu] startAt=%lld, serverNow=%lld, delayMs=%lld, sequenceStartAt=%lu\n", millis(), startAt, serverNow, delayMs, currentSequence.sequenceStartAt);
+                    } else {
+                        currentSequence.sequenceStartAt = millis();
+                        Serial.printf("[DEBUG][IOT][%lu] NTP not synced, starting immediately\n", millis());
+                    }
+                    
+                    Serial.printf("[DEBUG][IOT][%lu] sequence stored: len=%d, speed=%dms, startAt=%lu\n", millis(), currentSequence.length, currentSequence.displaySpeed, currentSequence.sequenceStartAt);
                     
                     if (currentState == GameState::WAIT_PLAYERS || 
                         currentState == GameState::ROUND_RESULT) {
@@ -212,7 +234,10 @@ void GameEngine::loop() {
             changeState(GameState::GAME_RESULT);
         }
     }
-    
+
+    // Process waiting countdown (non-blocking 5s sync with web)
+    handleWaitingCountdown();
+
     switch (currentState) {
         case GameState::BOOT: {
             static unsigned long lastBootCheck = 0;
@@ -299,6 +324,24 @@ void GameEngine::handleSelectMode() {
     }
 }
 
+void GameEngine::handleWaitingCountdown() {
+    if (!waitingCountdownActive) return;
+
+    unsigned long now = millis();
+    if (now - lastWaitingCountdownTime >= 1000) {
+        lastWaitingCountdownTime = now;
+        if (waitingCountdownStep > 0) {
+            Serial.printf("[DEBUG][IOT][%lu] waiting countdown: %d\n", now, waitingCountdownStep);
+            buzzerManager.play(BuzzerSound::BEEP);
+            waitingCountdownStep--;
+        } else {
+            Serial.printf("[DEBUG][IOT][%lu] waiting countdown complete, playGameStart\n", now);
+            buzzerManager.playGameStart();
+            waitingCountdownActive = false;
+        }
+    }
+}
+
 void GameEngine::handleCountdown() {
     unsigned long now = millis();
     
@@ -307,9 +350,11 @@ void GameEngine::handleCountdown() {
     if (now - lastCountdownTime >= 1000) {
         lastCountdownTime = now;
         if (countdownStep > 0) {
+            Serial.printf("[DEBUG][IOT][%lu] countdown: %d\n", now, countdownStep);
             buzzerManager.play(BuzzerSound::BEEP);
             countdownStep--;
         } else {
+            Serial.printf("[DEBUG][IOT][%lu] countdown complete -> SHOW_SEQUENCE\n", now);
             buzzerManager.playCorrect();
             changeState(GameState::SHOW_SEQUENCE);
         }
@@ -326,12 +371,33 @@ void GameEngine::handleShowSequence() {
             GameSequenceData seq;
             if (apiClient.getSequence(seq)) {
                 currentSequence = seq;
+                // REST fallback: convert relative startInMs to millis() timestamp
+                if (currentSequence.sequenceStartAt == 0 && currentSequence.startInMs > 0) {
+                    currentSequence.sequenceStartAt = millis() + currentSequence.startInMs;
+                    Serial.printf("[DEBUG][IOT][%lu] REST fallback: startInMs=%d, sequenceStartAt=%lu\n", millis(), currentSequence.startInMs, currentSequence.sequenceStartAt);
+                }
             }
             socketClient.loop();
             if (currentSequence.length == 0) return;
         }
+        // If no startAt was set (no NTP, no REST), start immediately
+        if (currentSequence.sequenceStartAt == 0) {
+            currentSequence.sequenceStartAt = millis();
+            Serial.printf("[DEBUG][IOT][%lu] no startAt set, starting immediately\n", millis());
+        }
         sequenceFetched = true;
         lastSequenceDisplayTime = now;
+        Serial.printf("[DEBUG][IOT][%lu] sequence fetched: len=%d, speed=%dms, startAt=%lu, now=%lu, wait=%lums\n", millis(), currentSequence.length, currentSequence.displaySpeed, currentSequence.sequenceStartAt, now, currentSequence.sequenceStartAt > now ? currentSequence.sequenceStartAt - now : 0);
+        return;
+    }
+
+    // Wait until synchronized start time before displaying
+    if (now < currentSequence.sequenceStartAt) {
+        static unsigned long lastWaitLog = 0;
+        if (now - lastWaitLog >= 500) {
+            Serial.printf("[DEBUG][IOT][%lu] waiting for startAt=%lu, remaining=%lums\n", now, currentSequence.sequenceStartAt, currentSequence.sequenceStartAt - now);
+            lastWaitLog = now;
+        }
         return;
     }
     
@@ -346,10 +412,12 @@ void GameEngine::handleShowSequence() {
             if (colorStr == "RED") color = LedColor::RED;
             else if (colorStr == "BLUE") color = LedColor::BLUE;
             
+            Serial.printf("[DEBUG][IOT][%lu] LED step %d/%d: %s\n", millis(), sequenceDisplayIndex + 1, currentSequence.length, colorStr.c_str());
             ledManager.turnOn(color);
             buzzerManager.play(BuzzerSound::BEEP);
             sequenceDisplayIndex++;
         } else {
+            Serial.printf("[DEBUG][IOT][%lu] sequence display complete, entering PLAYER_INPUT\n", millis());
             ledManager.turnOffAll();
             changeState(GameState::PLAYER_INPUT);
         }

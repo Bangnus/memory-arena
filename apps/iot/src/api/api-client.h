@@ -14,11 +14,12 @@ struct GameStateData {
 
 struct GameSequenceData {
     String sessionId;
-    int round;
-    int displaySpeed;
+    int round = 0;
+    int displaySpeed = 0;
     String sequence[MAX_SEQUENCE_LENGTH];
-    int length;
-    int startInMs; // Relative ms to wait before sequence starts
+    int length = 0;
+    int startInMs = 0;
+    unsigned long sequenceStartAt = 0;
 };
 
 struct PlayerInputData {

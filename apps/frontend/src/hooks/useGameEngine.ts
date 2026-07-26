@@ -55,6 +55,7 @@ export function useGameEngine() {
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
   const [matchWinner, setMatchWinner] = useState<string | null>(null);
   const [sequenceStartAt, setSequenceStartAt] = useState<number | null>(null);
+  const [sequenceId, setSequenceId] = useState(0);
 
 
 
@@ -72,6 +73,7 @@ export function useGameEngine() {
   useEffect(() => {
     gameService.getCurrentSession().then((currentSession: any) => {
       if (currentSession) {
+        console.log(`[DEBUG][GAME][${Date.now()}] initial session fetch: status=${currentSession.status}, round=${currentSession.currentRound}, startAt=${currentSession.startAt}`);
         setSession(currentSession);
         if (currentSession.currentSequence && Array.isArray(currentSession.currentSequence) && currentSession.currentSequence.length > 0) {
           setSequence(currentSession.currentSequence);
@@ -87,16 +89,26 @@ export function useGameEngine() {
     if (!socket) return;
 
     socket.on(SOCKET_EVENTS.SESSION_UPDATE, (updatedSession: GameSession & { startAt?: number }) => {
+      console.log(`[DEBUG][GAME][${Date.now()}] session:update received: status=${updatedSession.status}, round=${updatedSession.currentRound}, startAt=${updatedSession.startAt}`);
       setSession(updatedSession);
       if (updatedSession.currentSequence && Array.isArray(updatedSession.currentSequence) && updatedSession.currentSequence.length > 0) {
         setSequence(updatedSession.currentSequence);
       }
+      // Only update startAt if the new value is LATER than current (avoid stale overwrite)
       if (updatedSession.startAt) {
-        setSequenceStartAt(updatedSession.startAt);
+        setSequenceStartAt(prev => {
+          if (!prev || updatedSession.startAt! > prev) {
+            console.log(`[DEBUG][GAME][${Date.now()}] session:update upgrading startAt: ${prev} -> ${updatedSession.startAt}`);
+            return updatedSession.startAt!;
+          }
+          console.log(`[DEBUG][GAME][${Date.now()}] session:update NOT overwriting startAt: current=${prev}, incoming=${updatedSession.startAt}`);
+          return prev;
+        });
       }
     });
 
     socket.on(SOCKET_EVENTS.COUNTDOWN_START, (data: { count: number; startAt?: number }) => {
+      console.log(`[DEBUG][GAME][${Date.now()}] countdown:start received: count=${data.count}, startAt=${data.startAt}`);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
 
@@ -121,9 +133,11 @@ export function useGameEngine() {
       setTimeout(tick, 1000);
     });
 
-    socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeedMs: number; startAt?: number }) => {
+    socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeed?: number; displaySpeedMs?: number; startAt?: number }) => {
+      const speed = data.displaySpeed ?? data.displaySpeedMs ?? 0;
+      console.log(`[DEBUG][GAME][${Date.now()}] sequence:show received: seq=${JSON.stringify(data.sequence)}, speed=${speed}ms (raw displaySpeed=${data.displaySpeed}, displaySpeedMs=${data.displaySpeedMs}), startAt=${data.startAt}, delay=${data.startAt ? data.startAt - Date.now() : 'N/A'}ms`);
       setSequence(data.sequence);
-      setDisplaySpeedMs(data.displaySpeedMs);
+      setDisplaySpeedMs(speed);
       setIsInputPhase(false);
       setRoundWinner(null);
       setP1LiveInputs([]);
@@ -131,6 +145,8 @@ export function useGameEngine() {
       if (data.startAt) {
         setSequenceStartAt(data.startAt);
       }
+      // Signal a new sequence arrived — only this triggers the animation effect
+      setSequenceId(prev => prev + 1);
     });
 
     socket.on(SOCKET_EVENTS.INPUT_ENABLED, () => {
@@ -246,6 +262,7 @@ export function useGameEngine() {
     p1LiveInputs,
     p2LiveInputs,
     sequenceStartAt,
+    sequenceId,
     toggleReady,
     submitSequence
   };

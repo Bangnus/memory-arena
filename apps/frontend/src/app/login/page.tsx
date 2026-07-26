@@ -124,11 +124,20 @@ function CentralDisplayContent() {
   useEffect(() => {
     if (!socket) return;
     const handleGameWaiting = (data: { countdown: number }) => {
+      console.log(`[DEBUG][LOGIN][${Date.now()}] game:waiting received: countdown=${data.countdown}`);
       setRedirectCountdown(data.countdown);
     };
     socket.on('game:waiting', handleGameWaiting);
     return () => { socket.off('game:waiting', handleGameWaiting); };
   }, [socket]);
+
+  // Fallback: if both players already ready when page loads, start countdown
+  useEffect(() => {
+    if (session?.player1Id && session?.player2Id && redirectCountdown === null) {
+      console.log(`[DEBUG][LOGIN][${Date.now()}] Fallback: both players ready, starting countdown=5`);
+      setRedirectCountdown(5);
+    }
+  }, [session, redirectCountdown]);
 
   useEffect(() => {
     if (redirectCountdown === null) return;
@@ -137,11 +146,13 @@ function CentralDisplayContent() {
     playCountdownBeep(redirectCountdown);
 
     if (redirectCountdown > 0) {
+      console.log(`[DEBUG][LOGIN][${Date.now()}] countdown tick: ${redirectCountdown}`);
       const timer = setTimeout(() => {
         setRedirectCountdown(redirectCountdown - 1);
       }, 1000);
       return () => clearTimeout(timer);
     } else {
+      console.log(`[DEBUG][LOGIN][${Date.now()}] countdown=0, redirecting to /game`);
       window.location.href = '/game';
     }
   }, [redirectCountdown, playCountdownBeep]);
