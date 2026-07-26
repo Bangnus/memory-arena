@@ -8,6 +8,7 @@ import { authService } from '@/services/auth.service';
 import { gameService } from '@/services/game.service';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameEngine } from '@/hooks/useGameEngine';
+import { useSocket } from '@/hooks/useSocket';
 import { useSound } from '@/hooks/useSound';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
@@ -95,13 +96,13 @@ function MobileLoginContent({ code, role }: { code: string, role: number }) {
 function CentralDisplayContent() {
   const router = useRouter();
   const { session } = useGameEngine();
+  const { socket } = useSocket();
   const { playCountdownBeep } = useSound();
   const [qrUrls, setQrUrls] = useState<{ p1: string, p2: string } | null>(null);
 
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
   useEffect(() => {
-    // Fetch active session without deleting chosen mode
     gameService.getCurrentSession().catch(console.error);
 
     const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || '';
@@ -119,13 +120,15 @@ function CentralDisplayContent() {
     setQrUrls({ p1: buildUrl(1), p2: buildUrl(2) });
   }, []);
 
+  // Listen for game:waiting event from backend (synced with IoT)
   useEffect(() => {
-    if (session?.player1Id && session?.player2Id) {
-      if (redirectCountdown === null) {
-        setRedirectCountdown(5);
-      }
-    }
-  }, [session, redirectCountdown]);
+    if (!socket) return;
+    const handleGameWaiting = (data: { countdown: number }) => {
+      setRedirectCountdown(data.countdown);
+    };
+    socket.on('game:waiting', handleGameWaiting);
+    return () => { socket.off('game:waiting', handleGameWaiting); };
+  }, [socket]);
 
   useEffect(() => {
     if (redirectCountdown === null) return;

@@ -146,7 +146,16 @@ void GameEngine::loop() {
         hasPendingEvent = false;
         
         // Handle game events from socket
-        if (event == "countdown:start") {
+        if (event == "game:waiting") {
+            // Both players ready — play countdown beeps to sync with web
+            Serial.println("[WAITING] Players ready, countdown 5s...");
+            for (int i = 0; i < 5; i++) {
+                buzzerManager.play(BuzzerSound::BEEP);
+                delay(1000);
+                yield();
+            }
+            buzzerManager.playGameStart();
+        } else if (event == "countdown:start") {
             if (currentState != GameState::COUNTDOWN && 
                 currentState != GameState::SHOW_SEQUENCE && 
                 currentState != GameState::PLAYER_INPUT) {
@@ -167,19 +176,6 @@ void GameEngine::loop() {
                     currentSequence.displaySpeed = doc["displaySpeed"] | 500;
                     currentSequence.sessionId = doc["sessionId"].as<String>();
                     currentRound = doc["round"] | 1;
-                    
-                    // Parse startAt — calculate delay until sequence should start
-                    // startAt is Unix timestamp (ms), server time
-                    // We record millis() now and calculate how long to wait
-                    unsigned long startAt = doc["startAt"] | 0UL;
-                    if (startAt > 3000) {
-                        // startAt = serverNow + 3000 (countdown duration)
-                        // We received this event approximately at serverNow
-                        // So we need to wait ~3000ms from now
-                        sequenceStartAtMs = millis() + 3000;
-                    } else {
-                        sequenceStartAtMs = 0; // No sync, show immediately
-                    }
                     
                     if (currentState == GameState::WAIT_PLAYERS || 
                         currentState == GameState::ROUND_RESULT) {
@@ -337,11 +333,6 @@ void GameEngine::handleShowSequence() {
         sequenceFetched = true;
         lastSequenceDisplayTime = now;
         return;
-    }
-    
-    // Wait for startAt timestamp before displaying (sync with frontend)
-    if (sequenceStartAtMs > 0 && now < sequenceStartAtMs) {
-        return; // Not yet time
     }
     
     unsigned long speed = currentSequence.displaySpeed > 0 ? currentSequence.displaySpeed : 500;

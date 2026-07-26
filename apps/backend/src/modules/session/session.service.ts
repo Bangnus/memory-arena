@@ -97,6 +97,11 @@ export class SessionService {
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
 
+    // Emit game:waiting when both players are ready (triggers 5s countdown on web + IoT)
+    if (hasP1 && hasP2) {
+      this.broadcast.emit('game:waiting', { countdown: 5 });
+    }
+
     if (hasP1 && hasP2) {
       this.logger.log(`Both players joined. Automatically starting match for session: ${session.id}`);
       return this.startMatch();

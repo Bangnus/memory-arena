@@ -8,7 +8,7 @@ export type SoundType = 'beep' | 'buttonPress' | 'inputReady' | 'gameStart' | 'c
 const SOUND_CONFIG: Record<SoundType, { frequency: number; duration: number; type?: OscillatorType }> = {
   beep: { frequency: 800, duration: 150 },
   buttonPress: { frequency: 2000, duration: 20 },
-  inputReady: { frequency: 2500, duration: 40 },
+  inputReady: { frequency: 3000, duration: 50 },
   gameStart: { frequency: 600, duration: 80 }, // First note of rising fanfare
   correct: { frequency: 1200, duration: 200 },
   wrong: { frequency: 300, duration: 500 },
