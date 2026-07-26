@@ -1,10 +1,28 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSocket } from './useSocket';
 import { gameService } from '@/services/game.service';
 import { GAME_STATUS, COLOR } from '@/constants/game';
 import { SOCKET_EVENTS } from '@/constants/socket';
+import { DIFFICULTY_CONFIG } from '@/constants/game.config';
+
+// Inline sound function to avoid hook dependency issues
+function playBeepSound(frequency: number, duration: number) {
+  try {
+    const ctx = new AudioContext();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.frequency.value = frequency;
+    osc.type = 'sine';
+    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + duration / 1000);
+  } catch {}
+}
 
 export interface PlayerState {
   id: string;
@@ -32,23 +50,34 @@ export function useGameEngine() {
   const [session, setSession] = useState<GameSession | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [sequence, setSequence] = useState<string[]>([]);
-  const [displaySpeedMs, setDisplaySpeedMs] = useState(1000);
+  const [displaySpeedMs, setDisplaySpeedMs] = useState(0);
   const [isInputPhase, setIsInputPhase] = useState(false);
   const [roundWinner, setRoundWinner] = useState<string | null>(null);
   const [matchWinner, setMatchWinner] = useState<string | null>(null);
+  const [sequenceStartAt, setSequenceStartAt] = useState<number | null>(null);
 
 
 
   const [p1LiveInputs, setP1LiveInputs] = useState<string[]>([]);
   const [p2LiveInputs, setP2LiveInputs] = useState<string[]>([]);
 
+  // Derive display speed from backend event or fall back to difficulty config
+  const effectiveDisplaySpeedMs = displaySpeedMs > 0
+    ? displaySpeedMs
+    : (session?.difficulty
+        ? DIFFICULTY_CONFIG[session.difficulty as keyof typeof DIFFICULTY_CONFIG]?.displaySpeed ?? 800
+        : 800);
+
   // Always fetch current session on mount and when connection status changes
   useEffect(() => {
-    gameService.getCurrentSession().then((currentSession) => {
+    gameService.getCurrentSession().then((currentSession: any) => {
       if (currentSession) {
         setSession(currentSession);
         if (currentSession.currentSequence && Array.isArray(currentSession.currentSequence) && currentSession.currentSequence.length > 0) {
           setSequence(currentSession.currentSequence);
+        }
+        if (currentSession.startAt) {
+          setSequenceStartAt(currentSession.startAt);
         }
       }
     }).catch(() => {});
@@ -57,26 +86,51 @@ export function useGameEngine() {
   useEffect(() => {
     if (!socket) return;
 
-    socket.on(SOCKET_EVENTS.SESSION_UPDATE, (updatedSession: GameSession) => {
+    socket.on(SOCKET_EVENTS.SESSION_UPDATE, (updatedSession: GameSession & { startAt?: number }) => {
       setSession(updatedSession);
       if (updatedSession.currentSequence && Array.isArray(updatedSession.currentSequence) && updatedSession.currentSequence.length > 0) {
         setSequence(updatedSession.currentSequence);
       }
+      if (updatedSession.startAt) {
+        setSequenceStartAt(updatedSession.startAt);
+      }
     });
 
-    socket.on(SOCKET_EVENTS.COUNTDOWN_START, (data: { count: number }) => {
-      setCountdown(data.count);
+    socket.on(SOCKET_EVENTS.COUNTDOWN_START, (data: { count: number; startAt?: number }) => {
       setP1LiveInputs([]);
       setP2LiveInputs([]);
+
+      // Animate countdown from count to 0
+      let current = data.count;
+      setCountdown(current);
+      playBeepSound(800, 50);
+
+      const tick = () => {
+        if (current > 0) {
+          current--;
+          setCountdown(current);
+          if (current > 0) {
+            playBeepSound(800, 50);
+            setTimeout(tick, 1000);
+          } else {
+            playBeepSound(1200, 80);
+            setTimeout(() => setCountdown(null), 500);
+          }
+        }
+      };
+      setTimeout(tick, 1000);
     });
 
-    socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeedMs: number }) => {
+    socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeedMs: number; startAt?: number }) => {
       setSequence(data.sequence);
       setDisplaySpeedMs(data.displaySpeedMs);
       setIsInputPhase(false);
       setRoundWinner(null);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
+      if (data.startAt) {
+        setSequenceStartAt(data.startAt);
+      }
     });
 
     socket.on(SOCKET_EVENTS.INPUT_ENABLED, () => {
@@ -185,12 +239,13 @@ export function useGameEngine() {
     session,
     countdown,
     sequence,
-    displaySpeedMs,
+    displaySpeedMs: effectiveDisplaySpeedMs,
     isInputPhase,
     roundWinner,
     matchWinner,
     p1LiveInputs,
     p2LiveInputs,
+    sequenceStartAt,
     toggleReady,
     submitSequence
   };

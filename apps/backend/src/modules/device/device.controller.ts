@@ -36,7 +36,7 @@ export class DeviceController {
     const deviceId = body.deviceId || 'ESP32-DEV';
     this.logger.debug(`Heartbeat received from device: ${deviceId}`);
     this.deviceService.updateHeartbeat(deviceId);
-    return { acknowledged: true, serverTime: new Date().toISOString() };
+    return { acknowledged: true, serverTime: new Date().toISOString(), serverTimeMs: Date.now() };
   }
 
   @Post('start')

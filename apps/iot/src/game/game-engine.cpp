@@ -3,59 +3,70 @@
 #include "../buzzer/buzzer.h"
 #include "../button/button-manager.h"
 #include "../wifi/wifi-manager.h"
+#include <ArduinoJson.h>
 
 GameEngine gameEngine;
 
+// Static callback for socket events
+void onSocketEvent(const String& event, const String& payload) {
+    gameEngine.handleSocketEvent(event, payload);
+}
+
 void GameEngine::init() {
+    // Initialize socket client with event handler
+    socketClient.onEvent(onSocketEvent);
+    socketClient.init();
+    
     changeState(GameState::BOOT);
+}
+
+void GameEngine::handleSocketEvent(const String& event, const String& payload) {
+    // Store event for processing in main loop (thread-safe)
+    pendingEvent = event;
+    pendingPayload = payload;
+    hasPendingEvent = true;
+    
+    Serial.printf("[SOCKET] Received: %s\n", event.c_str());
 }
 
 void GameEngine::changeState(GameState newState) {
     currentState = newState;
     stateStartTime = millis();
     
-    Serial.print("[GAME ENGINE] State -> ");
     switch(currentState) {
         case GameState::BOOT:
-            Serial.println("BOOT");
+            Serial.println("[STATE] BOOT");
             ledManager.startCycling();
             buzzerManager.playBoot();
             buttonManager.disablePlayerButtons();
             break;
         case GameState::SELECT_MODE:
-            Serial.println("SELECT_MODE");
             selectedMode = 1;
             ledManager.turnOffAll();
             buzzerManager.play(BuzzerSound::BEEP);
             break;
         case GameState::WAIT_PLAYERS:
-            Serial.println("WAIT_PLAYERS");
-            ledManager.startBlinking(); // Breathing/Blinking White
+            Serial.println("[STATE] WAIT_PLAYERS");
+            ledManager.startBlinking();
             buzzerManager.playReset();
             buttonManager.disablePlayerButtons();
             break;
         case GameState::COUNTDOWN:
-            Serial.println("COUNTDOWN");
+            Serial.println("[STATE] COUNTDOWN");
             ledManager.stopAnimation();
-            countdownStep = 5;
+            countdownStep = 3;
             lastCountdownTime = 0;
             buttonManager.disablePlayerButtons();
             break;
         case GameState::SHOW_SEQUENCE:
-            Serial.println("SHOW_SEQUENCE");
+            Serial.println("[STATE] SHOW_SEQUENCE");
             ledManager.stopAnimation();
             sequenceDisplayIndex = 0;
-            lastSequenceDisplayTime = millis();
+            lastSequenceDisplayTime = 0;
             buttonManager.disablePlayerButtons();
-            if(!apiClient.getSequence(currentSequence)) {
-                Serial.println("[GAME ENGINE] Failed to fetch sequence, reverting to WAIT_PLAYERS");
-                changeState(GameState::WAIT_PLAYERS); 
-            } else {
-                Serial.printf("[GAME ENGINE] Sequence fetched! Length: %d, Speed: %d ms\n", currentSequence.length, currentSequence.displaySpeed);
-            }
             break;
         case GameState::PLAYER_INPUT:
-            Serial.println("PLAYER_INPUT (Buttons Enabled)");
+            Serial.println("[STATE] INPUT (Buttons ON)");
             ledManager.stopAnimation();
             p1Input.length = 0;
             p2Input.length = 0;
@@ -67,25 +78,28 @@ void GameEngine::changeState(GameState newState) {
             buzzerManager.play(BuzzerSound::BEEP);
             break;
         case GameState::ROUND_RESULT:
-            Serial.println("ROUND_RESULT");
+            Serial.println("[STATE] ROUND_RESULT");
             buttonManager.disablePlayerButtons();
             ledManager.startBlinking();
             break;
         case GameState::GAME_RESULT:
-            Serial.println("GAME_RESULT");
+            Serial.println("[STATE] GAME_RESULT");
             buttonManager.disablePlayerButtons();
             ledManager.startCycling();
             buzzerManager.playWinner();
             break;
         default:
-            Serial.println("UNKNOWN");
             break;
     }
 }
 
 void GameEngine::pollBackend() {
     unsigned long now = millis();
-    if (now - lastPollTime >= 2000) {
+    // Poll faster during critical transitions (WAIT_PLAYERS, ROUND_RESULT)
+    unsigned long pollInterval = (currentState == GameState::WAIT_PLAYERS || 
+                                   currentState == GameState::ROUND_RESULT) 
+                                  ? 500 : 2000;
+    if (now - lastPollTime >= pollInterval) {
         lastPollTime = now;
         
         GameStateData state;
@@ -112,6 +126,58 @@ void GameEngine::loop() {
     buzzerManager.loop();
     wifiManager.loop();
     apiClient.loop();
+    socketClient.loop();
+    
+    // Process pending socket events
+    if (hasPendingEvent) {
+        String event = pendingEvent;
+        String payload = pendingPayload;
+        hasPendingEvent = false;
+        
+        // Handle game events from socket
+        if (event == "countdown:start") {
+            if (currentState != GameState::COUNTDOWN && 
+                currentState != GameState::SHOW_SEQUENCE && 
+                currentState != GameState::PLAYER_INPUT) {
+                changeState(GameState::COUNTDOWN);
+            }
+        } else if (event == "sequence:show") {
+            // Parse sequence from payload
+            JsonDocument doc;
+            DeserializationError error = deserializeJson(doc, payload);
+            if (!error) {
+                JsonArray arr = doc["sequence"].as<JsonArray>();
+                if (!arr.isNull()) {
+                    currentSequence.length = 0;
+                    for (JsonVariant v : arr) {
+                        if (currentSequence.length < MAX_SEQUENCE_LENGTH) {
+                            currentSequence.sequence[currentSequence.length++] = v.as<String>();
+                        }
+                    }
+                    currentSequence.displaySpeed = doc["displaySpeed"] | 500;
+                    currentSequence.sessionId = doc["sessionId"].as<String>();
+                    currentSequence.round = doc["round"] | 1;
+                    
+                    if (currentState != GameState::SHOW_SEQUENCE && 
+                        currentState != GameState::PLAYER_INPUT) {
+                        changeState(GameState::SHOW_SEQUENCE);
+                    }
+                }
+            }
+        } else if (event == "session:update") {
+            // Update session info
+            JsonDocument doc;
+            DeserializationError error = deserializeJson(doc, payload);
+            if (!error) {
+                String sessionId = doc["id"].as<String>();
+                if (sessionId.length() > 0) {
+                    currentSessionId = sessionId;
+                }
+                int round = doc["currentRound"] | 1;
+                currentRound = round;
+            }
+        }
+    }
     
     switch (currentState) {
         case GameState::BOOT:
@@ -132,7 +198,6 @@ void GameEngine::loop() {
             break;
         case GameState::SELECT_MODE:
             handleSelectMode();
-            pollBackend();
             break;
         case GameState::WAIT_PLAYERS:
             if (buttonManager.isStartPressed()) {
@@ -141,7 +206,6 @@ void GameEngine::loop() {
                     changeState(GameState::WAIT_PLAYERS);
                 }
             }
-            pollBackend();
             break;
         case GameState::COUNTDOWN:
             handleCountdown();
@@ -171,7 +235,6 @@ void GameEngine::handleSelectMode() {
         lastButtonTime = now;
         selectedMode = (selectedMode + 1) % 3;
         buzzerManager.play(BuzzerSound::BEEP);
-        Serial.printf("[SELECT_MODE] Mode: %s\n", modes[selectedMode]);
         apiClient.signalModeChange(selectedMode);
     }
 
@@ -179,14 +242,13 @@ void GameEngine::handleSelectMode() {
         lastButtonTime = now;
         selectedMode = (selectedMode + 2) % 3;
         buzzerManager.play(BuzzerSound::BEEP);
-        Serial.printf("[SELECT_MODE] Mode: %s\n", modes[selectedMode]);
         apiClient.signalModeChange(selectedMode);
     }
 
     if (buttonManager.isStartPressed()) {
         lastButtonTime = now;
         buzzerManager.playCorrect();
-        Serial.printf("[SELECT_MODE] Selected: %s\n", modes[selectedMode]);
+        Serial.printf("[MODE] Selected: %s\n", modes[selectedMode]);
         if (apiClient.setDifficulty(modes[selectedMode])) {
             changeState(GameState::WAIT_PLAYERS);
         }
@@ -195,6 +257,18 @@ void GameEngine::handleSelectMode() {
 
 void GameEngine::handleCountdown() {
     unsigned long now = millis();
+    
+    // Fetch sequence on first call
+    if (currentSequence.length == 0) {
+        GameSequenceData seq;
+        if (apiClient.getSequence(seq)) {
+            currentSequence = seq;
+        } else {
+            return;
+        }
+    }
+    
+    // Run the countdown immediately (synced with frontend via state change)
     if (now - lastCountdownTime >= 1000) {
         lastCountdownTime = now;
         if (countdownStep > 0) {
@@ -209,6 +283,17 @@ void GameEngine::handleCountdown() {
 
 void GameEngine::handleShowSequence() {
     unsigned long now = millis();
+    
+    if (!sequenceFetched) {
+        if (currentSequence.length == 0) {
+            changeState(GameState::WAIT_PLAYERS);
+            return;
+        }
+        sequenceFetched = true;
+        lastSequenceDisplayTime = now;
+        return;
+    }
+    
     unsigned long speed = currentSequence.displaySpeed > 0 ? currentSequence.displaySpeed : 500;
     
     if (now - lastSequenceDisplayTime >= speed) {
@@ -245,15 +330,7 @@ void GameEngine::handlePlayerInput() {
         
         if (colorStr != "") {
             apiClient.sendButtonPress(isP1 ? 1 : 2, colorStr);
-
-            Serial.printf("[INPUT] %s pressed: %s (%d/%d)\n", 
-                isP1 ? "Player 1" : "Player 2", 
-                colorStr.c_str(), 
-                isP1 ? p1Input.length + 1 : p2Input.length + 1, 
-                currentSequence.length);
-
-            // LEDs remain OFF during player input (LEDs are ONLY for sequence display)
-            buzzerManager.play(BuzzerSound::BEEP);
+            buzzerManager.playButtonPress();
             
             if (isP1 && !p1Finished) {
                 if (p1Input.length < currentSequence.length) {
@@ -261,7 +338,7 @@ void GameEngine::handlePlayerInput() {
                     if (p1Input.length == currentSequence.length) {
                         p1Input.time = millis() - inputStartTime;
                         p1Finished = true;
-                        Serial.printf("[INPUT] Player 1 Finished Input in %lu ms!\n", p1Input.time);
+                        Serial.printf("[P1] Done in %lu ms\n", p1Input.time);
                     }
                 }
             } else if (!isP1 && !p2Finished) {
@@ -270,7 +347,7 @@ void GameEngine::handlePlayerInput() {
                     if (p2Input.length == currentSequence.length) {
                         p2Input.time = millis() - inputStartTime;
                         p2Finished = true;
-                        Serial.printf("[INPUT] Player 2 Finished Input in %lu ms!\n", p2Input.time);
+                        Serial.printf("[P2] Done in %lu ms\n", p2Input.time);
                     }
                 }
             }
@@ -278,24 +355,24 @@ void GameEngine::handlePlayerInput() {
     }
     
     if (millis() - inputStartTime > INPUT_TIMEOUT_MS && (!p1Finished || !p2Finished)) {
-        Serial.println("[INPUT] Input Timeout 15s reached!");
+        Serial.println("[INPUT] Timeout!");
         p1Finished = true;
         p2Finished = true;
     }
     
     if (p1Finished && p2Finished) {
-        Serial.printf("[INPUT] Submitting inputs to Backend... P1: %d inputs, P2: %d inputs\n", p1Input.length, p2Input.length);
         RoundResultData res;
         if (apiClient.submitInput(currentSessionId, currentRound, p1Input, p2Input, res)) {
-            Serial.printf("[INPUT] Backend Accepted! MatchFinished: %s, Winner: %d, P1Score: %d, P2Score: %d\n",
-                res.matchFinished ? "YES" : "NO", res.roundWinner, res.player1Score, res.player2Score);
+            Serial.printf("[RESULT] R%d P1:%d P2:%d%s\n", 
+                currentRound, res.player1Score, res.player2Score,
+                res.matchFinished ? " MATCH" : "");
             if (res.matchFinished) {
                 changeState(GameState::GAME_RESULT);
             } else {
                 changeState(GameState::ROUND_RESULT);
             }
         } else {
-            Serial.println("[INPUT] Submit Input Failed! Reverting to WAIT_PLAYERS");
+            Serial.println("[ERR] Submit failed");
             changeState(GameState::WAIT_PLAYERS);
         }
     }

@@ -8,6 +8,7 @@ import { authService } from '@/services/auth.service';
 import { gameService } from '@/services/game.service';
 import { useAuth } from '@/hooks/useAuth';
 import { useGameEngine } from '@/hooks/useGameEngine';
+import { useSound } from '@/hooks/useSound';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import GameQRCode from '@/components/game/GameQRCode';
@@ -94,6 +95,7 @@ function MobileLoginContent({ code, role }: { code: string, role: number }) {
 function CentralDisplayContent() {
   const router = useRouter();
   const { session } = useGameEngine();
+  const { playCountdownBeep } = useSound();
   const [qrUrls, setQrUrls] = useState<{ p1: string, p2: string } | null>(null);
 
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
@@ -128,6 +130,9 @@ function CentralDisplayContent() {
   useEffect(() => {
     if (redirectCountdown === null) return;
 
+    // Play countdown beep
+    playCountdownBeep(redirectCountdown);
+
     if (redirectCountdown > 0) {
       const timer = setTimeout(() => {
         setRedirectCountdown(redirectCountdown - 1);
@@ -136,7 +141,7 @@ function CentralDisplayContent() {
     } else {
       window.location.href = '/game';
     }
-  }, [redirectCountdown]);
+  }, [redirectCountdown, playCountdownBeep]);
 
   const p1Ready = !!session?.player1Id;
   const p2Ready = !!session?.player2Id;

@@ -3,6 +3,7 @@
 #include <Arduino.h>
 #include "../config/constants.h"
 #include "../api/api-client.h"
+#include "../api/socket-client.h"
 
 class GameEngine {
 public:
@@ -26,6 +27,7 @@ private:
 
     int sequenceDisplayIndex = 0;
     unsigned long lastSequenceDisplayTime = 0;
+    bool sequenceFetched = false;
 
     int countdownStep = 3;
     unsigned long lastCountdownTime = 0;
@@ -35,8 +37,14 @@ private:
     const char* modes[3] = {"EASY", "MEDIUM", "HARD"};
     unsigned long lastButtonTime = 0;
 
+    // Socket event queue for thread-safe processing
+    String pendingEvent = "";
+    String pendingPayload = "";
+    bool hasPendingEvent = false;
+
     void changeState(GameState newState);
     void pollBackend();
+    void handleSocketEvent(const String& event, const String& payload);
 
     void handleSelectMode();
     void handleCountdown();

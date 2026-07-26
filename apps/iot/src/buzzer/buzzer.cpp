@@ -20,6 +20,7 @@ void BuzzerManager::stopTone() {
 
 void BuzzerManager::playBoot() { play(BuzzerSound::BOOT); }
 void BuzzerManager::playCountdown() { play(BuzzerSound::BEEP); }
+void BuzzerManager::playButtonPress() { play(BuzzerSound::BUTTON_PRESS); }
 void BuzzerManager::playCorrect() { play(BuzzerSound::CORRECT); }
 void BuzzerManager::playWrong() { play(BuzzerSound::WRONG); }
 void BuzzerManager::playWinner() { play(BuzzerSound::VICTORY); }
@@ -35,6 +36,10 @@ void BuzzerManager::play(BuzzerSound sound) {
             break;
         case BuzzerSound::BEEP:
             playTone(800, 50);
+            break;
+        case BuzzerSound::BUTTON_PRESS:
+            // Two quick high-frequency clicks for tactile feel
+            playTone(2000, 15);
             break;
         case BuzzerSound::CORRECT:
             playTone(1200, 80);
@@ -66,6 +71,13 @@ void BuzzerManager::loop() {
                 playTone(1200, 150);
             } else if (melodyStep == 2) {
                 playTone(1500, 300);
+            } else {
+                currentSound = BuzzerSound::NONE;
+            }
+        } else if (currentSound == BuzzerSound::BUTTON_PRESS) {
+            melodyStep++;
+            if (melodyStep == 1) {
+                playTone(1500, 10); // Second shorter click
             } else {
                 currentSound = BuzzerSound::NONE;
             }

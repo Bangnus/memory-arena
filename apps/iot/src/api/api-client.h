@@ -9,6 +9,7 @@ struct GameStateData {
     String status;
     String difficulty;
     int round;
+    int startInMs; // Relative ms to wait before sequence starts
 };
 
 struct GameSequenceData {
@@ -17,6 +18,7 @@ struct GameSequenceData {
     int displaySpeed;
     String sequence[MAX_SEQUENCE_LENGTH];
     int length;
+    int startInMs; // Relative ms to wait before sequence starts
 };
 
 struct PlayerInputData {

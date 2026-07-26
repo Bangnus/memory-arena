@@ -17,6 +17,8 @@ import { GAME_CONSTANTS } from '../../../common/constants/game.constants';
 @Injectable()
 export class GameEngineService {
   private readonly logger = new Logger(GameEngineService.name);
+  // Tracks the scheduled start time for each session's sequence display
+  private sequenceStartAt = new Map<string, number>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -49,7 +51,9 @@ export class GameEngineService {
       if (p2) players.push({ id: p2.id, displayName: p2.displayName, pictureUrl: p2.pictureUrl, score: session.player2Score, isReady: true });
     }
 
-    return { ...session, players };
+    const startAt = this.sequenceStartAt.get(session.id) || null;
+
+    return { ...session, players, startAt };
   }
 
   /**
@@ -74,11 +78,28 @@ export class GameEngineService {
     const displaySpeed =
       GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty] || 500;
 
+    // Calculate synchronized start time
+    const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
+    const startAt = Date.now() + countdownDuration;
+    this.sequenceStartAt.set(session.id, startAt);
+
+    // Emit countdown + sequence events for frontend synchronization
+    this.broadcast.emit(SocketEvent.COUNTDOWN_START, { count: 3, startAt });
+    this.broadcast.emit(SocketEvent.SEQUENCE_SHOW, {
+      sequence,
+      displaySpeed,
+      sessionId: session.id,
+      round: session.currentRound,
+      startAt,
+    });
+
     return {
       sequence,
       displaySpeed,
       sessionId: session.id,
       round: session.currentRound,
+      startAt,
+      startInMs: countdownDuration, // Relative ms for ESP32 (avoids 32-bit overflow)
     };
   }
 
@@ -247,6 +268,20 @@ export class GameEngineService {
         nextRound: nextRoundNumber,
       });
 
+      // Emit countdown + sequence events for next round synchronization
+      const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
+      const nextStartAt = Date.now() + countdownDuration;
+      this.sequenceStartAt.set(session.id, nextStartAt);
+
+      this.broadcast.emit(SocketEvent.COUNTDOWN_START, { count: 3, startAt: nextStartAt });
+      this.broadcast.emit(SocketEvent.SEQUENCE_SHOW, {
+        sequence: nextSequence,
+        displaySpeed: GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty],
+        sessionId: session.id,
+        round: nextRoundNumber,
+        startAt: nextStartAt,
+      });
+
       this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
 
       return {
@@ -257,6 +292,7 @@ export class GameEngineService {
         nextRound: nextRoundNumber,
         nextSequence,
         displaySpeed,
+        startInMs: countdownDuration,
       };
     }
   }

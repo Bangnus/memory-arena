@@ -1,14 +1,19 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useGameEngine } from '@/hooks/useGameEngine';
 import { useAuth } from '@/hooks/useAuth';
+import { useSocket } from '@/hooks/useSocket';
 import { GameScreen } from '@/features/game/GameScreen';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 
 export default function GamePage() {
+  const router = useRouter();
   const { player } = useAuth();
+  const { socket } = useSocket();
   const {
     isConnected,
     session,
@@ -20,9 +25,29 @@ export default function GamePage() {
     matchWinner,
     p1LiveInputs,
     p2LiveInputs,
+    sequenceStartAt,
     toggleReady,
     submitSequence
   } = useGameEngine();
+
+  // IoT START button → go home
+  useEffect(() => {
+    if (!socket) return;
+    const handleDeviceStart = () => {
+      router.push('/');
+    };
+    socket.on('device:start', handleDeviceStart);
+    return () => { socket.off('device:start', handleDeviceStart); };
+  }, [socket, router]);
+
+  // Match finished → auto go home after 5 seconds
+  useEffect(() => {
+    if (!matchWinner) return;
+    const timer = setTimeout(() => {
+      router.push('/');
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [matchWinner, router]);
 
   if (!isConnected) {
     return (
@@ -62,6 +87,7 @@ export default function GamePage() {
             currentUserId={player?.id}
             onReady={toggleReady}
             onSubmitSequence={submitSequence}
+            sequenceStartAt={sequenceStartAt}
           />
         ) : (
           <div className="text-xl text-muted-foreground">

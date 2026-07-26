@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Trophy, CheckCircle2, XCircle } from 'lucide-react';
+import { useSound } from '@/hooks/useSound';
 import type { GameSession } from '@/hooks/useGameEngine';
 
 const COLOR_MAP = {
@@ -32,6 +33,7 @@ interface GameScreenProps {
   currentUserId: string | undefined;
   onReady: () => void;
   onSubmitSequence: (seq: string[]) => void;
+  sequenceStartAt?: number | null;
 }
 
 export function GameScreen({
@@ -47,6 +49,7 @@ export function GameScreen({
   currentUserId,
   onReady,
   onSubmitSequence,
+  sequenceStartAt,
 }: GameScreenProps) {
   const [activeColor, setActiveColor] = useState<string | null>(null);
   const [activeStep, setActiveStep] = useState<number | null>(null);
@@ -54,6 +57,7 @@ export function GameScreen({
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
   const [isLocalInputPhase, setIsLocalInputPhase] = useState(false);
   const players = session?.players ?? [];
+  const { playCountdownBeep, playSequenceBeep, playButtonPress, playCorrect, playWrong } = useSound();
 
   const me = players.find(p => p.id === currentUserId);
   const isSpectator = !me;
@@ -64,12 +68,18 @@ export function GameScreen({
   // Round countdown effect when roundWinner appears
   useEffect(() => {
     if (roundWinner && !matchWinner) {
+      // Play correct/wrong sound based on result
+      if (roundWinner === currentUserId) {
+        playCorrect();
+      } else {
+        playWrong();
+      }
       const timer = setTimeout(() => {
         setRoundCountdown(3);
       }, 1800);
       return () => clearTimeout(timer);
     }
-  }, [roundWinner, matchWinner]);
+  }, [roundWinner, matchWinner, currentUserId, playCorrect, playWrong]);
 
   useEffect(() => {
     if (roundCountdown === null) return;
@@ -86,7 +96,7 @@ export function GameScreen({
 
   // Sequence Animation Effect matching ESP32 ON/OFF pulse timing
   useEffect(() => {
-    if (effectiveSequence.length > 0 && !isInputPhase && roundCountdown === null) {
+    if (effectiveSequence.length > 0 && displaySpeedMs > 0 && !isInputPhase && roundCountdown === null) {
       setIsLocalInputPhase(false);
       let step = 0;
       const speed = displaySpeedMs > 0 ? displaySpeedMs : 600;
@@ -97,6 +107,7 @@ export function GameScreen({
           const color = effectiveSequence[step];
           setActiveColor(color);
           setActiveStep(step + 1);
+          playSequenceBeep(); // Sync beep with LED
 
           setTimeout(() => {
             setActiveColor(null);
@@ -106,16 +117,22 @@ export function GameScreen({
         } else {
           setActiveColor(null);
           setActiveStep(null);
-          clearInterval(interval);
+          if (interval) clearInterval(interval);
           setIsLocalInputPhase(true);
         }
       };
 
-      runStep();
-      const interval = setInterval(runStep, speed);
+      // Wait until startAt before beginning animation (synchronized with IoT)
+      let interval: ReturnType<typeof setInterval> | null = null;
+      const delayMs = sequenceStartAt ? Math.max(0, sequenceStartAt - Date.now()) : 0;
+      const startTimeout = setTimeout(() => {
+        runStep();
+        interval = setInterval(runStep, speed);
+      }, delayMs);
 
       return () => {
-        clearInterval(interval);
+        clearTimeout(startTimeout);
+        if (interval) clearInterval(interval);
         setActiveColor(null);
         setActiveStep(null);
       };
@@ -123,14 +140,15 @@ export function GameScreen({
       setActiveColor(null);
       setActiveStep(null);
     }
-  }, [effectiveSequence, displaySpeedMs, isInputPhase, roundCountdown]);
+  }, [effectiveSequence, displaySpeedMs, isInputPhase, roundCountdown, sequenceStartAt, playSequenceBeep]);
 
   // Handle Input Phase reset
   useEffect(() => {
     if (isInputPhase) {
       setPlayerInput([]);
+      playButtonPress(); // Click sound when input phase starts
     }
-  }, [isInputPhase]);
+  }, [isInputPhase, playButtonPress]);
 
   const handleColorClick = (color: string) => {
     if (!showInputArea || isSpectator) return;

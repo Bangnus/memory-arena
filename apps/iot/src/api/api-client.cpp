@@ -23,7 +23,6 @@ String ApiClient::httpGet(const char* endpoint) {
     if (!wifiManager.isConnected()) return "";
     
     WiFiClient client;
-    // Removed client.setTimeout(5) to fix read Timeout error
     HTTPClient http;
     String url = String(BACKEND_URL) + endpoint;
     http.begin(client, url);
@@ -31,15 +30,13 @@ String ApiClient::httpGet(const char* endpoint) {
     http.addHeader("Connection", "close");
     http.setTimeout(HTTP_TIMEOUT_MS);
     
-    Serial.printf("[HTTP] GET %s\n", url.c_str());
     int httpCode = http.GET();
     String payload = "";
     
     if (httpCode > 0) {
         payload = http.getString();
-        Serial.printf("[HTTP] GET Response Code: %d, Payload: %s\n", httpCode, payload.c_str());
     } else {
-        Serial.printf("[HTTP] GET %s failed, error: %s\n", endpoint, http.errorToString(httpCode).c_str());
+        Serial.printf("[ERR] GET %s failed: %s\n", endpoint, http.errorToString(httpCode).c_str());
     }
     http.end();
     return payload;
@@ -49,7 +46,6 @@ String ApiClient::httpPost(const char* endpoint, const String& payload) {
     if (!wifiManager.isConnected()) return "";
     
     WiFiClient client;
-    // Removed client.setTimeout(5) to fix read Timeout error
     HTTPClient http;
     String url = String(BACKEND_URL) + endpoint;
     http.begin(client, url);
@@ -58,15 +54,13 @@ String ApiClient::httpPost(const char* endpoint, const String& payload) {
     http.addHeader("Connection", "close");
     http.setTimeout(HTTP_TIMEOUT_MS);
     
-    Serial.printf("[HTTP] POST %s, Payload: %s\n", url.c_str(), payload.c_str());
     int httpCode = http.POST(payload);
     String response = "";
     
     if (httpCode > 0) {
         response = http.getString();
-        Serial.printf("[HTTP] POST Response Code: %d, Data: %s\n", httpCode, response.c_str());
     } else {
-        Serial.printf("[HTTP] POST %s failed, error: %s\n", endpoint, http.errorToString(httpCode).c_str());
+        Serial.printf("[ERR] POST %s failed: %s\n", endpoint, http.errorToString(httpCode).c_str());
     }
     http.end();
     return response;
@@ -104,6 +98,7 @@ bool ApiClient::getCurrentState(GameStateData& state) {
     state.status = data["status"].as<String>();
     state.difficulty = data["difficulty"].as<String>();
     state.round = data["currentRound"] | 1;
+    state.startInMs = data["startInMs"] | 0;
     return true;
 }
 
@@ -121,6 +116,7 @@ bool ApiClient::getSequence(GameSequenceData& seq) {
     seq.sessionId = data["sessionId"].as<String>();
     seq.round = data["round"] | 1;
     seq.displaySpeed = data["displaySpeed"] | 500;
+    seq.startInMs = data["startInMs"] | 0;
 
     JsonArray arr = data["sequence"].as<JsonArray>();
     seq.length = 0;
