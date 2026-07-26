@@ -27,6 +27,17 @@ export class DeviceService {
     return Array.from(this.devices.values());
   }
 
+  isAnyDeviceOnline(): boolean {
+    const now = Date.now();
+    const ONLINE_THRESHOLD_MS = 30_000;
+    for (const device of this.devices.values()) {
+      if (now - device.lastSeen.getTime() < ONLINE_THRESHOLD_MS) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   markOffline(deviceId: string): void {
     const device = this.devices.get(deviceId);
     if (device) {

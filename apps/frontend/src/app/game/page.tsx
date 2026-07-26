@@ -6,6 +6,7 @@ import { useGameEngine } from '@/hooks/useGameEngine';
 import { useAuth } from '@/hooks/useAuth';
 import { useSocket } from '@/hooks/useSocket';
 import { GameScreen } from '@/features/game/GameScreen';
+import { gameService } from '@/services/game.service';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -15,15 +16,15 @@ export default function GamePage() {
   const router = useRouter();
   const { player } = useAuth();
   const { socket } = useSocket();
-  const [enterCountdown, setEnterCountdown] = useState(3);
-  const [showCountdown, setShowCountdown] = useState(true);
+  const [iotStatus, setIotStatus] = useState<'checking' | 'connected' | 'error'>('checking');
+  const [enterCountdown, setEnterCountdown] = useState<number | null>(null);
   const {
     isConnected,
     session,
     countdown,
     sequence,
-    displaySpeedMs,
     isInputPhase,
+    isSequenceDisplaying,
     roundWinner,
     matchWinner,
     p1LiveInputs,
@@ -34,15 +35,51 @@ export default function GamePage() {
     submitSequence
   } = useGameEngine();
 
-  // 3-second countdown when entering /game
+  // Poll IoT status until connected
   useEffect(() => {
+    if (!isConnected) return;
+
+    let attempts = 0;
+    const maxAttempts = 15;
+
+    const checkIot = async () => {
+      try {
+        const status = await gameService.getIotStatus();
+        if (status.connected) {
+          setIotStatus('connected');
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkIot, 1000);
+        } else {
+          setIotStatus('error');
+        }
+      } catch {
+        if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkIot, 1000);
+        } else {
+          setIotStatus('error');
+        }
+      }
+    };
+
+    checkIot();
+  }, [isConnected]);
+
+  // IoT connected → start 3-second countdown
+  useEffect(() => {
+    if (iotStatus !== 'connected') return;
+    setEnterCountdown(3);
+  }, [iotStatus]);
+
+  // Countdown 3 → 0
+  useEffect(() => {
+    if (enterCountdown === null) return;
     if (enterCountdown > 0) {
-      const timer = setTimeout(() => {
-        setEnterCountdown(enterCountdown - 1);
-      }, 1000);
+      const timer = setTimeout(() => setEnterCountdown(enterCountdown - 1), 1000);
       return () => clearTimeout(timer);
     } else {
-      setShowCountdown(false);
+      setEnterCountdown(null);
     }
   }, [enterCountdown]);
 
@@ -80,9 +117,45 @@ export default function GamePage() {
       <div className="absolute -top-20 -left-20 w-[450px] h-[450px] bg-yellow-200/40 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 -right-20 w-[450px] h-[450px] bg-orange-300/40 rounded-full blur-3xl pointer-events-none" />
 
-      {/* Enter Countdown Overlay */}
+      {/* IoT Connection Overlay */}
       <AnimatePresence>
-        {showCountdown && (
+        {iotStatus !== 'connected' && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md"
+          >
+            {iotStatus === 'checking' ? (
+              <>
+                <Loader2 className="w-16 h-16 animate-spin text-amber-400 mb-6" />
+                <div className="text-lg font-black font-orbitron text-amber-300 uppercase tracking-widest mb-2">
+                  Connecting to Device...
+                </div>
+                <p className="text-sm text-white/60 font-medium">Waiting for IoT device</p>
+              </>
+            ) : (
+              <>
+                <div className="text-6xl mb-6">⚠️</div>
+                <div className="text-lg font-black font-orbitron text-red-400 uppercase tracking-widest mb-2">
+                  Device Not Found
+                </div>
+                <p className="text-sm text-white/60 font-medium mb-6">IoT device is not connected to the server</p>
+                <Button 
+                  onClick={() => window.location.reload()} 
+                  className="bg-white/10 text-white hover:bg-white/20 font-orbitron"
+                >
+                  Retry
+                </Button>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Enter Countdown Overlay (after IoT connected) */}
+      <AnimatePresence>
+        {enterCountdown !== null && (
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -104,8 +177,6 @@ export default function GamePage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Top Header */}
       <div className="w-full max-w-5xl flex justify-between items-center mb-2 z-10">
         <h1 className="text-2xl font-black text-amber-300 font-orbitron tracking-wide drop-shadow-md">MEMORY ARENA</h1>
         <Button variant="ghost" asChild className="bg-white/10 text-white hover:bg-white/20">
@@ -119,8 +190,8 @@ export default function GamePage() {
             session={session}
             countdown={countdown}
             sequence={sequence}
-            displaySpeedMs={displaySpeedMs}
             isInputPhase={isInputPhase}
+            isSequenceDisplaying={isSequenceDisplaying}
             roundWinner={roundWinner}
             matchWinner={matchWinner}
             p1LiveInputs={p1LiveInputs}

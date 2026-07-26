@@ -26,6 +26,18 @@ export class DeviceController {
     return { status: 'ONLINE', timestamp: new Date().toISOString() };
   }
 
+  @Get('iot-status')
+  @ApiOperation({
+    summary: 'Check IoT Device Connection Status',
+    description:
+      'Frontend polls this to verify ESP32 is connected before game starts',
+  })
+  @ApiResponse({ status: 200, description: 'IoT connection status' })
+  getIotStatus() {
+    const online = this.deviceService.isAnyDeviceOnline();
+    return { connected: online, timestamp: new Date().toISOString() };
+  }
+
   @Post('heartbeat')
   @ApiOperation({
     summary: 'ESP32 Device Heartbeat',

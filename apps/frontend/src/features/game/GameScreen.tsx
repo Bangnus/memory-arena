@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COLOR } from '@/constants/game';
 import { cn } from '@/lib/utils';
@@ -15,17 +15,12 @@ const COLOR_MAP = {
   [COLOR.BLUE]: 'bg-blue-500 shadow-blue-500/50',
 };
 
-const COLOR_RING = {
-  [COLOR.RED]: 'ring-red-500',
-  [COLOR.BLUE]: 'ring-blue-500',
-};
-
 interface GameScreenProps {
   session: GameSession | null;
   countdown: number | null;
   sequence: string[];
-  displaySpeedMs: number;
   isInputPhase: boolean;
+  isSequenceDisplaying: boolean;
   roundWinner: string | null;
   matchWinner: string | null;
   p1LiveInputs?: string[];
@@ -41,8 +36,8 @@ export function GameScreen({
   session,
   countdown,
   sequence,
-  displaySpeedMs,
   isInputPhase,
+  isSequenceDisplaying,
   roundWinner,
   matchWinner,
   p1LiveInputs = [],
@@ -53,22 +48,11 @@ export function GameScreen({
   sequenceStartAt,
   sequenceId = 0,
 }: GameScreenProps) {
-  const [activeColor, setActiveColor] = useState<string | null>(null);
-  const [activeStep, setActiveStep] = useState<number | null>(null);
   const [playerInput, setPlayerInput] = useState<string[]>([]);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
-  const [isLocalInputPhase, setIsLocalInputPhase] = useState(false);
   const [lastClickTime, setLastClickTime] = useState(0);
-  const seqGenRef = useRef(0);
-  const lastSeqIdRef = useRef<number>(-1);
   const players = session?.players ?? [];
-  const { playCountdownBeep, playSequenceBeep, playButtonPress, playInputReady, playCorrect, playWrong } = useSound();
-
-  const me = players.find(p => p.id === currentUserId);
-  const isSpectator = !me;
-  
-  const effectiveSequence = sequence.length > 0 ? sequence : (session?.currentSequence || []);
-  const showInputArea = isInputPhase || isLocalInputPhase || p1LiveInputs.length > 0 || p2LiveInputs.length > 0;
+  const { playButtonPress, playInputReady, playCorrect, playWrong } = useSound();
 
   // Round countdown effect when roundWinner appears
   useEffect(() => {
@@ -99,79 +83,11 @@ export function GameScreen({
     }
   }, [roundCountdown]);
 
-  // Sequence Animation Effect matching ESP32 ON/OFF pulse timing
-  useEffect(() => {
-    // Only run when a NEW sequence:show arrives (sequenceId incremented)
-    // Prevents phantom re-runs from countdown:start, roundCountdown transition, etc.
-    if (sequenceId === lastSeqIdRef.current) return;
-    lastSeqIdRef.current = sequenceId;
-
-    if (effectiveSequence.length > 0 && displaySpeedMs > 0 && sequenceStartAt) {
-      setIsLocalInputPhase(false);
-      let step = 0;
-      const speed = displaySpeedMs > 0 ? displaySpeedMs : 600;
-      const pulseOnDuration = Math.floor(speed * 0.65);
-      const delayMs = sequenceStartAt ? Math.max(0, sequenceStartAt - Date.now()) : 0;
-
-      // Increment generation to cancel any stale animation from previous effect run
-      const gen = ++seqGenRef.current;
-
-      console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} preparing: seq=${JSON.stringify(effectiveSequence)}, speed=${speed}ms, pulseOn=${pulseOnDuration}ms, startAt=${sequenceStartAt}, delay=${delayMs}ms`);
-
-      const timeouts: ReturnType<typeof setTimeout>[] = [];
-
-      const runStep = () => {
-        // Cancel if a newer animation has started
-        if (gen !== seqGenRef.current) return;
-
-        if (step < effectiveSequence.length) {
-          const color = effectiveSequence[step];
-          setActiveColor(color);
-          setActiveStep(step + 1);
-          console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} step ${step + 1}/${effectiveSequence.length}: ${color}`);
-          playSequenceBeep();
-
-          const offTimer = setTimeout(() => {
-            if (gen === seqGenRef.current) setActiveColor(null);
-          }, pulseOnDuration);
-          timeouts.push(offTimer);
-
-          step++;
-        } else {
-          console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} complete, entering input phase`);
-          setActiveColor(null);
-          setActiveStep(null);
-          if (interval) clearInterval(interval);
-          setIsLocalInputPhase(true);
-        }
-      };
-
-      // Wait until startAt before beginning animation (synchronized with IoT)
-      let interval: ReturnType<typeof setInterval> | null = null;
-      console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} waiting ${delayMs}ms before start`);
-      const startTimeout = setTimeout(() => {
-        if (gen !== seqGenRef.current) return;
-        console.log(`[DEBUG][ANIM][${Date.now()}] seq#${gen} START`);
-        runStep();
-        interval = setInterval(() => {
-          if (gen !== seqGenRef.current) { clearInterval(interval!); return; }
-          runStep();
-        }, speed);
-      }, delayMs);
-      timeouts.push(startTimeout);
-
-      return () => {
-        timeouts.forEach(clearTimeout);
-        clearTimeout(startTimeout);
-        if (interval) clearInterval(interval);
-        setActiveColor(null);
-        setActiveStep(null);
-      };
-    } else {
-      setActiveColor(null);
-      setActiveStep(null);
-    }
-  }, [sequenceId, effectiveSequence, displaySpeedMs, sequenceStartAt, playSequenceBeep]);
+  const me = players.find(p => p.id === currentUserId);
+  const isSpectator = !me;
+  
+  const effectiveSequence = sequence.length > 0 ? sequence : (session?.currentSequence || []);
+  const showInputArea = isInputPhase || p1LiveInputs.length > 0 || p2LiveInputs.length > 0;
 
   // Handle Input Phase reset
   useEffect(() => {
@@ -205,9 +121,7 @@ export function GameScreen({
   }
 
   const renderColorPad = (color: string) => {
-    const isActive = activeColor === color && !showInputArea;
     const baseColorClass = COLOR_MAP[color as keyof typeof COLOR_MAP];
-    const ringColorClass = COLOR_RING[color as keyof typeof COLOR_RING];
     
     return (
       <motion.button
@@ -218,10 +132,9 @@ export function GameScreen({
         className={cn(
           "w-32 h-32 md:w-40 md:h-40 rounded-3xl transition-all duration-150 cursor-default",
           baseColorClass,
-          isActive 
-            ? `opacity-100 scale-110 shadow-[0_0_50px_rgba(255,255,255,0.8)] ring-4 ring-offset-4 ring-offset-slate-900 ${ringColorClass}` 
+          showInputArea && !isSpectator
+            ? "opacity-70 shadow-lg cursor-pointer hover:opacity-90 active:opacity-100"
             : "opacity-30 shadow-sm",
-          showInputArea && !isSpectator ? "cursor-pointer hover:opacity-90 active:opacity-100 opacity-70 shadow-lg" : ""
         )}
       />
     );
@@ -341,10 +254,10 @@ export function GameScreen({
       <div className="relative w-full aspect-square max-w-[340px] md:max-w-[380px] flex items-center justify-center my-auto z-10">
         
         {/* Sequence Status Text */}
-        {!isInputPhase && activeStep && (
+        {isSequenceDisplaying && !isInputPhase && (
           <div className="absolute -top-9 font-orbitron font-black text-amber-300 text-xs md:text-sm tracking-wider animate-pulse flex items-center gap-2 bg-slate-900/80 px-4 py-1 rounded-full border border-amber-400/40 backdrop-blur-md shadow-lg">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-            SHOWING SEQUENCE ({activeStep}/{effectiveSequence.length})
+            WATCH THE DEVICE
           </div>
         )}
 

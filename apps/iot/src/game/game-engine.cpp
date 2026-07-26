@@ -63,13 +63,11 @@ void GameEngine::changeState(GameState newState) {
             buttonManager.disablePlayerButtons();
             break;
         case GameState::SHOW_SEQUENCE:
-            Serial.printf("[DEBUG][IOT][%lu] STATE -> SHOW_SEQUENCE (startAt=%lu)\n", millis(), currentSequence.sequenceStartAt);
+            Serial.printf("[DEBUG][IOT][%lu] STATE -> SHOW_SEQUENCE (startAt=%lu, len=%d)\n", millis(), currentSequence.sequenceStartAt, currentSequence.length);
             ledManager.stopAnimation();
             sequenceDisplayIndex = 0;
             lastSequenceDisplayTime = 0;
             sequenceFetched = false;
-            currentSequence.length = 0;
-            currentSequence.sequenceStartAt = 0;
             buttonManager.disablePlayerButtons();
             break;
         case GameState::PLAYER_INPUT:

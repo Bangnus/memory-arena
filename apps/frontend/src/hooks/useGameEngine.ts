@@ -56,6 +56,7 @@ export function useGameEngine() {
   const [matchWinner, setMatchWinner] = useState<string | null>(null);
   const [sequenceStartAt, setSequenceStartAt] = useState<number | null>(null);
   const [sequenceId, setSequenceId] = useState(0);
+  const [isSequenceDisplaying, setIsSequenceDisplaying] = useState(false);
 
 
 
@@ -145,12 +146,13 @@ export function useGameEngine() {
       if (data.startAt) {
         setSequenceStartAt(data.startAt);
       }
-      // Signal a new sequence arrived — only this triggers the animation effect
       setSequenceId(prev => prev + 1);
+      setIsSequenceDisplaying(true);
     });
 
     socket.on(SOCKET_EVENTS.INPUT_ENABLED, () => {
       setIsInputPhase(true);
+      setIsSequenceDisplaying(false);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
     });
@@ -167,6 +169,7 @@ export function useGameEngine() {
     socket.on(SOCKET_EVENTS.ROUND_RESULT, (data: { winnerPlayerNumber: number; winnerId?: string; nextRound?: number; player1Score: number; player2Score: number }) => {
       setRoundWinner(data.winnerId || (data.winnerPlayerNumber === 1 ? '1' : data.winnerPlayerNumber === 2 ? '2' : null));
       setIsInputPhase(false);
+      setIsSequenceDisplaying(false);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
       setSession(prev => {
@@ -189,6 +192,7 @@ export function useGameEngine() {
     socket.on(SOCKET_EVENTS.MATCH_RESULT, (data: { winnerId: string; winnerPlayerNumber?: number; player1Score: number; player2Score: number }) => {
       setMatchWinner(data.winnerId || (data.winnerPlayerNumber === 1 ? '1' : '2'));
       setIsInputPhase(false);
+      setIsSequenceDisplaying(false);
       setSession(prev => {
         if (!prev) return null;
         const updatedPlayers = prev.players?.map((p, idx) => {
@@ -208,6 +212,7 @@ export function useGameEngine() {
     socket.on(SOCKET_EVENTS.GAME_FINISHED, () => {
       setSequence([]);
       setIsInputPhase(false);
+      setIsSequenceDisplaying(false);
       setCountdown(null);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
@@ -217,6 +222,7 @@ export function useGameEngine() {
       setSession(null);
       setSequence([]);
       setIsInputPhase(false);
+      setIsSequenceDisplaying(false);
       setCountdown(null);
       setRoundWinner(null);
       setMatchWinner(null);
@@ -257,6 +263,7 @@ export function useGameEngine() {
     sequence,
     displaySpeedMs: effectiveDisplaySpeedMs,
     isInputPhase,
+    isSequenceDisplaying,
     roundWinner,
     matchWinner,
     p1LiveInputs,

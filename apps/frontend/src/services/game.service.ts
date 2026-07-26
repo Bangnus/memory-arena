@@ -78,4 +78,9 @@ export const gameService = {
     const response = await api.post('/session/difficulty', { difficulty });
     return response.data.data || response.data;
   },
+
+  getIotStatus: async (): Promise<{ connected: boolean }> => {
+    const response = await api.get('/device/iot-status');
+    return response.data;
+  },
 };

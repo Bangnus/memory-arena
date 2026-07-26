@@ -93,6 +93,16 @@ export class GameEngineService {
       startAt,
     });
 
+    // Schedule input:enabled after sequence display finishes
+    const displayDuration = sequence.length * displaySpeed;
+    const inputEnabledAt = startAt + displayDuration;
+    const delayMs = Math.max(0, inputEnabledAt - Date.now());
+    this.logger.log(`Scheduling input:enabled in ${delayMs}ms (display=${displayDuration}ms)`);
+    setTimeout(() => {
+      this.broadcast.emit(SocketEvent.INPUT_ENABLED, {});
+      this.logger.log('input:enabled emitted');
+    }, delayMs);
+
     return {
       sequence,
       displaySpeed,
