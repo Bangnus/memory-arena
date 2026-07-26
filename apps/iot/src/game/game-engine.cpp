@@ -63,6 +63,7 @@ void GameEngine::changeState(GameState newState) {
             ledManager.stopAnimation();
             sequenceDisplayIndex = 0;
             lastSequenceDisplayTime = 0;
+            sequenceFetched = false;
             buttonManager.disablePlayerButtons();
             break;
         case GameState::PLAYER_INPUT:
@@ -198,6 +199,9 @@ void GameEngine::loop() {
             break;
         case GameState::SELECT_MODE:
             handleSelectMode();
+            if (!socketClient.isConnected()) {
+                pollBackend();
+            }
             break;
         case GameState::WAIT_PLAYERS:
             if (buttonManager.isStartPressed()) {
@@ -205,6 +209,10 @@ void GameEngine::loop() {
                 if (apiClient.signalStart()) {
                     changeState(GameState::WAIT_PLAYERS);
                 }
+            }
+            // Fallback: poll via HTTP when socket disconnected
+            if (!socketClient.isConnected()) {
+                pollBackend();
             }
             break;
         case GameState::COUNTDOWN:
@@ -274,11 +282,16 @@ void GameEngine::handleCountdown() {
 void GameEngine::handleShowSequence() {
     unsigned long now = millis();
     
-    // Check if we have sequence data from socket
+    // Check if we have sequence data, fallback to HTTP if not
     if (!sequenceFetched) {
         if (currentSequence.length == 0) {
-            // No sequence yet, wait for socket event
-            return;
+            // Try fetching via HTTP as fallback
+            GameSequenceData seq;
+            if (apiClient.getSequence(seq)) {
+                currentSequence = seq;
+            } else {
+                return; // Wait for socket or retry
+            }
         }
         sequenceFetched = true;
         lastSequenceDisplayTime = now;

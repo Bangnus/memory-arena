@@ -9,6 +9,7 @@ class GameEngine {
 public:
     void init();
     void loop();
+    void handleSocketEvent(const String& event, const String& payload);
 
 private:
     GameState currentState = GameState::BOOT;
@@ -44,7 +45,6 @@ private:
 
     void changeState(GameState newState);
     void pollBackend();
-    void handleSocketEvent(const String& event, const String& payload);
 
     void handleSelectMode();
     void handleCountdown();

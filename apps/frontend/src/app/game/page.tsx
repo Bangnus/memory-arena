@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useGameEngine } from '@/hooks/useGameEngine';
 import { useAuth } from '@/hooks/useAuth';
@@ -9,11 +9,14 @@ import { GameScreen } from '@/features/game/GameScreen';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function GamePage() {
   const router = useRouter();
   const { player } = useAuth();
   const { socket } = useSocket();
+  const [enterCountdown, setEnterCountdown] = useState(3);
+  const [showCountdown, setShowCountdown] = useState(true);
   const {
     isConnected,
     session,
@@ -29,6 +32,18 @@ export default function GamePage() {
     toggleReady,
     submitSequence
   } = useGameEngine();
+
+  // 3-second countdown when entering /game
+  useEffect(() => {
+    if (enterCountdown > 0) {
+      const timer = setTimeout(() => {
+        setEnterCountdown(enterCountdown - 1);
+      }, 1000);
+      return () => clearTimeout(timer);
+    } else {
+      setShowCountdown(false);
+    }
+  }, [enterCountdown]);
 
   // IoT START button → go home
   useEffect(() => {
@@ -63,6 +78,31 @@ export default function GamePage() {
       {/* Floating RMUT Orbs */}
       <div className="absolute -top-20 -left-20 w-[450px] h-[450px] bg-yellow-200/40 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-20 -right-20 w-[450px] h-[450px] bg-orange-300/40 rounded-full blur-3xl pointer-events-none" />
+
+      {/* Enter Countdown Overlay */}
+      <AnimatePresence>
+        {showCountdown && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-slate-950/90 backdrop-blur-md"
+          >
+            <div className="text-lg font-black font-orbitron text-amber-300 uppercase tracking-widest mb-4">
+              GET READY!
+            </div>
+            <motion.span 
+              key={enterCountdown}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              className="text-9xl font-black font-orbitron text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.6)]"
+            >
+              {enterCountdown === 0 ? 'GO!' : enterCountdown}
+            </motion.span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Top Header */}
       <div className="w-full max-w-5xl flex justify-between items-center mb-2 z-10">

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include <SocketIOClient.h>
+#include <SocketIOclient.h>
 #include "../config/config.h"
 
 // Callback type for socket events
@@ -12,6 +12,7 @@ public:
     void init();
     void loop();
     void disconnect();
+    void handleEvent(socketIOmessageType_t type, uint8_t * payload, size_t length);
     
     bool isConnected();
     
@@ -20,17 +21,11 @@ public:
     
     // Register callback for incoming events
     void onEvent(SocketEventCallback callback);
-    
-    // Reconnect
-    void reconnect();
 
 private:
-    SocketIOClient client;
+    SocketIOclient socketIO;
     SocketEventCallback eventCallback = nullptr;
     bool connected = false;
-    unsigned long lastReconnectAttempt = 0;
-    
-    void handleEvent(const String& event, const String& payload);
 };
 
 extern SocketClient socketClient;

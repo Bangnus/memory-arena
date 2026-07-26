@@ -1,87 +1,37 @@
 #include "socket-client.h"
 #include "../wifi/wifi-manager.h"
 #include <ArduinoJson.h>
+#include <WiFi.h>
 
 SocketClient socketClient;
 
-// Server event handler
-void socketIOEvent(socketIOClient::clientDataType_t type, uint8_t * payload, size_t length) {
-    switch (type) {
-        case sIOtype_DISCONNECT:
-            Serial.println("[SOCKET] Disconnected");
-            socketClient.disconnect();
-            break;
-        case sIOtype_CONNECT:
-            Serial.println("[SOCKET] Connected");
-            // Join game namespace
-            socketClient.emit("join", "{\"room\":\"game\"}");
-            break;
-        case sIOtype_EVENT: {
-            // Parse event name and payload
-            String payloadStr = String((char*)payload);
-            
-            // Socket.IO events come as JSON array: ["event_name", {data}]
-            JsonDocument doc;
-            DeserializationError error = deserializeJson(doc, payloadStr);
-            if (!error && doc.is<JsonArray>()) {
-                JsonArray arr = doc.as<JsonArray>();
-                if (arr.size() >= 1) {
-                    String eventName = arr[0].as<String>();
-                    String eventData = "";
-                    if (arr.size() >= 2) {
-                        serializeJson(arr[1], eventData);
-                    }
-                    socketClient.emit(eventName, eventData);
-                }
-            }
-            break;
-        }
-        case sIOtype_ERROR:
-            Serial.printf("[SOCKET] Error: %s\n", payload);
-            break;
-        default:
-            break;
+// Static event handler for SocketIOclient
+static SocketClient* instance = nullptr;
+
+void socketIOEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
+    if (instance) {
+        instance->handleEvent(type, payload, length);
     }
 }
 
 void SocketClient::init() {
-    // Set up event handler
-    client.onEvent(socketIOEvent);
+    instance = this;
     
-    // Connect to server
-    reconnect();
+    // Setup Socket.IO client
+    socketIO.begin(BACKEND_HOST, BACKEND_PORT, "/socket.io/?EIO=4&transport=websocket");
+    socketIO.onEvent(socketIOEvent);
+    
+    Serial.printf("[SOCKET] Connecting to %s:%d\n", BACKEND_HOST, BACKEND_PORT);
 }
 
 void SocketClient::loop() {
     if (!wifiManager.isConnected()) return;
-    
-    // Check connection and reconnect if needed
-    if (!connected) {
-        unsigned long now = millis();
-        if (now - lastReconnectAttempt > 5000) { // Reconnect every 5 seconds
-            lastReconnectAttempt = now;
-            reconnect();
-        }
-        return;
-    }
-    
-    // Handle incoming data
-    client.monitor();
-}
-
-void SocketClient::reconnect() {
-    Serial.printf("[SOCKET] Connecting to %s:%d\n", BACKEND_HOST, BACKEND_PORT);
-    
-    if (client.begin(BACKEND_HOST, BACKEND_PORT, "/socket.io/?EIO=4&transport=polling")) {
-        Serial.println("[SOCKET] Connection initiated");
-    } else {
-        Serial.println("[SOCKET] Failed to initiate connection");
-    }
+    socketIO.loop();
 }
 
 void SocketClient::disconnect() {
     connected = false;
-    client.disconnect();
+    socketIO.disconnect();
 }
 
 bool SocketClient::isConnected() {
@@ -89,19 +39,56 @@ bool SocketClient::isConnected() {
 }
 
 void SocketClient::emit(const String& event, const String& payload) {
-    if (!connected) return;
-    
-    // Socket.IO emit format: ["event_name", {data}]
-    String json = "[\"" + event + "\"," + payload + "]";
-    client.sendEvent(json.c_str());
+    // Socket.IO message format: ["event",{payload}]
+    String msg = "[\"" + event + "\"," + payload + "]";
+    socketIO.sendEVENT(msg.c_str());
 }
 
 void SocketClient::onEvent(SocketEventCallback callback) {
     eventCallback = callback;
 }
 
-void SocketClient::handleEvent(const String& event, const String& payload) {
-    if (eventCallback) {
-        eventCallback(event, payload);
+void SocketClient::handleEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
+    switch (type) {
+        case sIOtype_DISCONNECT:
+            Serial.printf("[SOCKET] Disconnected (heap:%d rssi:%d)\n", ESP.getFreeHeap(), WiFi.RSSI());
+            connected = false;
+            break;
+            
+        case sIOtype_CONNECT:
+            Serial.printf("[SOCKET] Connected (heap:%d)\n", ESP.getFreeHeap());
+            connected = true;
+            break;
+            
+        case sIOtype_EVENT: {
+            String payloadStr = String((char*)payload, length);
+            
+            // Parse Socket.IO event: ["event_name", {data}]
+            JsonDocument doc;
+            DeserializationError error = deserializeJson(doc, payloadStr);
+            if (!error && doc.is<JsonArray>()) {
+                JsonArray arr = doc.as<JsonArray>();
+                if (arr.size() >= 1) {
+                    String eventName = arr[0].as<String>();
+                    String eventData = "{}";
+                    if (arr.size() >= 2) {
+                        serializeJson(arr[1], eventData);
+                    }
+                    
+                    // Forward to game engine callback
+                    if (eventCallback) {
+                        eventCallback(eventName, eventData);
+                    }
+                }
+            }
+            break;
+        }
+        
+        case sIOtype_ERROR:
+            Serial.printf("[SOCKET] Error: %s\n", payload);
+            break;
+            
+        default:
+            break;
     }
 }
