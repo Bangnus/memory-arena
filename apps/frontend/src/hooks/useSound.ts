@@ -2,12 +2,14 @@
 
 import { useCallback, useRef } from 'react';
 
-export type SoundType = 'beep' | 'buttonPress' | 'correct' | 'wrong' | 'victory' | 'countdown';
+export type SoundType = 'beep' | 'buttonPress' | 'inputReady' | 'gameStart' | 'correct' | 'wrong' | 'victory' | 'countdown';
 
 // Sound frequencies matching ESP32 buzzer tones
 const SOUND_CONFIG: Record<SoundType, { frequency: number; duration: number; type?: OscillatorType }> = {
   beep: { frequency: 800, duration: 150 },
-  buttonPress: { frequency: 3000, duration: 30 },
+  buttonPress: { frequency: 2000, duration: 20 },
+  inputReady: { frequency: 2500, duration: 40 },
+  gameStart: { frequency: 600, duration: 80 }, // First note of rising fanfare
   correct: { frequency: 1200, duration: 200 },
   wrong: { frequency: 300, duration: 500 },
   victory: { frequency: 1000, duration: 200 },
@@ -64,6 +66,14 @@ export function useSound() {
     playSound('buttonPress');
   }, [playSound]);
 
+  const playInputReady = useCallback(() => {
+    playSound('inputReady');
+  }, [playSound]);
+
+  const playGameStart = useCallback(() => {
+    playSound('gameStart');
+  }, [playSound]);
+
   const playCorrect = useCallback(() => {
     playSound('correct');
   }, [playSound]);
@@ -81,6 +91,8 @@ export function useSound() {
     playCountdownBeep,
     playSequenceBeep,
     playButtonPress,
+    playInputReady,
+    playGameStart,
     playCorrect,
     playWrong,
     playVictory,

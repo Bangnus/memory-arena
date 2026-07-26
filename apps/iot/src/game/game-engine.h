@@ -32,6 +32,7 @@ private:
 
     int countdownStep = 3;
     unsigned long lastCountdownTime = 0;
+    unsigned long sequenceStartAtMs = 0; // Server startAt converted to local millis
 
     // Mode selection
     int selectedMode = 0;

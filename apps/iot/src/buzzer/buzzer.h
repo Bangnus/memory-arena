@@ -8,6 +8,8 @@ enum class BuzzerSound {
     BOOT,
     BEEP,
     BUTTON_PRESS,
+    INPUT_READY,
+    GAME_START,
     CORRECT,
     WRONG,
     VICTORY
@@ -20,6 +22,8 @@ public:
     void playBoot();
     void playCountdown();
     void playButtonPress();
+    void playInputReady();
+    void playGameStart();
     void playCorrect();
     void playWrong();
     void playWinner();

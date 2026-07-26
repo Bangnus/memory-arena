@@ -56,8 +56,9 @@ export function GameScreen({
   const [playerInput, setPlayerInput] = useState<string[]>([]);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
   const [isLocalInputPhase, setIsLocalInputPhase] = useState(false);
+  const [lastClickTime, setLastClickTime] = useState(0);
   const players = session?.players ?? [];
-  const { playCountdownBeep, playSequenceBeep, playButtonPress, playCorrect, playWrong } = useSound();
+  const { playCountdownBeep, playSequenceBeep, playButtonPress, playInputReady, playCorrect, playWrong } = useSound();
 
   const me = players.find(p => p.id === currentUserId);
   const isSpectator = !me;
@@ -146,12 +147,19 @@ export function GameScreen({
   useEffect(() => {
     if (isInputPhase) {
       setPlayerInput([]);
-      playButtonPress(); // Click sound when input phase starts
+      playInputReady(); // Double beep — signals "buttons active"
     }
-  }, [isInputPhase, playButtonPress]);
+  }, [isInputPhase, playInputReady]);
 
   const handleColorClick = (color: string) => {
     if (!showInputArea || isSpectator) return;
+    
+    // Debounce: ignore if less than 200ms since last click
+    const now = Date.now();
+    if (now - lastClickTime < 200) return;
+    setLastClickTime(now);
+    
+    playButtonPress();
     
     const newInput = [...playerInput, color];
     setPlayerInput(newInput);

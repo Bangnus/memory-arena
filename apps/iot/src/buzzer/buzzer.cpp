@@ -25,6 +25,8 @@ void BuzzerManager::stopTone() {
 void BuzzerManager::playBoot() { play(BuzzerSound::BOOT); }
 void BuzzerManager::playCountdown() { play(BuzzerSound::BEEP); }
 void BuzzerManager::playButtonPress() { play(BuzzerSound::BUTTON_PRESS); }
+void BuzzerManager::playInputReady() { play(BuzzerSound::INPUT_READY); }
+void BuzzerManager::playGameStart() { play(BuzzerSound::GAME_START); }
 void BuzzerManager::playCorrect() { play(BuzzerSound::CORRECT); }
 void BuzzerManager::playWrong() { play(BuzzerSound::WRONG); }
 void BuzzerManager::playWinner() { play(BuzzerSound::VICTORY); }
@@ -42,8 +44,16 @@ void BuzzerManager::play(BuzzerSound sound) {
             playTone(800, 150);
             break;
         case BuzzerSound::BUTTON_PRESS:
-            // Two quick high-pitched clicks — very different from BEEP
-            playTone(3000, 30);
+            // Single short click when pressing button
+            playTone(2000, 20);
+            break;
+        case BuzzerSound::INPUT_READY:
+            // Quick double high-pitch — signals "buttons active"
+            playTone(2500, 40);
+            break;
+        case BuzzerSound::GAME_START:
+            // Rising 3-note game start fanfare
+            playTone(600, 80);
             break;
         case BuzzerSound::CORRECT:
             playTone(1200, 200);
@@ -79,9 +89,20 @@ void BuzzerManager::loop() {
                 currentSound = BuzzerSound::NONE;
             }
         } else if (currentSound == BuzzerSound::BUTTON_PRESS) {
+            currentSound = BuzzerSound::NONE;
+        } else if (currentSound == BuzzerSound::INPUT_READY) {
             melodyStep++;
             if (melodyStep == 1) {
-                playTone(2500, 25); // Second quick click
+                playTone(3000, 30); // Second quick beep
+            } else {
+                currentSound = BuzzerSound::NONE;
+            }
+        } else if (currentSound == BuzzerSound::GAME_START) {
+            melodyStep++;
+            if (melodyStep == 1) {
+                playTone(800, 80); // Note 2 — rising
+            } else if (melodyStep == 2) {
+                playTone(1200, 120); // Note 3 — highest, longer
             } else {
                 currentSound = BuzzerSound::NONE;
             }

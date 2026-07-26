@@ -56,6 +56,7 @@ void GameEngine::changeState(GameState newState) {
             ledManager.stopAnimation();
             countdownStep = 3;
             lastCountdownTime = 0;
+            sequenceFetched = false;
             buttonManager.disablePlayerButtons();
             break;
         case GameState::SHOW_SEQUENCE:
@@ -76,7 +77,7 @@ void GameEngine::changeState(GameState newState) {
             inputStartTime = millis();
             ledManager.turnOffAll();
             buttonManager.enablePlayerButtons();
-            buzzerManager.playButtonPress(); // Short quick click — different from sequence BEEP
+            buzzerManager.playInputReady(); // Double beep — signals "buttons active"
             break;
         case GameState::ROUND_RESULT:
             Serial.println("[STATE] ROUND_RESULT");
@@ -134,7 +135,9 @@ void GameEngine::loop() {
     wifiManager.loop();
     apiClient.loop();
     socketClient.loop();
-    yield(); // Give WiFi stack time to process ping/pong
+    yield();
+    
+    unsigned long now = millis();
     
     // Process pending socket events
     if (hasPendingEvent) {
@@ -150,7 +153,6 @@ void GameEngine::loop() {
                 changeState(GameState::COUNTDOWN);
             }
         } else if (event == "sequence:show") {
-            // Parse sequence from payload - just store data, don't change state
             JsonDocument doc;
             DeserializationError error = deserializeJson(doc, payload);
             if (!error) {
@@ -166,8 +168,19 @@ void GameEngine::loop() {
                     currentSequence.sessionId = doc["sessionId"].as<String>();
                     currentRound = doc["round"] | 1;
                     
-                    // Only change state if not already in active game states
-                    // Let countdown finish first, then SHOW_SEQUENCE will start
+                    // Parse startAt — calculate delay until sequence should start
+                    // startAt is Unix timestamp (ms), server time
+                    // We record millis() now and calculate how long to wait
+                    unsigned long startAt = doc["startAt"] | 0UL;
+                    if (startAt > 3000) {
+                        // startAt = serverNow + 3000 (countdown duration)
+                        // We received this event approximately at serverNow
+                        // So we need to wait ~3000ms from now
+                        sequenceStartAtMs = millis() + 3000;
+                    } else {
+                        sequenceStartAtMs = 0; // No sync, show immediately
+                    }
+                    
                     if (currentState == GameState::WAIT_PLAYERS || 
                         currentState == GameState::ROUND_RESULT) {
                         changeState(GameState::COUNTDOWN);
@@ -234,8 +247,9 @@ void GameEngine::loop() {
             }
             break;
         case GameState::WAIT_PLAYERS:
-            if (buttonManager.isStartPressed()) {
-                buzzerManager.play(BuzzerSound::BEEP);
+            if (buttonManager.isStartPressed() && (now - lastButtonTime >= 500)) {
+                lastButtonTime = now;
+                buzzerManager.playGameStart(); // Rising 3-note game start sound
                 socketClient.signalStart();
             }
             // Fallback: poll via HTTP when socket disconnected
@@ -312,9 +326,7 @@ void GameEngine::handleShowSequence() {
     // Check if we have sequence data, fallback to HTTP if not
     if (!sequenceFetched) {
         if (currentSequence.length == 0) {
-            // Keep socket alive during HTTP call
             socketClient.loop();
-            // Try fetching via HTTP as fallback
             GameSequenceData seq;
             if (apiClient.getSequence(seq)) {
                 currentSequence = seq;
@@ -325,6 +337,11 @@ void GameEngine::handleShowSequence() {
         sequenceFetched = true;
         lastSequenceDisplayTime = now;
         return;
+    }
+    
+    // Wait for startAt timestamp before displaying (sync with frontend)
+    if (sequenceStartAtMs > 0 && now < sequenceStartAtMs) {
+        return; // Not yet time
     }
     
     unsigned long speed = currentSequence.displaySpeed > 0 ? currentSequence.displaySpeed : 500;
