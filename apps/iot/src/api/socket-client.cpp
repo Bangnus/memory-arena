@@ -1,4 +1,5 @@
 #include "socket-client.h"
+#include "../config/config.h"
 #include "../wifi/wifi-manager.h"
 #include <ArduinoJson.h>
 #include <WiFi.h>
@@ -61,6 +62,67 @@ void SocketClient::emit(const String& event, const String& payload) {
 
 void SocketClient::onEvent(SocketEventCallback callback) {
     eventCallback = callback;
+}
+
+void SocketClient::sendHeartbeat() {
+    JsonDocument doc;
+    doc["deviceId"] = DEVICE_ID;
+    doc["firmwareVersion"] = FIRMWARE_VERSION;
+    doc["status"] = "ONLINE";
+    String payload;
+    serializeJson(doc, payload);
+    emit("device:heartbeat", payload);
+}
+
+void SocketClient::sendButtonPress(int playerNumber, const String& color) {
+    JsonDocument doc;
+    doc["playerNumber"] = playerNumber;
+    doc["color"] = color;
+    String payload;
+    serializeJson(doc, payload);
+    emit("game:press", payload);
+}
+
+void SocketClient::submitInput(const String& sessionId, int round,
+                               const String& p1Inputs, int p1Time,
+                               const String& p2Inputs, int p2Time) {
+    JsonDocument doc;
+    doc["sessionId"] = sessionId;
+    doc["round"] = round;
+    
+    JsonDocument p1Doc;
+    deserializeJson(p1Doc, p1Inputs);
+    doc["player1"]["input"] = p1Doc;
+    doc["player1"]["time"] = p1Time;
+    
+    JsonDocument p2Doc;
+    deserializeJson(p2Doc, p2Inputs);
+    doc["player2"]["input"] = p2Doc;
+    doc["player2"]["time"] = p2Time;
+    
+    String payload;
+    serializeJson(doc, payload);
+    emit("game:input", payload);
+}
+
+void SocketClient::signalStart() {
+    emit("device:start", "{}");
+}
+
+void SocketClient::signalModeChange(int mode) {
+    JsonDocument doc;
+    doc["mode"] = mode;
+    String payload;
+    serializeJson(doc, payload);
+    emit("device:mode", payload);
+}
+
+void SocketClient::setDifficulty(const String& difficulty) {
+    JsonDocument doc;
+    doc["difficulty"] = difficulty;
+    String payload;
+    serializeJson(doc, payload);
+    emit("session:difficulty", payload);
 }
 
 void SocketClient::handleEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {

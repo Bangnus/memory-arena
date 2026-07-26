@@ -1,6 +1,7 @@
 #include "api-client.h"
 #include "../config/config.h"
 #include "../wifi/wifi-manager.h"
+#include "socket-client.h"
 #include <HTTPClient.h>
 
 ApiClient apiClient;
@@ -13,9 +14,14 @@ void ApiClient::loop() {
     if (!wifiManager.isConnected()) return;
     
     unsigned long now = millis();
-    if (now - lastHeartbeat >= 30000) { // 30 seconds
-        sendHeartbeat();
+    if (now - lastHeartbeat >= 30000) {
         lastHeartbeat = now;
+        // Use socket when connected, HTTP as fallback
+        if (socketClient.isConnected()) {
+            socketClient.sendHeartbeat();
+        } else {
+            sendHeartbeat();
+        }
     }
 }
 

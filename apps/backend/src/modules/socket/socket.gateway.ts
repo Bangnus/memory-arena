@@ -4,10 +4,16 @@ import {
   OnGatewayInit,
   OnGatewayConnection,
   OnGatewayDisconnect,
+  SubscribeMessage,
+  MessageBody,
+  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 import { BroadcastService } from './broadcast.service';
+import { GameEngineService } from '../game/services/game-engine.service';
+import { DeviceService } from '../device/device.service';
+import { SessionService } from '../session/session.service';
 
 @WebSocketGateway({
   cors: {
@@ -15,7 +21,7 @@ import { BroadcastService } from './broadcast.service';
   },
   pingInterval: 25000,
   pingTimeout: 60000,
-  allowEIO3: true, // Support Engine.IO v3 for ESP32 WebSockets library
+  allowEIO3: true,
 })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect
@@ -25,7 +31,12 @@ export class SocketGateway
 
   private readonly logger = new Logger(SocketGateway.name);
 
-  constructor(private readonly broadcastService: BroadcastService) {}
+  constructor(
+    private readonly broadcastService: BroadcastService,
+    private readonly gameEngine: GameEngineService,
+    private readonly deviceService: DeviceService,
+    private readonly sessionService: SessionService,
+  ) {}
 
   afterInit(server: Server): void {
     this.broadcastService.setServer(server);
@@ -33,10 +44,60 @@ export class SocketGateway
   }
 
   handleConnection(client: Socket): void {
-    this.logger.log(`Client connected to WebSocket: ${client.id}`);
+    this.logger.log(`Client connected: ${client.id}`);
   }
 
   handleDisconnect(client: Socket): void {
-    this.logger.log(`Client disconnected from WebSocket: ${client.id}`);
+    this.logger.log(`Client disconnected: ${client.id}`);
+  }
+
+  @SubscribeMessage('device:heartbeat')
+  async handleHeartbeat(
+    @MessageBody() data: { deviceId: string; firmwareVersion: string; status: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    this.deviceService.updateHeartbeat(data.deviceId);
+    client.emit('device:heartbeat:ack', { acknowledged: true, serverTimeMs: Date.now() });
+  }
+
+  @SubscribeMessage('game:press')
+  handlePress(@MessageBody() data: { playerNumber: number; color: string }) {
+    this.gameEngine.broadcastPress(data.playerNumber, data.color);
+  }
+
+  @SubscribeMessage('game:input')
+  async handleInput(
+    @MessageBody() data: { sessionId: string; round: number; player1: any; player2: any },
+  ) {
+    try {
+      const result = await this.gameEngine.processRoundInput(data);
+      return { success: true, data: result };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
+  @SubscribeMessage('device:start')
+  handleStart() {
+    this.logger.log('START from IoT');
+    this.broadcastService.emit('device:start', { timestamp: new Date().toISOString() });
+  }
+
+  @SubscribeMessage('device:mode')
+  handleModeChange(@MessageBody() data: { mode: number }) {
+    this.broadcastService.emit('device:mode_change', { mode: data.mode });
+  }
+
+  @SubscribeMessage('session:difficulty')
+  async handleDifficulty(
+    @MessageBody() data: { difficulty: string },
+    @ConnectedSocket() client: Socket,
+  ) {
+    try {
+      await this.sessionService.setDifficulty({ difficulty: data.difficulty as any });
+      client.emit('session:difficulty:ack', { success: true });
+    } catch (err) {
+      client.emit('session:difficulty:ack', { success: false, error: err.message });
+    }
   }
 }

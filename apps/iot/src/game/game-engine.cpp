@@ -175,7 +175,6 @@ void GameEngine::loop() {
                 }
             }
         } else if (event == "session:update") {
-            // Update session info
             JsonDocument doc;
             DeserializationError error = deserializeJson(doc, payload);
             if (!error) {
@@ -186,6 +185,22 @@ void GameEngine::loop() {
                 int round = doc["currentRound"] | 1;
                 currentRound = round;
             }
+        } else if (event == "round:result") {
+            JsonDocument doc;
+            DeserializationError error = deserializeJson(doc, payload);
+            if (!error) {
+                bool matchFinished = doc["matchFinished"] | false;
+                int nextRound = doc["nextRound"] | 0;
+                if (matchFinished) {
+                    changeState(GameState::GAME_RESULT);
+                } else {
+                    // Update round and wait for next sequence
+                    if (nextRound > 0) currentRound = nextRound;
+                    changeState(GameState::ROUND_RESULT);
+                }
+            }
+        } else if (event == "match:result") {
+            changeState(GameState::GAME_RESULT);
         }
     }
     
@@ -215,9 +230,7 @@ void GameEngine::loop() {
         case GameState::WAIT_PLAYERS:
             if (buttonManager.isStartPressed()) {
                 buzzerManager.play(BuzzerSound::BEEP);
-                if (apiClient.signalStart()) {
-                    changeState(GameState::WAIT_PLAYERS);
-                }
+                socketClient.signalStart();
             }
             // Fallback: poll via HTTP when socket disconnected
             if (!socketClient.isConnected()) {
@@ -252,21 +265,21 @@ void GameEngine::handleSelectMode() {
         lastButtonTime = now;
         selectedMode = (selectedMode + 1) % 3;
         buzzerManager.play(BuzzerSound::BEEP);
-        apiClient.signalModeChange(selectedMode);
+        socketClient.signalModeChange(selectedMode);
     }
 
     if (buttonManager.isPrevPressed()) {
         lastButtonTime = now;
         selectedMode = (selectedMode + 2) % 3;
         buzzerManager.play(BuzzerSound::BEEP);
-        apiClient.signalModeChange(selectedMode);
+        socketClient.signalModeChange(selectedMode);
     }
 
     if (buttonManager.isStartPressed()) {
         lastButtonTime = now;
         buzzerManager.playCorrect();
         Serial.printf("[MODE] Selected: %s\n", modes[selectedMode]);
-        if (apiClient.setDifficulty(modes[selectedMode])) {
+        socketClient.setDifficulty(modes[selectedMode]);
             changeState(GameState::WAIT_PLAYERS);
         }
     }
@@ -275,12 +288,8 @@ void GameEngine::handleSelectMode() {
 void GameEngine::handleCountdown() {
     unsigned long now = millis();
     
-    // Wait for sequence data before starting countdown
-    if (currentSequence.length == 0) {
-        return; // Wait for socket event or HTTP fallback
-    }
-    
-    // Run the countdown - beep every second for 3 seconds
+    // Run the countdown immediately - beep every second for 3 seconds
+    // Sequence data will be fetched when entering SHOW_SEQUENCE
     if (now - lastCountdownTime >= 1000) {
         lastCountdownTime = now;
         if (countdownStep > 0) {
@@ -349,7 +358,8 @@ void GameEngine::handlePlayerInput() {
         else if (evt.button == ButtonType::P2_BLUE) { colorStr = "BLUE"; isP1 = false; }
         
         if (colorStr != "") {
-            apiClient.sendButtonPress(isP1 ? 1 : 2, colorStr);
+            // Send via socket (non-blocking)
+            socketClient.sendButtonPress(isP1 ? 1 : 2, colorStr);
             buzzerManager.playButtonPress();
             
             if (isP1 && !p1Finished) {
@@ -381,29 +391,36 @@ void GameEngine::handlePlayerInput() {
     }
     
     if (p1Finished && p2Finished) {
-        // Keep socket alive during HTTP call
-        socketClient.loop();
-        RoundResultData res;
-        if (apiClient.submitInput(currentSessionId, currentRound, p1Input, p2Input, res)) {
-            socketClient.loop();
-            Serial.printf("[RESULT] R%d P1:%d P2:%d%s\n", 
-                currentRound, res.player1Score, res.player2Score,
-                res.matchFinished ? " MATCH" : "");
-            if (res.matchFinished) {
-                changeState(GameState::GAME_RESULT);
-            } else {
-                changeState(GameState::ROUND_RESULT);
-            }
-        } else {
-            Serial.println("[ERR] Submit failed");
-            changeState(GameState::WAIT_PLAYERS);
+        // Build JSON arrays for inputs
+        String p1Json = "[";
+        for (int i = 0; i < p1Input.length; i++) {
+            if (i > 0) p1Json += ",";
+            p1Json += "\"" + p1Input.inputs[i] + "\"";
         }
+        p1Json += "]";
+        
+        String p2Json = "[";
+        for (int i = 0; i < p2Input.length; i++) {
+            if (i > 0) p2Json += ",";
+            p2Json += "\"" + p2Input.inputs[i] + "\"";
+        }
+        p2Json += "]";
+        
+        // Submit via socket (non-blocking, gets result via socket event)
+        socketClient.submitInput(currentSessionId, currentRound, 
+                                 p1Json, p1Input.time, p2Json, p2Input.time);
+        
+        // For now, transition based on local data
+        // Backend will emit round:result or match:result via socket
+        Serial.printf("[RESULT] R%d P1:%dms P2:%dms\n", 
+            currentRound, p1Input.time, p2Input.time);
+        changeState(GameState::ROUND_RESULT);
     }
 }
 
 void GameEngine::handleRoundResult() {
     unsigned long now = millis();
-    if (now - stateStartTime >= 3000) {
+    if (now - stateStartTime >= 500) {
         pollBackend();
     }
 }
