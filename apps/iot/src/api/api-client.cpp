@@ -30,7 +30,9 @@ String ApiClient::httpGet(const char* endpoint) {
     http.addHeader("Connection", "close");
     http.setTimeout(HTTP_TIMEOUT_MS);
     
+    yield(); // Keep WiFi stack alive
     int httpCode = http.GET();
+    yield(); // Keep WiFi stack alive
     String payload = "";
     
     if (httpCode > 0) {
@@ -54,7 +56,9 @@ String ApiClient::httpPost(const char* endpoint, const String& payload) {
     http.addHeader("Connection", "close");
     http.setTimeout(HTTP_TIMEOUT_MS);
     
+    yield(); // Keep WiFi stack alive
     int httpCode = http.POST(payload);
+    yield(); // Keep WiFi stack alive
     String response = "";
     
     if (httpCode > 0) {

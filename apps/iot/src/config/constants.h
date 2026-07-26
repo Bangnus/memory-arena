@@ -29,6 +29,6 @@ enum class ButtonType {
 };
 
 constexpr int MAX_SEQUENCE_LENGTH = 20;
-constexpr unsigned long HTTP_TIMEOUT_MS = 5000;
+constexpr unsigned long HTTP_TIMEOUT_MS = 1000;
 constexpr unsigned long DEBOUNCE_DELAY_MS = 50;
 constexpr unsigned long INPUT_TIMEOUT_MS = 15000;

@@ -13,6 +13,9 @@ import { BroadcastService } from './broadcast.service';
   cors: {
     origin: '*',
   },
+  pingInterval: 25000,
+  pingTimeout: 60000,
+  allowEIO3: true, // Support Engine.IO v3 for ESP32 WebSockets library
 })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect

@@ -10,6 +10,7 @@ void BuzzerManager::init() {
 
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
     ledcWriteTone(0, frequency);
+    ledcWrite(0, 200); // High duty cycle for louder sound (max 255)
     currentToneStart = millis();
     currentToneDuration = duration;
 }
@@ -35,14 +36,13 @@ void BuzzerManager::play(BuzzerSound sound) {
             playTone(1000, 100);
             break;
         case BuzzerSound::BEEP:
-            playTone(800, 50);
+            playTone(800, 100); // Was 50ms, now 100ms for louder sound
             break;
         case BuzzerSound::BUTTON_PRESS:
-            // Two quick high-frequency clicks for tactile feel
-            playTone(2000, 15);
+            playTone(2000, 25); // Was 15ms, now 25ms
             break;
         case BuzzerSound::CORRECT:
-            playTone(1200, 80);
+            playTone(1200, 150); // Was 80ms, now 150ms
             break;
         case BuzzerSound::WRONG:
             playTone(300, 500);
@@ -77,7 +77,7 @@ void BuzzerManager::loop() {
         } else if (currentSound == BuzzerSound::BUTTON_PRESS) {
             melodyStep++;
             if (melodyStep == 1) {
-                playTone(1500, 10); // Second shorter click
+                playTone(1500, 20); // Second click
             } else {
                 currentSound = BuzzerSound::NONE;
             }

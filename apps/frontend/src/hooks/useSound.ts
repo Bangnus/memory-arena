@@ -6,12 +6,12 @@ export type SoundType = 'beep' | 'buttonPress' | 'correct' | 'wrong' | 'victory'
 
 // Sound frequencies matching ESP32 buzzer tones
 const SOUND_CONFIG: Record<SoundType, { frequency: number; duration: number; type?: OscillatorType }> = {
-  beep: { frequency: 800, duration: 50 },
-  buttonPress: { frequency: 2000, duration: 15 },
-  correct: { frequency: 1200, duration: 80 },
+  beep: { frequency: 800, duration: 100 },
+  buttonPress: { frequency: 2000, duration: 25 },
+  correct: { frequency: 1200, duration: 150 },
   wrong: { frequency: 300, duration: 500 },
   victory: { frequency: 1000, duration: 150 },
-  countdown: { frequency: 800, duration: 50 },
+  countdown: { frequency: 800, duration: 100 },
 };
 
 export function useSound() {
@@ -38,7 +38,7 @@ export function useSound() {
       oscillator.frequency.value = config.frequency;
       oscillator.type = (config.type || 'sine') as OscillatorType;
       
-      gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+      gainNode.gain.setValueAtTime(0.5, ctx.currentTime);
       gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + config.duration / 1000);
       
       oscillator.start(ctx.currentTime);

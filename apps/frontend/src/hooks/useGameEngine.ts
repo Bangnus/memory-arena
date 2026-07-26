@@ -17,7 +17,7 @@ function playBeepSound(frequency: number, duration: number) {
     gain.connect(ctx.destination);
     osc.frequency.value = frequency;
     osc.type = 'sine';
-    gain.gain.setValueAtTime(0.3, ctx.currentTime);
+    gain.gain.setValueAtTime(0.5, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration / 1000);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + duration / 1000);
@@ -103,17 +103,17 @@ export function useGameEngine() {
       // Animate countdown from count to 0
       let current = data.count;
       setCountdown(current);
-      playBeepSound(800, 50);
+      playBeepSound(800, 100);
 
       const tick = () => {
         if (current > 0) {
           current--;
           setCountdown(current);
           if (current > 0) {
-            playBeepSound(800, 50);
+            playBeepSound(800, 100);
             setTimeout(tick, 1000);
           } else {
-            playBeepSound(1200, 80);
+            playBeepSound(1200, 150);
             setTimeout(() => setCountdown(null), 500);
           }
         }

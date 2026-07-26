@@ -103,6 +103,9 @@ void GameEngine::pollBackend() {
     if (now - lastPollTime >= pollInterval) {
         lastPollTime = now;
         
+        // Keep socket alive during HTTP call
+        socketClient.loop();
+        
         GameStateData state;
         if (apiClient.getCurrentState(state)) {
             currentSessionId = state.id; // Store session ID
@@ -119,6 +122,9 @@ void GameEngine::pollBackend() {
                 changeState(GameState::WAIT_PLAYERS);
             }
         }
+        
+        // Keep socket alive after HTTP call
+        socketClient.loop();
     }
 }
 
@@ -128,6 +134,7 @@ void GameEngine::loop() {
     wifiManager.loop();
     apiClient.loop();
     socketClient.loop();
+    yield(); // Give WiFi stack time to process ping/pong
     
     // Process pending socket events
     if (hasPendingEvent) {
@@ -143,7 +150,7 @@ void GameEngine::loop() {
                 changeState(GameState::COUNTDOWN);
             }
         } else if (event == "sequence:show") {
-            // Parse sequence from payload
+            // Parse sequence from payload - just store data, don't change state
             JsonDocument doc;
             DeserializationError error = deserializeJson(doc, payload);
             if (!error) {
@@ -157,11 +164,13 @@ void GameEngine::loop() {
                     }
                     currentSequence.displaySpeed = doc["displaySpeed"] | 500;
                     currentSequence.sessionId = doc["sessionId"].as<String>();
-                    currentSequence.round = doc["round"] | 1;
+                    currentRound = doc["round"] | 1;
                     
-                    if (currentState != GameState::SHOW_SEQUENCE && 
-                        currentState != GameState::PLAYER_INPUT) {
-                        changeState(GameState::SHOW_SEQUENCE);
+                    // Only change state if not already in active game states
+                    // Let countdown finish first, then SHOW_SEQUENCE will start
+                    if (currentState == GameState::WAIT_PLAYERS || 
+                        currentState == GameState::ROUND_RESULT) {
+                        changeState(GameState::COUNTDOWN);
                     }
                 }
             }
@@ -266,7 +275,12 @@ void GameEngine::handleSelectMode() {
 void GameEngine::handleCountdown() {
     unsigned long now = millis();
     
-    // Run the countdown immediately (sequence is received via socket)
+    // Wait for sequence data before starting countdown
+    if (currentSequence.length == 0) {
+        return; // Wait for socket event or HTTP fallback
+    }
+    
+    // Run the countdown - beep every second for 3 seconds
     if (now - lastCountdownTime >= 1000) {
         lastCountdownTime = now;
         if (countdownStep > 0) {
@@ -285,13 +299,15 @@ void GameEngine::handleShowSequence() {
     // Check if we have sequence data, fallback to HTTP if not
     if (!sequenceFetched) {
         if (currentSequence.length == 0) {
+            // Keep socket alive during HTTP call
+            socketClient.loop();
             // Try fetching via HTTP as fallback
             GameSequenceData seq;
             if (apiClient.getSequence(seq)) {
                 currentSequence = seq;
-            } else {
-                return; // Wait for socket or retry
             }
+            socketClient.loop();
+            if (currentSequence.length == 0) return;
         }
         sequenceFetched = true;
         lastSequenceDisplayTime = now;
@@ -365,8 +381,11 @@ void GameEngine::handlePlayerInput() {
     }
     
     if (p1Finished && p2Finished) {
+        // Keep socket alive during HTTP call
+        socketClient.loop();
         RoundResultData res;
         if (apiClient.submitInput(currentSessionId, currentRound, p1Input, p2Input, res)) {
+            socketClient.loop();
             Serial.printf("[RESULT] R%d P1:%d P2:%d%s\n", 
                 currentRound, res.player1Score, res.player2Score,
                 res.matchFinished ? " MATCH" : "");
