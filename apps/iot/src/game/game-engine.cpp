@@ -76,7 +76,7 @@ void GameEngine::changeState(GameState newState) {
             inputStartTime = millis();
             ledManager.turnOffAll();
             buttonManager.enablePlayerButtons();
-            buzzerManager.play(BuzzerSound::BEEP);
+            buzzerManager.playButtonPress(); // Short quick click — different from sequence BEEP
             break;
         case GameState::ROUND_RESULT:
             Serial.println("[STATE] ROUND_RESULT");
@@ -205,7 +205,12 @@ void GameEngine::loop() {
     }
     
     switch (currentState) {
-        case GameState::BOOT:
+        case GameState::BOOT: {
+            static unsigned long lastBootCheck = 0;
+            unsigned long now = millis();
+            if (now - lastBootCheck < 2000) break; // Check every 2 seconds only
+            lastBootCheck = now;
+            
             if (wifiManager.isConnected() && apiClient.checkBackendStatus()) {
                 GameStateData state;
                 if (apiClient.getCurrentState(state) && state.id.length() > 0) {
@@ -221,6 +226,7 @@ void GameEngine::loop() {
                 }
             }
             break;
+        }
         case GameState::SELECT_MODE:
             handleSelectMode();
             if (!socketClient.isConnected()) {
@@ -280,8 +286,6 @@ void GameEngine::handleSelectMode() {
         buzzerManager.playCorrect();
         Serial.printf("[MODE] Selected: %s\n", modes[selectedMode]);
         socketClient.setDifficulty(modes[selectedMode]);
-            changeState(GameState::WAIT_PLAYERS);
-        }
     }
 }
 

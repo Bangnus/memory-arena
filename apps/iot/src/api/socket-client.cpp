@@ -20,10 +20,10 @@ void SocketClient::init() {
     instance = this;
     connected = false;
     
-    socketIO.begin(BACKEND_HOST, BACKEND_PORT, "/socket.io/?EIO=4&transport=websocket");
+    socketIO.begin(BACKEND_HOST, BACKEND_PORT, "/socket.io/?EIO=3&transport=websocket");
     socketIO.onEvent(socketIOEvent);
     
-    Serial.printf("[SOCKET] Init -> %s:%d\n", BACKEND_HOST, BACKEND_PORT);
+    Serial.printf("[SOCKET] Init -> %s:%d (EIO=3)\n", BACKEND_HOST, BACKEND_PORT);
 }
 
 void SocketClient::loop() {
@@ -37,7 +37,7 @@ void SocketClient::loop() {
         }
         if (lastDisconnectTime > 0) {
             Serial.println("[SOCKET] Reconnecting...");
-            socketIO.begin(BACKEND_HOST, BACKEND_PORT, "/socket.io/?EIO=4&transport=websocket");
+            socketIO.begin(BACKEND_HOST, BACKEND_PORT, "/socket.io/?EIO=3&transport=websocket");
             lastDisconnectTime = 0;
         }
     }

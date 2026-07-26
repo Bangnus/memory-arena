@@ -5,7 +5,10 @@ Reads the root .env file and injects IoT-relevant variables
 as -D build flags so config.h can pick them up at compile time.
 """
 
-Import("env")
+try:
+    Import("env")  # PlatformIO/SCons provides this at build time
+except NameError:
+    env = {}  # fallback so editors don't flag downstream usage
 
 import os
 
@@ -32,19 +35,19 @@ def load_dotenv(path):
     return values
 
 
-# Resolve the root .env relative to this script (apps/iot/scripts/ -> ../../.env)
-root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", ".."))
+# Resolve the root .env relative to the project root
+root_dir = os.path.abspath(os.path.join(env["PROJECT_DIR"], "..", ".."))
 env_path = os.path.join(root_dir, ".env")
 
 dotenv = load_dotenv(env_path)
 
 
-def resolve_refs(value, env):
+def resolve_refs(value, values):
     """Replace {VAR} placeholders with values from the same env dict."""
     import re
 
     def replacer(match):
-        return env.get(match.group(1), match.group(0))
+        return values.get(match.group(1), match.group(0))
 
     return re.sub(r"\{(\w+)\}", replacer, value)
 
@@ -65,7 +68,10 @@ for env_key, flag_name in ENV_MAP.items():
     value = dotenv.get(env_key)
     if value:
         value = resolve_refs(value, dotenv)
-        build_flags.append(f'-D{flag_name}=\\"{value}\\"')
+        if value.isdigit():
+            build_flags.append(f"-D{flag_name}={value}")
+        else:
+            build_flags.append(f'-D{flag_name}=\\"{value}\\"')
 
 if build_flags:
     env.Append(BUILD_FLAGS=build_flags)

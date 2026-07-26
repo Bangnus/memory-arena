@@ -3,20 +3,23 @@
 BuzzerManager buzzerManager;
 
 void BuzzerManager::init() {
-    ledcSetup(0, 2000, 8);
+    // 10-bit resolution (0-1023) for finer duty cycle control
+    ledcSetup(0, 2000, 10);
     ledcAttachPin(PIN_BUZZER, 0);
     digitalWrite(PIN_BUZZER, LOW);
 }
 
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
     ledcWriteTone(0, frequency);
-    ledcWrite(0, 200); // High duty cycle for louder sound (max 255)
+    // Set 80% duty cycle for louder sound (max is 1023 for 10-bit)
+    ledcWrite(0, 819);
     currentToneStart = millis();
     currentToneDuration = duration;
 }
 
 void BuzzerManager::stopTone() {
     ledcWriteTone(0, 0);
+    ledcWrite(0, 0);
 }
 
 void BuzzerManager::playBoot() { play(BuzzerSound::BOOT); }
@@ -33,22 +36,23 @@ void BuzzerManager::play(BuzzerSound sound) {
 
     switch (sound) {
         case BuzzerSound::BOOT:
-            playTone(1000, 100);
+            playTone(1000, 150);
             break;
         case BuzzerSound::BEEP:
-            playTone(800, 100); // Was 50ms, now 100ms for louder sound
+            playTone(800, 150);
             break;
         case BuzzerSound::BUTTON_PRESS:
-            playTone(2000, 25); // Was 15ms, now 25ms
+            // Two quick high-pitched clicks — very different from BEEP
+            playTone(3000, 30);
             break;
         case BuzzerSound::CORRECT:
-            playTone(1200, 150); // Was 80ms, now 150ms
+            playTone(1200, 200);
             break;
         case BuzzerSound::WRONG:
             playTone(300, 500);
             break;
         case BuzzerSound::VICTORY:
-            playTone(1000, 150);
+            playTone(1000, 200);
             break;
         case BuzzerSound::NONE:
         default:
@@ -68,16 +72,16 @@ void BuzzerManager::loop() {
         if (currentSound == BuzzerSound::VICTORY) {
             melodyStep++;
             if (melodyStep == 1) {
-                playTone(1200, 150);
+                playTone(1200, 200);
             } else if (melodyStep == 2) {
-                playTone(1500, 300);
+                playTone(1500, 400);
             } else {
                 currentSound = BuzzerSound::NONE;
             }
         } else if (currentSound == BuzzerSound::BUTTON_PRESS) {
             melodyStep++;
             if (melodyStep == 1) {
-                playTone(1500, 20); // Second click
+                playTone(2500, 25); // Second quick click
             } else {
                 currentSound = BuzzerSound::NONE;
             }

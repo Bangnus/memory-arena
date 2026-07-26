@@ -43,12 +43,15 @@ export class SocketGateway
     this.logger.log('SocketGateway initialized successfully');
   }
 
-  handleConnection(client: Socket): void {
-    this.logger.log(`Client connected: ${client.id}`);
+  handleConnection(client: Socket) {
+    this.logger.log(`[WS] Connected: ${client.id} transport=${client.conn.transport.name} query=${JSON.stringify(client.handshake.query)}`);
+    client.conn.on('upgrade', (transport: any) => {
+      this.logger.log(`[WS] Upgraded: ${client.id} -> ${transport.name}`);
+    });
   }
 
-  handleDisconnect(client: Socket): void {
-    this.logger.log(`Client disconnected: ${client.id}`);
+  handleDisconnect(client: Socket, reason?: string) {
+    this.logger.log(`[WS] Disconnected: ${client.id} reason=${reason ?? 'unknown'}`);
   }
 
   @SubscribeMessage('device:heartbeat')

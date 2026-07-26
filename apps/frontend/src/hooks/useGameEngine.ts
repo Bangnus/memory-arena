@@ -103,17 +103,17 @@ export function useGameEngine() {
       // Animate countdown from count to 0
       let current = data.count;
       setCountdown(current);
-      playBeepSound(800, 100);
+      playBeepSound(800, 150);
 
       const tick = () => {
         if (current > 0) {
           current--;
           setCountdown(current);
           if (current > 0) {
-            playBeepSound(800, 100);
+            playBeepSound(800, 150);
             setTimeout(tick, 1000);
           } else {
-            playBeepSound(1200, 150);
+            playBeepSound(1200, 200);
             setTimeout(() => setCountdown(null), 500);
           }
         }
