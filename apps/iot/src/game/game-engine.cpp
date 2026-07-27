@@ -160,7 +160,6 @@ void GameEngine::loop() {
             waitingCountdownStep--;
         } else if (event == "countdown:start") {
             Serial.printf("[DEBUG][IOT][%lu] countdown:start received, currentState=%d\n", millis(), (int)currentState);
-            waitingCountdownActive = false;
             if (currentState != GameState::COUNTDOWN && 
                 currentState != GameState::SHOW_SEQUENCE && 
                 currentState != GameState::PLAYER_INPUT) {
@@ -345,17 +344,19 @@ void GameEngine::handleWaitingCountdown() {
 void GameEngine::handleCountdown() {
     unsigned long now = millis();
     
-    // Run the countdown immediately - beep every second for 3 seconds
-    // Sequence data will be fetched when entering SHOW_SEQUENCE
     if (now - lastCountdownTime >= 1000) {
         lastCountdownTime = now;
         if (countdownStep > 0) {
             Serial.printf("[DEBUG][IOT][%lu] countdown: %d\n", now, countdownStep);
-            buzzerManager.play(BuzzerSound::BEEP);
+            if (!waitingCountdownActive) {
+                buzzerManager.play(BuzzerSound::BEEP);
+            }
             countdownStep--;
         } else {
             Serial.printf("[DEBUG][IOT][%lu] countdown complete -> SHOW_SEQUENCE\n", now);
-            buzzerManager.playCorrect();
+            if (!waitingCountdownActive) {
+                buzzerManager.playCorrect();
+            }
             changeState(GameState::SHOW_SEQUENCE);
         }
     }
