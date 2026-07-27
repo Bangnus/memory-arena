@@ -22,6 +22,7 @@ export default function GamePage() {
     session,
     countdown,
     sequence,
+    displaySpeedMs,
     isInputPhase,
     isSequenceDisplaying,
     roundWinner,
@@ -148,6 +149,7 @@ export default function GamePage() {
             session={session}
             countdown={countdown}
             sequence={sequence}
+            displaySpeedMs={displaySpeedMs}
             isInputPhase={isInputPhase}
             isSequenceDisplaying={isSequenceDisplaying}
             roundWinner={roundWinner}

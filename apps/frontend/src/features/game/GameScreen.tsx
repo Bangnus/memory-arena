@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { COLOR } from '@/constants/game';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,7 @@ interface GameScreenProps {
   session: GameSession | null;
   countdown: number | null;
   sequence: string[];
+  displaySpeedMs?: number;
   isInputPhase: boolean;
   isSequenceDisplaying: boolean;
   roundWinner: string | null;
@@ -36,6 +37,7 @@ export function GameScreen({
   session,
   countdown,
   sequence,
+  displaySpeedMs = 800,
   isInputPhase,
   isSequenceDisplaying,
   roundWinner,
@@ -49,8 +51,10 @@ export function GameScreen({
   sequenceId = 0,
 }: GameScreenProps) {
   const [playerInput, setPlayerInput] = useState<string[]>([]);
+  const [activeColor, setActiveColor] = useState<string | null>(null);
   const [roundCountdown, setRoundCountdown] = useState<number | null>(null);
   const [lastClickTime, setLastClickTime] = useState(0);
+  const seqAnimRef = useRef(0);
   const players = session?.players ?? [];
   const { playButtonPress, playCorrect, playWrong } = useSound();
 
@@ -82,6 +86,46 @@ export function GameScreen({
       setRoundCountdown(null);
     }
   }, [roundCountdown]);
+
+  // Sequence animation - sync with IoT via sequenceStartAt
+  useEffect(() => {
+    if (sequence.length === 0 || !sequenceStartAt || isInputPhase || sequenceId === 0) {
+      setActiveColor(null);
+      return;
+    }
+
+    const gen = ++seqAnimRef.current;
+
+    const startDelay = sequenceStartAt - Date.now();
+    const timer = setTimeout(() => {
+      if (gen !== seqAnimRef.current) return;
+
+      let i = 0;
+      const showNext = () => {
+        if (gen !== seqAnimRef.current || i >= sequence.length) {
+          setActiveColor(null);
+          return;
+        }
+        setActiveColor(sequence[i]);
+        i++;
+        setTimeout(showNext, displaySpeedMs);
+      };
+      showNext();
+    }, Math.max(0, startDelay));
+
+    return () => {
+      clearTimeout(timer);
+      seqAnimRef.current++;
+      setActiveColor(null);
+    };
+  }, [sequenceId, sequence, sequenceStartAt, isInputPhase, displaySpeedMs]);
+
+  // Clear active color when input phase starts
+  useEffect(() => {
+    if (isInputPhase) {
+      setActiveColor(null);
+    }
+  }, [isInputPhase]);
 
   const me = players.find(p => p.id === currentUserId);
   const isSpectator = !me;
@@ -121,6 +165,7 @@ export function GameScreen({
 
   const renderColorPad = (color: string) => {
     const baseColorClass = COLOR_MAP[color as keyof typeof COLOR_MAP];
+    const isActive = activeColor === color;
     
     return (
       <motion.button
@@ -129,11 +174,13 @@ export function GameScreen({
         onClick={() => handleColorClick(color)}
         disabled={!showInputArea || isSpectator}
         className={cn(
-          "w-32 h-32 md:w-40 md:h-40 rounded-3xl transition-all duration-150 cursor-default",
+          "w-32 h-32 md:w-40 md:h-40 rounded-3xl transition-all duration-100 cursor-default",
           baseColorClass,
-          showInputArea && !isSpectator
-            ? "opacity-70 shadow-lg cursor-pointer hover:opacity-90 active:opacity-100"
-            : "opacity-30 shadow-sm",
+          isActive
+            ? "opacity-100 shadow-2xl scale-110 ring-4 ring-white/60"
+            : showInputArea && !isSpectator
+              ? "opacity-70 shadow-lg cursor-pointer hover:opacity-90 active:opacity-100"
+              : "opacity-30 shadow-sm",
         )}
       />
     );
@@ -256,7 +303,7 @@ export function GameScreen({
         {isSequenceDisplaying && !isInputPhase && (
           <div className="absolute -top-9 font-orbitron font-black text-amber-300 text-xs md:text-sm tracking-wider animate-pulse flex items-center gap-2 bg-slate-900/80 px-4 py-1 rounded-full border border-amber-400/40 backdrop-blur-md shadow-lg">
             <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
-            WATCH THE DEVICE
+            {activeColor ? 'MEMORIZE!' : 'GET READY...'}
           </div>
         )}
 
