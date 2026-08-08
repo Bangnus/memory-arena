@@ -63,7 +63,7 @@ export function useGameEngine() {
           setSequence(currentSession.currentSequence);
         }
         if (currentSession.startAt) {
-          setSequenceStartAt(currentSession.startAt);
+          setSequenceStartAt(currentSession.startAt + 500);
         }
         if (currentSession.status === 'COUNTDOWN' || currentSession.status === 'SHOW_SEQUENCE') {
           setIsSequenceDisplaying(true);
@@ -85,11 +85,12 @@ export function useGameEngine() {
       // Only update startAt if the new value is LATER than current (avoid stale overwrite)
       if (updatedSession.startAt) {
         setSequenceStartAt(prev => {
-          if (!prev || updatedSession.startAt! > prev) {
-            console.log(`[DEBUG][GAME][${Date.now()}] session:update upgrading startAt: ${prev} -> ${updatedSession.startAt}`);
-            return updatedSession.startAt!;
+          const incomingStartAt = updatedSession.startAt! + 500;
+          if (!prev || incomingStartAt > prev) {
+            console.log(`[DEBUG][GAME][${Date.now()}] session:update upgrading startAt: ${prev} -> ${incomingStartAt}`);
+            return incomingStartAt;
           }
-          console.log(`[DEBUG][GAME][${Date.now()}] session:update NOT overwriting startAt: current=${prev}, incoming=${updatedSession.startAt}`);
+          console.log(`[DEBUG][GAME][${Date.now()}] session:update NOT overwriting startAt: current=${prev}, incoming=${incomingStartAt}`);
           return prev;
         });
       }
@@ -128,9 +129,9 @@ export function useGameEngine() {
       setP1LiveInputs([]);
       setP2LiveInputs([]);
       if (data.startInMs !== undefined) {
-        setSequenceStartAt(Date.now() + data.startInMs);
+        setSequenceStartAt(Date.now() + data.startInMs + 500);
       } else if (data.startAt) {
-        setSequenceStartAt(data.startAt);
+        setSequenceStartAt(data.startAt + 500);
       }
       setSequenceId(prev => prev + 1);
       setIsSequenceDisplaying(true);
