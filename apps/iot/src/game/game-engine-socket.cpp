@@ -3,6 +3,8 @@
 #include "../wifi/wifi-manager.h"
 #include <ArduinoJson.h>
 
+#include <sys/time.h>
+
 void GameEngine::handleSocketEvent(const String& event, const String& payload) {
     pendingEvent = event;
     pendingPayload = payload;
@@ -51,12 +53,15 @@ void GameEngine::processSocketEvents() {
 
                 if (wifiManager.isTimeSynced()) {
                     long long startAt = doc["startAt"] | 0LL;
-                    time_t nowTime;
-                    time(&nowTime);
-                    long long delayMs = startAt - ((long long)nowTime * 1000);
+                    struct timeval tv;
+                    gettimeofday(&tv, NULL);
+                    long long serverNow = (long long)tv.tv_sec * 1000LL + (long long)tv.tv_usec / 1000LL;
+                    long long delayMs = startAt - serverNow;
                     currentSequence.sequenceStartAt = millis() + (delayMs > 0 ? delayMs : 0);
+                    Serial.printf("[DEBUG][IOT] Precision startAt=%lld, serverNow=%lld, delayMs=%lld, sequenceStartAt=%lu\n", startAt, serverNow, delayMs, currentSequence.sequenceStartAt);
                 } else {
                     currentSequence.sequenceStartAt = millis();
+                    Serial.printf("[DEBUG][IOT] NTP not synced, starting immediately\n");
                 }
                 
                 if (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT) {
