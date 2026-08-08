@@ -20,6 +20,7 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
 
     unsigned long now = millis();
     if (now - lastDebounceTime[pin] < DEBOUNCE_DELAY_MS) return;
+    if (digitalRead(pin) == HIGH) return; // Ignore transient noise spikes
     lastDebounceTime[pin] = now;
 
     ButtonType btn = ButtonType::NONE;
