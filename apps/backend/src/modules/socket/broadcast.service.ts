@@ -6,6 +6,7 @@ import { SocketEvent } from '../../common/enums';
 export class BroadcastService {
   private readonly logger = new Logger(BroadcastService.name);
   private server: Server | null = null;
+  public readonly sequenceStartAt = new Map<string, number>();
 
   setServer(server: Server): void {
     this.server = server;

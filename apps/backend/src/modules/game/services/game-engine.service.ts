@@ -18,7 +18,7 @@ import { GAME_CONSTANTS } from '../../../common/constants/game.constants';
 export class GameEngineService {
   private readonly logger = new Logger(GameEngineService.name);
   // Tracks the scheduled start time for each session's sequence display
-  private sequenceStartAt = new Map<string, number>();
+  // Shared sequence start times stored in BroadcastService
 
   constructor(
     private readonly prisma: PrismaService,
@@ -51,7 +51,7 @@ export class GameEngineService {
       if (p2) players.push({ id: p2.id, displayName: p2.displayName, pictureUrl: p2.pictureUrl, score: session.player2Score, isReady: true });
     }
 
-    const startAt = this.sequenceStartAt.get(session.id) || null;
+    const startAt = this.broadcast.sequenceStartAt.get(session.id) || null;
 
     return { ...session, players, startAt };
   }
@@ -84,7 +84,7 @@ export class GameEngineService {
     // Calculate synchronized start time
     const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
     const startAt = Date.now() + countdownDuration;
-    this.sequenceStartAt.set(session.id, startAt);
+    this.broadcast.sequenceStartAt.set(session.id, startAt);
 
     // Emit countdown + sequence events for frontend synchronization
     this.broadcast.emit(SocketEvent.COUNTDOWN_START, { count: 3, startAt });
@@ -285,7 +285,7 @@ export class GameEngineService {
       // Emit countdown + sequence events for next round synchronization
       const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
       const nextStartAt = Date.now() + countdownDuration;
-      this.sequenceStartAt.set(session.id, nextStartAt);
+      this.broadcast.sequenceStartAt.set(session.id, nextStartAt);
 
       this.broadcast.emit(SocketEvent.COUNTDOWN_START, { count: 3, startAt: nextStartAt });
       this.broadcast.emit(SocketEvent.SEQUENCE_SHOW, {

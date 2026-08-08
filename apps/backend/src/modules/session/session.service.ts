@@ -172,6 +172,7 @@ export class SessionService {
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
 
     const startAt = Date.now() + 3000;
+    this.broadcast.sequenceStartAt.set(session.id, startAt);
     this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
       count: 3,
       startAt,
