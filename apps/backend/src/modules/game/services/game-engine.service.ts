@@ -93,13 +93,13 @@ export class GameEngineService {
       displaySpeed,
       sessionId: session.id,
       round: session.currentRound,
-      startAt,
-      startInMs: countdownDuration,
+      startAt: startAt + 500,
+      startInMs: countdownDuration + 500,
     });
 
     // Schedule input:enabled after sequence display finishes
     const displayDuration = sequence.length * displaySpeed;
-    const inputEnabledAt = startAt + displayDuration;
+    const inputEnabledAt = startAt + 500 + displayDuration;
     const delayMs = Math.max(0, inputEnabledAt - Date.now());
     this.logger.log(`Scheduling input:enabled in ${delayMs}ms (display=${displayDuration}ms)`);
     setTimeout(() => {
@@ -293,8 +293,8 @@ export class GameEngineService {
         displaySpeed: GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty],
         sessionId: session.id,
         round: nextRoundNumber,
-        startAt: nextStartAt,
-        startInMs: countdownDuration,
+        startAt: nextStartAt + 500,
+        startInMs: countdownDuration + 500,
       });
 
       this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);

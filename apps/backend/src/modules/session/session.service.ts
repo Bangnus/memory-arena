@@ -203,8 +203,8 @@ export class SessionService {
       displaySpeed,
       sessionId: session.id,
       round: 1,
-      startAt,
-      startInMs: 3000,
+      startAt: startAt + 500,
+      startInMs: 3000 + 500,
     });
 
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
