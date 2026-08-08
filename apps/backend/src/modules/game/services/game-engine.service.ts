@@ -78,6 +78,12 @@ export class GameEngineService {
     const displaySpeed =
       GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty] || 500;
 
+    const sessionWithPlayers = await this.prisma.gameSession.findUnique({
+      where: { id: session.id },
+      include: { players: true },
+    });
+    this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
+
     // Calculate synchronized start time
     const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
     const startAt = Date.now() + countdownDuration;
