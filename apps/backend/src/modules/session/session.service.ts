@@ -100,14 +100,25 @@ export class SessionService {
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
 
-    // Emit game:waiting when both players are ready (triggers 5s countdown on web + IoT)
     if (hasP1 && hasP2) {
       this.broadcast.emit('game:waiting', { countdown: 5 });
-    }
-
-    if (hasP1 && hasP2) {
-      this.logger.log(`Both players joined. Automatically starting match for session: ${session.id}`);
-      return this.startMatch();
+      this.logger.log(`Both players joined. Starting 5s countdown before match start for session: ${session.id}`);
+      
+      setTimeout(async () => {
+        try {
+          const currentSession = await this.prisma.gameSession.findUnique({
+            where: { id: session.id },
+          });
+          if (currentSession && currentSession.player1Id && currentSession.player2Id) {
+            this.logger.log(`5s countdown complete. Starting match for session: ${session.id}`);
+            await this.startMatch();
+          } else {
+            this.logger.log(`5s countdown complete but players left. Aborting match start for session: ${session.id}`);
+          }
+        } catch (err) {
+          this.logger.error(`Failed to automatically start match: ${err.message}`);
+        }
+      }, 5000);
     }
 
     return sessionWithPlayers;
@@ -174,17 +185,12 @@ export class SessionService {
 
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
 
-    const isDeviceOnline = this.deviceService.isAnyDeviceOnline();
-    if (isDeviceOnline) {
-      this.logger.log(`IoT device is online. Skipping immediate countdown start in startMatch to wait for /game/sequence poll.`);
-    } else {
-      const startAt = Date.now() + 3000;
-      this.broadcast.sequenceStartAt.set(session.id, startAt);
-      this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
-        count: 3,
-        startAt,
-      });
-    }
+    const startAt = Date.now() + 3000;
+    this.broadcast.sequenceStartAt.set(session.id, startAt);
+    this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
+      count: 3,
+      startAt,
+    });
 
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
     return sessionWithPlayers;
