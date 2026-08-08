@@ -76,6 +76,8 @@ export function useGameEngine() {
   useEffect(() => {
     if (!socket) return;
 
+    let countdownTimeoutId: NodeJS.Timeout;
+
     socket.on(SOCKET_EVENTS.SESSION_UPDATE, (updatedSession: GameSession & { startAt?: number }) => {
       console.log(`[DEBUG][GAME][${Date.now()}] session:update received: status=${updatedSession.status}, round=${updatedSession.currentRound}, startAt=${updatedSession.startAt}`);
       setSession(updatedSession);
@@ -100,21 +102,29 @@ export function useGameEngine() {
       console.log(`[DEBUG][GAME][${Date.now()}] countdown:start received: count=${data.count}, startAt=${data.startAt}`);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
+      clearTimeout(countdownTimeoutId);
 
-      // Animate countdown from count to 0
-      let current = data.count;
-      setCountdown(current);
-
-      const tick = () => {
-        if (current > 1) {
-          current--;
-          setCountdown(current);
-          setTimeout(tick, 1000);
+      const targetStartAt = data.startAt || (Date.now() + 3000);
+      
+      const updateCountdown = () => {
+        const now = Date.now();
+        const remainingMs = targetStartAt - now;
+        
+        if (remainingMs > 2000) {
+          setCountdown(3);
+          countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs - 2000));
+        } else if (remainingMs > 1000) {
+          setCountdown(2);
+          countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs - 1000));
+        } else if (remainingMs > 0) {
+          setCountdown(1);
+          countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs));
         } else {
           setCountdown(null);
         }
       };
-      setTimeout(tick, 1000);
+      
+      updateCountdown();
     });
 
     socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeed?: number; displaySpeedMs?: number; startAt?: number; startInMs?: number }) => {
@@ -216,6 +226,7 @@ export function useGameEngine() {
     });
 
     return () => {
+      clearTimeout(countdownTimeoutId);
       socket.off(SOCKET_EVENTS.SESSION_UPDATE);
       socket.off(SOCKET_EVENTS.COUNTDOWN_START);
       socket.off(SOCKET_EVENTS.SEQUENCE_SHOW);
