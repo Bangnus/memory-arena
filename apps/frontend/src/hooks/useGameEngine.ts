@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSocket } from './useSocket';
 import { gameService } from '@/services/game.service';
 import { GAME_STATUS, COLOR } from '@/constants/game';
@@ -40,6 +40,7 @@ export function useGameEngine() {
   const [sequenceStartAt, setSequenceStartAt] = useState<number | null>(null);
   const [sequenceId, setSequenceId] = useState(0);
   const [isSequenceDisplaying, setIsSequenceDisplaying] = useState(false);
+  const countdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
 
@@ -71,7 +72,7 @@ export function useGameEngine() {
           
           if (currentSession.status === 'COUNTDOWN' && currentSession.startAt) {
             const targetStartAt = currentSession.startAt;
-            clearTimeout(countdownTimeoutId);
+            if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
             
             const updateCountdown = () => {
               const now = Date.now();
@@ -79,13 +80,13 @@ export function useGameEngine() {
               
               if (remainingMs > 2000) {
                 setCountdown(3);
-                countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs - 2000));
+                countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs - 2000));
               } else if (remainingMs > 1000) {
                 setCountdown(2);
-                countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs - 1000));
+                countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs - 1000));
               } else if (remainingMs > 0) {
                 setCountdown(1);
-                countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs));
+                countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs));
               } else {
                 setCountdown(null);
               }
@@ -100,8 +101,6 @@ export function useGameEngine() {
 
   useEffect(() => {
     if (!socket) return;
-
-    let countdownTimeoutId: NodeJS.Timeout;
 
     socket.on(SOCKET_EVENTS.SESSION_UPDATE, (updatedSession: GameSession & { startAt?: number }) => {
       console.log(`[DEBUG][GAME][${Date.now()}] session:update received: status=${updatedSession.status}, round=${updatedSession.currentRound}, startAt=${updatedSession.startAt}`);
@@ -127,7 +126,7 @@ export function useGameEngine() {
       console.log(`[DEBUG][GAME][${Date.now()}] countdown:start received: count=${data.count}, startAt=${data.startAt}`);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
-      clearTimeout(countdownTimeoutId);
+      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
 
       const targetStartAt = data.startAt || (Date.now() + 3000);
       
@@ -137,13 +136,13 @@ export function useGameEngine() {
         
         if (remainingMs > 2000) {
           setCountdown(3);
-          countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs - 2000));
+          countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs - 2000));
         } else if (remainingMs > 1000) {
           setCountdown(2);
-          countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs - 1000));
+          countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs - 1000));
         } else if (remainingMs > 0) {
           setCountdown(1);
-          countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs));
+          countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs));
         } else {
           setCountdown(null);
         }
@@ -251,7 +250,7 @@ export function useGameEngine() {
     });
 
     return () => {
-      clearTimeout(countdownTimeoutId);
+      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
       socket.off(SOCKET_EVENTS.SESSION_UPDATE);
       socket.off(SOCKET_EVENTS.COUNTDOWN_START);
       socket.off(SOCKET_EVENTS.SEQUENCE_SHOW);
