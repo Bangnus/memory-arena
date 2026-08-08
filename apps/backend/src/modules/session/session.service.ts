@@ -5,6 +5,7 @@ import { SequenceService } from '../game/services/sequence.service';
 import { Difficulty, SessionStatus, SocketEvent } from '../../common/enums';
 import { JoinPlayerDto } from './dto/join-player.dto';
 import { SelectDifficultyDto } from './dto/select-difficulty.dto';
+import { DeviceService } from '../device/device.service';
 
 @Injectable()
 export class SessionService {
@@ -14,6 +15,7 @@ export class SessionService {
     private readonly prisma: PrismaService,
     private readonly broadcast: BroadcastService,
     private readonly sequenceService: SequenceService,
+    private readonly deviceService: DeviceService,
   ) {}
 
   private async attachPlayers(session: any) {
@@ -172,12 +174,17 @@ export class SessionService {
 
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
 
-    const startAt = Date.now() + 3000;
-    this.broadcast.sequenceStartAt.set(session.id, startAt);
-    this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
-      count: 3,
-      startAt,
-    });
+    const isDeviceOnline = this.deviceService.isAnyDeviceOnline();
+    if (isDeviceOnline) {
+      this.logger.log(`IoT device is online. Skipping immediate countdown start in startMatch to wait for /game/sequence poll.`);
+    } else {
+      const startAt = Date.now() + 3000;
+      this.broadcast.sequenceStartAt.set(session.id, startAt);
+      this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
+        count: 3,
+        startAt,
+      });
+    }
 
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
     return sessionWithPlayers;
