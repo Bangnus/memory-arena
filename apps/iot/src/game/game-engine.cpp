@@ -325,6 +325,7 @@ void GameEngine::handleSelectMode() {
         buzzerManager.playCorrect();
         Serial.printf("[MODE] Selected: %s\n", modes[selectedMode]);
         socketClient.setDifficulty(modes[selectedMode]);
+        socketClient.signalStart();
     }
 }
 
