@@ -126,10 +126,10 @@ export function useGameEngine() {
       setRoundWinner(null);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
-      if (data.startInMs !== undefined) {
-        setSequenceStartAt(Date.now() + data.startInMs);
-      } else if (data.startAt) {
+      if (data.startAt) {
         setSequenceStartAt(data.startAt);
+      } else if (data.startInMs !== undefined) {
+        setSequenceStartAt(Date.now() + data.startInMs);
       }
       setSequenceId(prev => prev + 1);
       setIsSequenceDisplaying(true);
