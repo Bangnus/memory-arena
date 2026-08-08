@@ -271,6 +271,11 @@ export class GameEngineService {
         },
       });
 
+      // Emit countdown + sequence events for next round synchronization
+      const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
+      const nextStartAt = Date.now() + countdownDuration;
+      this.broadcast.sequenceStartAt.set(session.id, nextStartAt);
+
       const sessionWithPlayers = await this.getCurrentSession();
 
       this.broadcast.emit(SocketEvent.ROUND_RESULT, {
@@ -281,11 +286,6 @@ export class GameEngineService {
         shouldRestart: evalResult.shouldRestartRound,
         nextRound: nextRoundNumber,
       });
-
-      // Emit countdown + sequence events for next round synchronization
-      const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
-      const nextStartAt = Date.now() + countdownDuration;
-      this.broadcast.sequenceStartAt.set(session.id, nextStartAt);
 
       this.broadcast.emit(SocketEvent.COUNTDOWN_START, { count: 3, startAt: nextStartAt });
       this.broadcast.emit(SocketEvent.SEQUENCE_SHOW, {
