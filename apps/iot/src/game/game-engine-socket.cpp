@@ -24,8 +24,10 @@ void GameEngine::processSocketEvents() {
         changeState(GameState::SELECT_MODE);
     } else if (event == "game:waiting") {
         Serial.printf("[DEBUG][IOT][%lu] game:waiting received\n", millis());
+        JsonDocument doc;
+        deserializeJson(doc, payload);
+        waitingCountdownStep = doc["countdown"] | 5;
         waitingCountdownActive = true;
-        waitingCountdownStep = 5;
         lastWaitingCountdownTime = now;
         buzzerManager.play(BuzzerSound::BEEP);
         waitingCountdownStep--;
