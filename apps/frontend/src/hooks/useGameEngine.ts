@@ -68,6 +68,31 @@ export function useGameEngine() {
         if (currentSession.status === 'COUNTDOWN' || currentSession.status === 'SHOW_SEQUENCE') {
           setIsSequenceDisplaying(true);
           setSequenceId(prev => prev === 0 ? 1 : prev);
+          
+          if (currentSession.status === 'COUNTDOWN' && currentSession.startAt) {
+            const targetStartAt = currentSession.startAt;
+            clearTimeout(countdownTimeoutId);
+            
+            const updateCountdown = () => {
+              const now = Date.now();
+              const remainingMs = targetStartAt - now;
+              
+              if (remainingMs > 2000) {
+                setCountdown(3);
+                countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs - 2000));
+              } else if (remainingMs > 1000) {
+                setCountdown(2);
+                countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs - 1000));
+              } else if (remainingMs > 0) {
+                setCountdown(1);
+                countdownTimeoutId = setTimeout(updateCountdown, Math.max(10, remainingMs));
+              } else {
+                setCountdown(null);
+              }
+            };
+            
+            updateCountdown();
+          }
         }
       }
     }).catch(() => {});
