@@ -6,6 +6,7 @@ import { Difficulty, SessionStatus, SocketEvent } from '../../common/enums';
 import { JoinPlayerDto } from './dto/join-player.dto';
 import { SelectDifficultyDto } from './dto/select-difficulty.dto';
 import { DeviceService } from '../device/device.service';
+import { GAME_CONSTANTS } from '../../common/constants/game.constants';
 
 @Injectable()
 export class SessionService {
@@ -190,6 +191,18 @@ export class SessionService {
     this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
       count: 3,
       startAt,
+    });
+
+    const displaySpeed =
+      GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty] || 500;
+
+    this.broadcast.emit(SocketEvent.SEQUENCE_SHOW, {
+      sequence: initialSequence,
+      displaySpeed,
+      sessionId: session.id,
+      round: 1,
+      startAt,
+      startInMs: 3000,
     });
 
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
