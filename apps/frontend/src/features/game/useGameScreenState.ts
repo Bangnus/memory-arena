@@ -45,7 +45,7 @@ export function useGameScreenState({
   }, [roundCountdown]);
 
   useEffect(() => {
-    if (sequence.length === 0 || !sequenceStartAt || isInputPhase || sequenceId === 0) {
+    if (sequence.length === 0 || !sequenceStartAt || isInputPhase) {
       setActiveColor(null);
       return;
     }
