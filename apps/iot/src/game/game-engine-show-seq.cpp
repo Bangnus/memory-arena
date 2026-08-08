@@ -38,7 +38,7 @@ void GameEngine::handleShowSequence() {
     
     unsigned long speed = currentSequence.displaySpeed > 0 ? currentSequence.displaySpeed : 500;
     
-    if (now - lastSequenceDisplayTime >= speed) {
+    if (sequenceDisplayIndex == 0 || now - lastSequenceDisplayTime >= speed) {
         lastSequenceDisplayTime = now;
         
         if (sequenceDisplayIndex < currentSequence.length) {
