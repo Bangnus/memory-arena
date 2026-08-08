@@ -149,7 +149,10 @@ void GameEngine::loop() {
         hasPendingEvent = false;
         
         // Handle game events from socket
-        if (event == "game:waiting") {
+        if (event == "device:start") {
+            Serial.printf("[DEBUG][IOT][%lu] device:start received, changing to SELECT_MODE\n", millis());
+            changeState(GameState::SELECT_MODE);
+        } else if (event == "game:waiting") {
             // Both players ready — start non-blocking 5s countdown to sync with web
             Serial.printf("[DEBUG][IOT][%lu] game:waiting received\n", millis());
             waitingCountdownActive = true;
@@ -270,6 +273,7 @@ void GameEngine::loop() {
                 lastButtonTime = now;
                 buzzerManager.playGameStart(); // Rising 3-note game start sound
                 socketClient.signalStart();
+                changeState(GameState::SELECT_MODE);
             }
             // Fallback: poll via HTTP when socket disconnected
             if (!socketClient.isConnected()) {
