@@ -70,7 +70,7 @@ export function useGameScreenState({
         i++;
         nextTimer = setTimeout(showNext, displaySpeedMs);
       };
-      showNext();
+      nextTimer = setTimeout(showNext, displaySpeedMs);
     }, Math.max(0, startDelay));
 
     return () => {
