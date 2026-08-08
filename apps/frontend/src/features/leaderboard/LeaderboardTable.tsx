@@ -59,16 +59,16 @@ export function LeaderboardTable() {
                   {/* Rank Badge */}
                   <div className="flex-shrink-0 w-9 h-9 md:w-10 md:h-10 rounded-xl flex items-center justify-center font-orbitron font-black text-lg md:text-xl shadow-inner">
                     {isTop ? (
-                      <span className="w-full h-full bg-amber-400 text-amber-950 rounded-xl flex items-center justify-center border border-amber-300 font-black">
-                        🥇 1
+                      <span className="w-full h-full bg-amber-400 text-amber-950 rounded-xl flex items-center justify-center border border-amber-300 font-black text-xl">
+                        🥇
                       </span>
                     ) : isSecond ? (
-                      <span className="w-full h-full bg-slate-200 text-slate-800 rounded-xl flex items-center justify-center border border-slate-300 font-black">
-                        🥈 2
+                      <span className="w-full h-full bg-slate-200 text-slate-800 rounded-xl flex items-center justify-center border border-slate-300 font-black text-xl">
+                        🥈
                       </span>
                     ) : isThird ? (
-                      <span className="w-full h-full bg-amber-200 text-amber-900 rounded-xl flex items-center justify-center border border-amber-300 font-black">
-                        🥉 3
+                      <span className="w-full h-full bg-amber-200 text-amber-900 rounded-xl flex items-center justify-center border border-amber-300 font-black text-xl">
+                        🥉
                       </span>
                     ) : (
                       <span className="text-slate-400 font-bold">#{idx + 1}</span>
