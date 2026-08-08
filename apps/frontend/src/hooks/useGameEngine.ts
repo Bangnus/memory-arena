@@ -65,6 +65,10 @@ export function useGameEngine() {
         if (currentSession.startAt) {
           setSequenceStartAt(currentSession.startAt);
         }
+        if (currentSession.status === 'COUNTDOWN' || currentSession.status === 'SHOW_SEQUENCE') {
+          setIsSequenceDisplaying(true);
+          setSequenceId(prev => prev === 0 ? 1 : prev);
+        }
       }
     }).catch(() => {});
   }, [isConnected]);
