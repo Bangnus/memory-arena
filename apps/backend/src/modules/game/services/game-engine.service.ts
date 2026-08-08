@@ -93,13 +93,13 @@ export class GameEngineService {
       displaySpeed,
       sessionId: session.id,
       round: session.currentRound,
-      startAt: startAt + 500,
-      startInMs: countdownDuration + 500,
+      startAt,
+      startInMs: countdownDuration,
     });
 
     // Schedule input:enabled after sequence display finishes
     const displayDuration = sequence.length * displaySpeed;
-    const inputEnabledAt = startAt + 500 + displayDuration;
+    const inputEnabledAt = startAt + displayDuration;
     const delayMs = Math.max(0, inputEnabledAt - Date.now());
     this.logger.log(`Scheduling input:enabled in ${delayMs}ms (display=${displayDuration}ms)`);
     setTimeout(() => {
@@ -271,11 +271,6 @@ export class GameEngineService {
         },
       });
 
-      // Emit countdown + sequence events for next round synchronization
-      const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
-      const nextStartAt = Date.now() + countdownDuration;
-      this.broadcast.sequenceStartAt.set(session.id, nextStartAt);
-
       const sessionWithPlayers = await this.getCurrentSession();
 
       this.broadcast.emit(SocketEvent.ROUND_RESULT, {
@@ -287,14 +282,19 @@ export class GameEngineService {
         nextRound: nextRoundNumber,
       });
 
+      // Emit countdown + sequence events for next round synchronization
+      const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
+      const nextStartAt = Date.now() + countdownDuration;
+      this.broadcast.sequenceStartAt.set(session.id, nextStartAt);
+
       this.broadcast.emit(SocketEvent.COUNTDOWN_START, { count: 3, startAt: nextStartAt });
       this.broadcast.emit(SocketEvent.SEQUENCE_SHOW, {
         sequence: nextSequence,
         displaySpeed: GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty],
         sessionId: session.id,
         round: nextRoundNumber,
-        startAt: nextStartAt + 500,
-        startInMs: countdownDuration + 500,
+        startAt: nextStartAt,
+        startInMs: countdownDuration,
       });
 
       this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);

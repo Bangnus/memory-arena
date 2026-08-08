@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useSocket } from './useSocket';
 import { gameService } from '@/services/game.service';
 import { GAME_STATUS, COLOR } from '@/constants/game';
@@ -40,7 +40,6 @@ export function useGameEngine() {
   const [sequenceStartAt, setSequenceStartAt] = useState<number | null>(null);
   const [sequenceId, setSequenceId] = useState(0);
   const [isSequenceDisplaying, setIsSequenceDisplaying] = useState(false);
-  const countdownTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
 
 
@@ -64,36 +63,11 @@ export function useGameEngine() {
           setSequence(currentSession.currentSequence);
         }
         if (currentSession.startAt) {
-          setSequenceStartAt(currentSession.startAt);
+          setSequenceStartAt(currentSession.startAt + 500);
         }
         if (currentSession.status === 'COUNTDOWN' || currentSession.status === 'SHOW_SEQUENCE') {
           setIsSequenceDisplaying(true);
           setSequenceId(prev => prev === 0 ? 1 : prev);
-          
-          if (currentSession.status === 'COUNTDOWN' && currentSession.startAt) {
-            const targetStartAt = currentSession.startAt;
-            if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
-            
-            const updateCountdown = () => {
-              const now = Date.now();
-              const remainingMs = targetStartAt - now;
-              
-              if (remainingMs > 2000) {
-                setCountdown(3);
-                countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs - 2000));
-              } else if (remainingMs > 1000) {
-                setCountdown(2);
-                countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs - 1000));
-              } else if (remainingMs > 0) {
-                setCountdown(1);
-                countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs));
-              } else {
-                setCountdown(null);
-              }
-            };
-            
-            updateCountdown();
-          }
         }
       }
     }).catch(() => {});
@@ -111,7 +85,7 @@ export function useGameEngine() {
       // Only update startAt if the new value is LATER than current (avoid stale overwrite)
       if (updatedSession.startAt) {
         setSequenceStartAt(prev => {
-          const incomingStartAt = updatedSession.startAt!;
+          const incomingStartAt = updatedSession.startAt! + 500;
           if (!prev || incomingStartAt > prev) {
             console.log(`[DEBUG][GAME][${Date.now()}] session:update upgrading startAt: ${prev} -> ${incomingStartAt}`);
             return incomingStartAt;
@@ -126,29 +100,23 @@ export function useGameEngine() {
       console.log(`[DEBUG][GAME][${Date.now()}] countdown:start received: count=${data.count}, startAt=${data.startAt}`);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
-      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
 
-      const targetStartAt = data.startAt || (Date.now() + 3000);
-      
-      const updateCountdown = () => {
-        const now = Date.now();
-        const remainingMs = targetStartAt - now;
-        
-        if (remainingMs > 2000) {
-          setCountdown(3);
-          countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs - 2000));
-        } else if (remainingMs > 1000) {
-          setCountdown(2);
-          countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs - 1000));
-        } else if (remainingMs > 0) {
-          setCountdown(1);
-          countdownTimeoutRef.current = setTimeout(updateCountdown, Math.max(10, remainingMs));
-        } else {
-          setCountdown(null);
+      // Animate countdown from count to 0
+      let current = data.count;
+      setCountdown(current);
+
+      const tick = () => {
+        if (current > 0) {
+          current--;
+          setCountdown(current);
+          if (current > 0) {
+            setTimeout(tick, 1000);
+          } else {
+            setTimeout(() => setCountdown(null), 500);
+          }
         }
       };
-      
-      updateCountdown();
+      setTimeout(tick, 1000);
     });
 
     socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeed?: number; displaySpeedMs?: number; startAt?: number; startInMs?: number }) => {
@@ -160,10 +128,10 @@ export function useGameEngine() {
       setRoundWinner(null);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
-      if (data.startAt) {
-        setSequenceStartAt(data.startAt);
-      } else if (data.startInMs !== undefined) {
-        setSequenceStartAt(Date.now() + data.startInMs);
+      if (data.startInMs !== undefined) {
+        setSequenceStartAt(Date.now() + data.startInMs + 500);
+      } else if (data.startAt) {
+        setSequenceStartAt(data.startAt + 500);
       }
       setSequenceId(prev => prev + 1);
       setIsSequenceDisplaying(true);
@@ -250,7 +218,6 @@ export function useGameEngine() {
     });
 
     return () => {
-      if (countdownTimeoutRef.current) clearTimeout(countdownTimeoutRef.current);
       socket.off(SOCKET_EVENTS.SESSION_UPDATE);
       socket.off(SOCKET_EVENTS.COUNTDOWN_START);
       socket.off(SOCKET_EVENTS.SEQUENCE_SHOW);

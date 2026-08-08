@@ -5,8 +5,6 @@ import { SequenceService } from '../game/services/sequence.service';
 import { Difficulty, SessionStatus, SocketEvent } from '../../common/enums';
 import { JoinPlayerDto } from './dto/join-player.dto';
 import { SelectDifficultyDto } from './dto/select-difficulty.dto';
-import { DeviceService } from '../device/device.service';
-import { GAME_CONSTANTS } from '../../common/constants/game.constants';
 
 @Injectable()
 export class SessionService {
@@ -16,7 +14,6 @@ export class SessionService {
     private readonly prisma: PrismaService,
     private readonly broadcast: BroadcastService,
     private readonly sequenceService: SequenceService,
-    private readonly deviceService: DeviceService,
   ) {}
 
   private async attachPlayers(session: any) {
@@ -101,25 +98,14 @@ export class SessionService {
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
 
+    // Emit game:waiting when both players are ready (triggers 5s countdown on web + IoT)
     if (hasP1 && hasP2) {
       this.broadcast.emit('game:waiting', { countdown: 5 });
-      this.logger.log(`Both players joined. Starting 5s countdown before match start for session: ${session.id}`);
-      
-      setTimeout(async () => {
-        try {
-          const currentSession = await this.prisma.gameSession.findUnique({
-            where: { id: session.id },
-          });
-          if (currentSession && currentSession.player1Id && currentSession.player2Id) {
-            this.logger.log(`5s countdown complete. Starting match for session: ${session.id}`);
-            await this.startMatch();
-          } else {
-            this.logger.log(`5s countdown complete but players left. Aborting match start for session: ${session.id}`);
-          }
-        } catch (err) {
-          this.logger.error(`Failed to automatically start match: ${err.message}`);
-        }
-      }, 5000);
+    }
+
+    if (hasP1 && hasP2) {
+      this.logger.log(`Both players joined. Automatically starting match for session: ${session.id}`);
+      return this.startMatch();
     }
 
     return sessionWithPlayers;
@@ -144,8 +130,6 @@ export class SessionService {
       updateData.player1Score = 0;
       updateData.player2Score = 0;
       updateData.currentSequence = null;
-      updateData.player1Id = null;
-      updateData.player2Id = null;
     }
 
     const updatedSession = await this.prisma.gameSession.update({
@@ -193,18 +177,6 @@ export class SessionService {
     this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
       count: 3,
       startAt,
-    });
-
-    const displaySpeed =
-      GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty] || 500;
-
-    this.broadcast.emit(SocketEvent.SEQUENCE_SHOW, {
-      sequence: initialSequence,
-      displaySpeed,
-      sessionId: session.id,
-      round: 1,
-      startAt: startAt + 500,
-      startInMs: 3000 + 500,
     });
 
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
