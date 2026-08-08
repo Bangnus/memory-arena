@@ -91,6 +91,7 @@ export class GameEngineService {
       sessionId: session.id,
       round: session.currentRound,
       startAt,
+      startInMs: countdownDuration,
     });
 
     // Schedule input:enabled after sequence display finishes
@@ -290,6 +291,7 @@ export class GameEngineService {
         sessionId: session.id,
         round: nextRoundNumber,
         startAt: nextStartAt,
+        startInMs: countdownDuration,
       });
 
       this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);

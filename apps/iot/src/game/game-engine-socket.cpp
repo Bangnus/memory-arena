@@ -51,7 +51,11 @@ void GameEngine::processSocketEvents() {
                 currentSequence.sessionId = doc["sessionId"].as<String>();
                 currentRound = doc["round"] | 1;
 
-                if (wifiManager.isTimeSynced()) {
+                long startInMs = doc["startInMs"] | -1;
+                if (startInMs >= 0) {
+                    currentSequence.sequenceStartAt = millis() + startInMs;
+                    Serial.printf("[DEBUG][IOT] Using relative startInMs=%ld, sequenceStartAt=%lu\n", startInMs, currentSequence.sequenceStartAt);
+                } else if (wifiManager.isTimeSynced()) {
                     long long startAt = doc["startAt"] | 0LL;
                     struct timeval tv;
                     gettimeofday(&tv, NULL);
