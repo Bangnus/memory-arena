@@ -4,11 +4,11 @@ services:
     container_name: memory-battle-db
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_DB: memory_arena
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -25,33 +25,38 @@ services:
     restart: unless-stopped
     ports:
       - "3000:3000"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/memory_arena?schema=public
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/memory_arena?schema=public
       JWT_SECRET: ${JWT_SECRET:-super-secret-key-memory-arena}
       JWT_EXPIRES_IN: 1d
       LINE_CHANNEL_ID: ${LINE_CHANNEL_ID:-}
       LINE_CHANNEL_SECRET: ${LINE_CHANNEL_SECRET:-}
-      LINE_CALLBACK_URL: ${LINE_CALLBACK_URL:-http://localhost:3000/auth/line/callback}
-      FRONTEND_URL: http://localhost:3001
+      LINE_CALLBACK_URL: ${NGROK_URL:-http://localhost:3000}/api/v1/auth/line/callback
+      FRONTEND_URL: http://${LOCAL_IP:-localhost}:3001
     depends_on:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      test: ["CMD-SHELL", "node -e \"const http = require('http'); const req = http.get('http://localhost:3000/api/v1/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on('error', () => process.exit(1)); req.end()\""]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
 
   frontend:
     build:
       context: ./apps/frontend
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3000/api/v1
-        NEXT_PUBLIC_SOCKET_URL: http://localhost:3000
+        NEXT_PUBLIC_API_URL: http://${LOCAL_IP:-localhost}:3000/api/v1
+        NEXT_PUBLIC_SOCKET_URL: http://${LOCAL_IP:-localhost}:3000
         NEXT_PUBLIC_LINE_CLIENT_ID: ${LINE_CLIENT_ID:-}
+        NEXT_PUBLIC_LINE_CALLBACK_URL: ${NGROK_URL:-http://localhost:3000}/api/v1/auth/line/callback
     container_name: memory-battle-frontend
     restart: unless-stopped
     ports:
@@ -61,6 +66,19 @@ services:
     depends_on:
       backend:
         condition: service_healthy
+
+  ngrok:
+    image: ngrok/ngrok:latest
+    container_name: memory-battle-ngrok
+    restart: unless-stopped
+    ports:
+      - "4040:4040"
+    environment:
+      NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
+      NGROK_ARGS: --log=stdout
+    command: "http backend:3000"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
