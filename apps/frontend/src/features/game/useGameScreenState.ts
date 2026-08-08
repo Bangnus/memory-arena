@@ -3,35 +3,15 @@ import { useSound } from '@/hooks/useSound';
 import type { GameSession } from '@/hooks/useGameEngine';
 
 interface UseGameScreenStateProps {
-  session: GameSession | null;
-  countdown: number | null;
-  sequence: string[];
-  displaySpeedMs: number;
-  isInputPhase: boolean;
-  roundWinner: string | null;
-  matchWinner: string | null;
-  currentUserId: string | undefined;
-  onSubmitSequence: (seq: string[]) => void;
-  sequenceStartAt?: number | null;
-  sequenceId?: number;
-  p1LiveInputs: string[];
-  p2LiveInputs: string[];
+  session: GameSession | null; countdown: number | null; sequence: string[]; displaySpeedMs: number;
+  isInputPhase: boolean; roundWinner: string | null; matchWinner: string | null;
+  currentUserId: string | undefined; onSubmitSequence: (seq: string[]) => void;
+  sequenceStartAt?: number | null; sequenceId?: number; p1LiveInputs: string[]; p2LiveInputs: string[];
 }
 
 export function useGameScreenState({
-  session,
-  countdown,
-  sequence,
-  displaySpeedMs,
-  isInputPhase,
-  roundWinner,
-  matchWinner,
-  currentUserId,
-  onSubmitSequence,
-  sequenceStartAt,
-  sequenceId = 0,
-  p1LiveInputs,
-  p2LiveInputs,
+  session, countdown, sequence, displaySpeedMs, isInputPhase, roundWinner, matchWinner,
+  currentUserId, onSubmitSequence, sequenceStartAt, sequenceId = 0, p1LiveInputs, p2LiveInputs,
 }: UseGameScreenStateProps) {
   const [playerInput, setPlayerInput] = useState<string[]>([]);
   const [activeColor, setActiveColor] = useState<string | null>(null);
@@ -71,7 +51,11 @@ export function useGameScreenState({
     }
     const gen = ++seqAnimRef.current;
     const startDelay = sequenceStartAt - Date.now();
-    const timer = setTimeout(() => {
+    let mainTimer: NodeJS.Timeout;
+    let nextTimer: NodeJS.Timeout;
+    let offTimer: NodeJS.Timeout;
+
+    mainTimer = setTimeout(() => {
       if (gen !== seqAnimRef.current) return;
       let i = 0;
       const showNext = () => {
@@ -80,13 +64,19 @@ export function useGameScreenState({
           return;
         }
         setActiveColor(sequence[i]);
+        offTimer = setTimeout(() => {
+          if (gen === seqAnimRef.current) setActiveColor(null);
+        }, displaySpeedMs * 0.65);
         i++;
-        setTimeout(showNext, displaySpeedMs);
+        nextTimer = setTimeout(showNext, displaySpeedMs);
       };
       showNext();
     }, Math.max(0, startDelay));
+
     return () => {
-      clearTimeout(timer);
+      clearTimeout(mainTimer);
+      clearTimeout(nextTimer);
+      clearTimeout(offTimer);
       seqAnimRef.current++;
       setActiveColor(null);
     };
@@ -107,20 +97,11 @@ export function useGameScreenState({
     playButtonPress();
     const newInput = [...playerInput, color];
     setPlayerInput(newInput);
-    if (newInput.length === effectiveSequence.length) {
-      onSubmitSequence(newInput);
-    }
+    if (newInput.length === effectiveSequence.length) onSubmitSequence(newInput);
   };
 
   return {
-    playerInput,
-    activeColor,
-    roundCountdown,
-    me,
-    isSpectator,
-    effectiveSequence,
-    showInputArea,
-    handleColorClick,
-    activeCountdown: roundCountdown ?? countdown,
+    playerInput, activeColor, roundCountdown, me, isSpectator,
+    effectiveSequence, showInputArea, handleColorClick, activeCountdown: roundCountdown ?? countdown,
   };
 }
