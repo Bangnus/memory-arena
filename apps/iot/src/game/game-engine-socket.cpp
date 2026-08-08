@@ -37,6 +37,7 @@ void GameEngine::processSocketEvents() {
     } else if (event == "sequence:show") {
         Serial.printf("[DEBUG][IOT][%lu] sequence:show received\n", millis());
         JsonDocument doc;
+        Serial.printf("[DEBUG][IOT] Payload: %s\n", payload.c_str());
         DeserializationError error = deserializeJson(doc, payload);
         if (!error) {
             JsonArray arr = doc["sequence"].as<JsonArray>();
