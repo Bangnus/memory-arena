@@ -144,6 +144,8 @@ export class SessionService {
       updateData.player1Score = 0;
       updateData.player2Score = 0;
       updateData.currentSequence = null;
+      updateData.player1Id = null;
+      updateData.player2Id = null;
     }
 
     const updatedSession = await this.prisma.gameSession.update({
