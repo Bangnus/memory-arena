@@ -50,6 +50,8 @@ private:
 
     void changeState(GameState newState);
     void pollBackend();
+    void processSocketEvents();
+    void updateState();
 
     void handleSelectMode();
     void handleWaitingCountdown();
