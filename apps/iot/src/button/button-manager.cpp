@@ -81,13 +81,25 @@ ButtonEvent ButtonManager::popEvent() {
 }
 
 bool ButtonManager::isStartPressed() {
-    return digitalRead(PIN_BTN_START) == LOW;
+    static bool lastState = HIGH;
+    bool currentState = digitalRead(PIN_BTN_START);
+    bool pressed = (lastState == HIGH && currentState == LOW);
+    lastState = currentState;
+    return pressed;
 }
 
 bool ButtonManager::isNextPressed() {
-    return digitalRead(PIN_BTN_NEXT) == LOW;
+    static bool lastState = HIGH;
+    bool currentState = digitalRead(PIN_BTN_NEXT);
+    bool pressed = (lastState == HIGH && currentState == LOW);
+    lastState = currentState;
+    return pressed;
 }
 
 bool ButtonManager::isPrevPressed() {
-    return digitalRead(PIN_BTN_PREV) == LOW;
+    static bool lastState = HIGH;
+    bool currentState = digitalRead(PIN_BTN_PREV);
+    bool pressed = (lastState == HIGH && currentState == LOW);
+    lastState = currentState;
+    return pressed;
 }
