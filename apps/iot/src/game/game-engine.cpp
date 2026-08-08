@@ -303,6 +303,7 @@ void GameEngine::handleSelectMode() {
     if (buttonManager.isNextPressed()) {
         lastButtonTime = now;
         selectedMode = (selectedMode + 1) % 3;
+        Serial.printf("[DEBUG][IOT] Button NEXT (pin %d) pressed. Changed mode to: %s (%d)\n", PIN_BTN_NEXT, modes[selectedMode], selectedMode);
         buzzerManager.play(BuzzerSound::BEEP);
         socketClient.signalModeChange(selectedMode);
     }
@@ -310,6 +311,7 @@ void GameEngine::handleSelectMode() {
     if (buttonManager.isPrevPressed()) {
         lastButtonTime = now;
         selectedMode = (selectedMode + 2) % 3;
+        Serial.printf("[DEBUG][IOT] Button PREV (pin %d) pressed. Changed mode to: %s (%d)\n", PIN_BTN_PREV, modes[selectedMode], selectedMode);
         buzzerManager.play(BuzzerSound::BEEP);
         socketClient.signalModeChange(selectedMode);
     }
