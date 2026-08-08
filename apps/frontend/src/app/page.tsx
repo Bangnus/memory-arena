@@ -87,7 +87,7 @@ export default function Home() {
               asChild 
               className="w-full h-20 text-3xl font-orbitron font-black tracking-wider rounded-3xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 hover:from-emerald-300 hover:to-blue-400 text-slate-950 shadow-[0_8px_30px_rgba(56,189,248,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 border-4 border-white/20"
             >
-              <Link href="/login" className="flex items-center justify-center gap-3">
+              <Link href="/mode" className="flex items-center justify-center gap-3">
                 <Play className="w-8 h-8 fill-slate-950" />
                 START GAME
               </Link>
