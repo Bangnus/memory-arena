@@ -26,7 +26,8 @@ export class SessionService {
       const p2 = await this.prisma.player.findUnique({ where: { id: session.player2Id } });
       if (p2) players.push({ id: p2.id, displayName: p2.displayName, pictureUrl: p2.pictureUrl, score: session.player2Score, isReady: true });
     }
-    return { ...session, players };
+    const startAt = this.broadcast.sequenceStartAt.get(session.id) || null;
+    return { ...session, players, startAt };
   }
 
   /**
