@@ -114,16 +114,18 @@ export function useGameEngine() {
       setTimeout(tick, 1000);
     });
 
-    socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeed?: number; displaySpeedMs?: number; startAt?: number }) => {
+    socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeed?: number; displaySpeedMs?: number; startAt?: number; startInMs?: number }) => {
       const speed = data.displaySpeed ?? data.displaySpeedMs ?? 0;
-      console.log(`[DEBUG][GAME][${Date.now()}] sequence:show received: seq=${JSON.stringify(data.sequence)}, speed=${speed}ms (raw displaySpeed=${data.displaySpeed}, displaySpeedMs=${data.displaySpeedMs}), startAt=${data.startAt}, delay=${data.startAt ? data.startAt - Date.now() : 'N/A'}ms`);
+      console.log(`[DEBUG][GAME][${Date.now()}] sequence:show received: seq=${JSON.stringify(data.sequence)}, speed=${speed}ms (raw displaySpeed=${data.displaySpeed}, displaySpeedMs=${data.displaySpeedMs}), startAt=${data.startAt}, startInMs=${data.startInMs}`);
       setSequence(data.sequence);
       setDisplaySpeedMs(speed);
       setIsInputPhase(false);
       setRoundWinner(null);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
-      if (data.startAt) {
+      if (data.startInMs !== undefined) {
+        setSequenceStartAt(Date.now() + data.startInMs);
+      } else if (data.startAt) {
         setSequenceStartAt(data.startAt);
       }
       setSequenceId(prev => prev + 1);
