@@ -98,9 +98,6 @@ export function useGameSocketEvents({
       setSequenceId(prev => prev + 1);
       setIsSequenceDisplaying(true);
     });
-      setSequenceId(prev => prev + 1);
-      setIsSequenceDisplaying(true);
-    });
 
     socket.on(SOCKET_EVENTS.INPUT_ENABLED, () => {
       setIsInputPhase(true);
