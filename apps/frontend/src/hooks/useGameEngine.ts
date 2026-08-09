@@ -100,6 +100,7 @@ export function useGameEngine() {
       console.log(`[DEBUG][GAME][${Date.now()}] countdown:start received: count=${data.count}, startAt=${data.startAt}`);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
+      setSequenceStartAt(null);
 
       // Animate countdown from count to 0
       let current = data.count;
@@ -108,9 +109,11 @@ export function useGameEngine() {
       const tick = () => {
         if (current > 1) {
           current--;
+          console.log(`[DEBUG][GAME][${Date.now()}] countdown tick: ${current}`);
           setCountdown(current);
           setTimeout(tick, 1000);
         } else {
+          console.log(`[DEBUG][GAME][${Date.now()}] countdown complete`);
           setCountdown(null);
         }
       };
