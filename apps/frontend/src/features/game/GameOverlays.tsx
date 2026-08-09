@@ -26,17 +26,28 @@ export function GameOverlays({
       <AnimatePresence>
         {activeCountdown !== null && (
           <motion.div 
-            initial={{ scale: 0.5, opacity: 0 }}
+            initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 1.5, opacity: 0 }}
+            exit={{ scale: 1.1, opacity: 0 }}
+            transition={{ duration: 0.15 }}
             className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md rounded-[3rem]"
           >
-            <div className="text-lg font-black font-orbitron text-amber-300 uppercase tracking-widest mb-1">
+            <div className="text-sm md:text-base font-black font-orbitron text-amber-300 uppercase tracking-widest mb-2 drop-shadow-md">
               {roundCountdown !== null ? 'NEXT ROUND STARTING...' : 'GET READY!'}
             </div>
-            <span className="text-8xl font-black font-orbitron text-amber-400 drop-shadow-[0_4px_20px_rgba(251,191,36,0.6)] animate-pulse">
-              {activeCountdown === 0 ? 'GO!' : activeCountdown}
-            </span>
+            
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeCountdown}
+                initial={{ scale: 0.3, opacity: 0, y: 15 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 1.5, opacity: 0, y: -15 }}
+                transition={{ type: "spring", stiffness: 500, damping: 25 }}
+                className="text-8xl md:text-9xl font-black font-orbitron text-amber-400 drop-shadow-[0_0_35px_rgba(251,191,36,0.8)]"
+              >
+                {activeCountdown === 0 ? 'GO!' : activeCountdown}
+              </motion.div>
+            </AnimatePresence>
           </motion.div>
         )}
       </AnimatePresence>

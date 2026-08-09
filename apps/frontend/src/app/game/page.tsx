@@ -36,6 +36,13 @@ export default function GamePage() {
     getSyncedTime
   } = useGameEngine();
 
+  // Instant connect if session active
+  useEffect(() => {
+    if (session) {
+      setIotStatus('connected');
+    }
+  }, [session]);
+
   // Poll IoT status until connected
   useEffect(() => {
     if (!isConnected) return;
