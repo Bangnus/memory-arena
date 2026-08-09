@@ -71,7 +71,7 @@ void GameEngine::processSocketEvents() {
                     Serial.printf("[DEBUG][IOT] NTP not synced, starting immediately\n");
                 }
                 
-                if (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT) {
+                if (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT || currentState == GameState::SELECT_MODE) {
                     if (currentRound == 1) {
                         changeState(GameState::SHOW_SEQUENCE);
                     } else {
