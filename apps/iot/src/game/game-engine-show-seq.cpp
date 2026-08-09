@@ -32,10 +32,7 @@ void GameEngine::handleShowSequence() {
         int step = (remaining + 999) / 1000;
         if (step > 0 && step <= 3 && step < countdownStep) {
             countdownStep = step;
-            Serial.printf("[DEBUG][IOT][%lu] countdown tick beep: %d (remaining=%lums)\n", now, step, remaining);
-            if (!waitingCountdownActive) {
-                buzzerManager.play(BuzzerSound::BEEP);
-            }
+            Serial.printf("[DEBUG][IOT][%lu] countdown tick: %d (remaining=%lums)\n", now, step, remaining);
         }
 
         static unsigned long lastWaitLog = 0;

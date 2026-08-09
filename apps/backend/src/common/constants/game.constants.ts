@@ -11,9 +11,9 @@ export const GAME_CONSTANTS = {
     [Difficulty.HARD]: 4,
   },
   DISPLAY_SPEED_MS: {
-    [Difficulty.EASY]: 800,
-    [Difficulty.MEDIUM]: 500,
-    [Difficulty.HARD]: 300,
+    [Difficulty.EASY]: 1000,
+    [Difficulty.MEDIUM]: 750,
+    [Difficulty.HARD]: 500,
   },
   COLOR_MAP: [Color.RED, Color.BLUE],
   COLOR_TO_INT: {
