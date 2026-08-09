@@ -41,12 +41,12 @@ void BuzzerManager::play(BuzzerSound sound) {
             playTone(1000, 150);
             break;
         case BuzzerSound::BEEP:
-            // High-tech 2-note rising chime (1800 Hz -> 2600 Hz) for prominent sequence color flash
-            playTone(1800, 60);
+            // Warm pleasant 2-note musical chime (1000 Hz -> 1300 Hz) for sequence color flash
+            playTone(1000, 70);
             break;
         case BuzzerSound::COUNTDOWN:
-            // Short subtle digital tick (1000 Hz, 50 ms) for 3-2-1 countdown
-            playTone(1000, 50);
+            // Soft clean tick (750 Hz, 50 ms) for 3-2-1 countdown
+            playTone(750, 50);
             break;
         case BuzzerSound::BUTTON_PRESS:
             // Single short click when pressing button
@@ -97,7 +97,7 @@ void BuzzerManager::loop() {
         } else if (currentSound == BuzzerSound::BEEP) {
             melodyStep++;
             if (melodyStep == 1) {
-                playTone(2600, 100); // Note 2 — peak resonance chirp
+                playTone(1300, 90); // Note 2 — warm mid-range finish
             } else {
                 currentSound = BuzzerSound::NONE;
             }
