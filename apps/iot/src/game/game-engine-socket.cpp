@@ -72,7 +72,11 @@ void GameEngine::processSocketEvents() {
                 }
                 
                 if (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT) {
-                    changeState(GameState::COUNTDOWN);
+                    if (currentRound == 1) {
+                        changeState(GameState::SHOW_SEQUENCE);
+                    } else {
+                        changeState(GameState::COUNTDOWN);
+                    }
                 }
             }
         }
