@@ -83,24 +83,57 @@ ButtonEvent ButtonManager::popEvent() {
 
 bool ButtonManager::isStartPressed() {
     static bool lastState = HIGH;
+    static unsigned long lastDebounce = 0;
+    unsigned long now = millis();
     bool currentState = digitalRead(PIN_BTN_START);
-    bool pressed = (lastState == HIGH && currentState == LOW);
+    bool pressed = false;
+    
+    if (lastState == HIGH && currentState == LOW) {
+        if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
+            pressed = true;
+            lastDebounce = now;
+        }
+    } else if (lastState == LOW && currentState == HIGH) {
+        lastDebounce = now;
+    }
     lastState = currentState;
     return pressed;
 }
 
 bool ButtonManager::isNextPressed() {
     static bool lastState = HIGH;
+    static unsigned long lastDebounce = 0;
+    unsigned long now = millis();
     bool currentState = digitalRead(PIN_BTN_NEXT);
-    bool pressed = (lastState == HIGH && currentState == LOW);
+    bool pressed = false;
+    
+    if (lastState == HIGH && currentState == LOW) {
+        if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
+            pressed = true;
+            lastDebounce = now;
+        }
+    } else if (lastState == LOW && currentState == HIGH) {
+        lastDebounce = now;
+    }
     lastState = currentState;
     return pressed;
 }
 
 bool ButtonManager::isPrevPressed() {
     static bool lastState = HIGH;
+    static unsigned long lastDebounce = 0;
+    unsigned long now = millis();
     bool currentState = digitalRead(PIN_BTN_PREV);
-    bool pressed = (lastState == HIGH && currentState == LOW);
+    bool pressed = false;
+    
+    if (lastState == HIGH && currentState == LOW) {
+        if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
+            pressed = true;
+            lastDebounce = now;
+        }
+    } else if (lastState == LOW && currentState == HIGH) {
+        lastDebounce = now;
+    }
     lastState = currentState;
     return pressed;
 }

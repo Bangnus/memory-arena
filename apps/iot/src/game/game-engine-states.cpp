@@ -17,7 +17,6 @@ void GameEngine::changeState(GameState newState) {
         case GameState::SELECT_MODE:
             selectedMode = 1;
             ledManager.turnOffAll();
-            buzzerManager.play(BuzzerSound::BEEP);
             break;
         case GameState::WAIT_PLAYERS:
             Serial.println("[STATE] WAIT_PLAYERS");
@@ -42,6 +41,11 @@ void GameEngine::changeState(GameState newState) {
             lastSequenceDisplayTime = 0;
             sequenceFetched = false;
             buttonManager.disablePlayerButtons();
+            if (countdownStep == 2) {
+                countdownStep = 3;
+            } else {
+                countdownStep = 4;
+            }
             break;
         case GameState::PLAYER_INPUT:
             Serial.println("[STATE] INPUT (Buttons ON)");

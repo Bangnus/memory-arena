@@ -28,9 +28,19 @@ void GameEngine::handleShowSequence() {
     }
 
     if (now < currentSequence.sequenceStartAt) {
+        unsigned long remaining = currentSequence.sequenceStartAt - now;
+        int step = (remaining + 999) / 1000;
+        if (step > 0 && step <= 3 && step < countdownStep) {
+            countdownStep = step;
+            Serial.printf("[DEBUG][IOT][%lu] countdown tick beep: %d (remaining=%lums)\n", now, step, remaining);
+            if (!waitingCountdownActive) {
+                buzzerManager.play(BuzzerSound::BEEP);
+            }
+        }
+
         static unsigned long lastWaitLog = 0;
         if (now - lastWaitLog >= 500) {
-            Serial.printf("[DEBUG][IOT][%lu] waiting for startAt=%lu, remaining=%lums\n", now, currentSequence.sequenceStartAt, currentSequence.sequenceStartAt - now);
+            Serial.printf("[DEBUG][IOT][%lu] waiting for startAt=%lu, remaining=%lums\n", now, currentSequence.sequenceStartAt, remaining);
             lastWaitLog = now;
         }
         return;

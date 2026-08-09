@@ -75,12 +75,8 @@ void GameEngine::processSocketEvents() {
                     currentSequence.sequenceStartAt = millis();
                 }
                 
-                if (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT || currentState == GameState::SELECT_MODE) {
-                    if (currentRound == 1) {
-                        changeState(GameState::SHOW_SEQUENCE);
-                    } else {
-                        changeState(GameState::COUNTDOWN);
-                    }
+                if (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT || currentState == GameState::SELECT_MODE || currentState == GameState::COUNTDOWN) {
+                    changeState(GameState::SHOW_SEQUENCE);
                 }
             }
         }
