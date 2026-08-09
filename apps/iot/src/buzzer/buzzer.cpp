@@ -41,12 +41,12 @@ void BuzzerManager::play(BuzzerSound sound) {
             playTone(1000, 150);
             break;
         case BuzzerSound::BEEP:
-            // Bright vibrant tone (1600 Hz, 120 ms) for sequence color flashes
-            playTone(1600, 120);
+            // High-tech 2-note rising chime (1800 Hz -> 2600 Hz) for prominent sequence color flash
+            playTone(1800, 60);
             break;
         case BuzzerSound::COUNTDOWN:
-            // Crisp short digital tick (1000 Hz, 60 ms) for 3-2-1 countdown
-            playTone(1000, 60);
+            // Short subtle digital tick (1000 Hz, 50 ms) for 3-2-1 countdown
+            playTone(1000, 50);
             break;
         case BuzzerSound::BUTTON_PRESS:
             // Single short click when pressing button
@@ -94,6 +94,13 @@ void BuzzerManager::loop() {
             }
         } else if (currentSound == BuzzerSound::BUTTON_PRESS) {
             currentSound = BuzzerSound::NONE;
+        } else if (currentSound == BuzzerSound::BEEP) {
+            melodyStep++;
+            if (melodyStep == 1) {
+                playTone(2600, 100); // Note 2 — peak resonance chirp
+            } else {
+                currentSound = BuzzerSound::NONE;
+            }
         } else if (currentSound == BuzzerSound::GAME_START) {
             melodyStep++;
             if (melodyStep == 1) {
