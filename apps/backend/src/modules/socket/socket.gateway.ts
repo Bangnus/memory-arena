@@ -63,6 +63,11 @@ export class SocketGateway
     client.emit('device:heartbeat:ack', { acknowledged: true, serverTimeMs: Date.now() });
   }
 
+  @SubscribeMessage('time:sync')
+  handleTimeSync(@MessageBody() data: { clientTime: number }, @ConnectedSocket() client: Socket) {
+    client.emit('time:sync:ack', { clientTime: data.clientTime, serverTime: Date.now() });
+  }
+
   @SubscribeMessage('game:press')
   handlePress(@MessageBody() data: { playerNumber: number; color: string }) {
     this.gameEngine.broadcastPress(data.playerNumber, data.color);

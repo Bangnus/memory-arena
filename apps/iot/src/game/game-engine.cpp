@@ -28,3 +28,7 @@ void GameEngine::loop() {
     handleWaitingCountdown();
     updateState();
 }
+
+uint64_t GameEngine::getSyncedTime() {
+    return (uint64_t)millis() + timeOffset;
+}

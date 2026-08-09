@@ -85,6 +85,7 @@ export class GameEngineService {
     const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
     const startAt = Date.now() + countdownDuration;
     this.broadcast.sequenceStartAt.set(session.id, startAt);
+    this.logger.log(`[DEBUG][BACKEND] countdown duration=${countdownDuration}ms, calculated startAt=${startAt} (in ${startAt - Date.now()}ms)`);
 
     // Emit countdown + sequence events for frontend synchronization
     this.broadcast.emit(SocketEvent.COUNTDOWN_START, { count: 3, startAt });
@@ -94,14 +95,13 @@ export class GameEngineService {
       sessionId: session.id,
       round: session.currentRound,
       startAt,
-      startInMs: countdownDuration,
     });
 
     // Schedule input:enabled after sequence display finishes
     const displayDuration = sequence.length * displaySpeed;
     const inputEnabledAt = startAt + displayDuration;
     const delayMs = Math.max(0, inputEnabledAt - Date.now());
-    this.logger.log(`Scheduling input:enabled in ${delayMs}ms (display=${displayDuration}ms)`);
+    this.logger.log(`[DEBUG][BACKEND] Scheduling input:enabled in ${delayMs}ms (display=${displayDuration}ms) at inputEnabledAt=${inputEnabledAt}`);
     setTimeout(() => {
       this.broadcast.emit(SocketEvent.INPUT_ENABLED, {});
       this.logger.log('input:enabled emitted');
@@ -113,7 +113,6 @@ export class GameEngineService {
       sessionId: session.id,
       round: session.currentRound,
       startAt,
-      startInMs: countdownDuration, // Relative ms for ESP32 (avoids 32-bit overflow)
     };
   }
 
@@ -294,7 +293,6 @@ export class GameEngineService {
         sessionId: session.id,
         round: nextRoundNumber,
         startAt: nextStartAt,
-        startInMs: countdownDuration,
       });
 
       this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
@@ -307,7 +305,6 @@ export class GameEngineService {
         nextRound: nextRoundNumber,
         nextSequence,
         displaySpeed,
-        startInMs: countdownDuration,
       };
     }
   }

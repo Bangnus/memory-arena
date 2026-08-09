@@ -200,7 +200,6 @@ export class SessionService {
       sessionId: session.id,
       round: 1,
       startAt,
-      startInMs: 1500,
     });
 
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);

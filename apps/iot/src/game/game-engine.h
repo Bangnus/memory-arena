@@ -15,6 +15,12 @@ private:
     GameState currentState = GameState::BOOT;
     unsigned long stateStartTime = 0;
     unsigned long lastPollTime = 0;
+    
+    long long timeOffset = 0;
+    bool timeSynced = false;
+    uint64_t getSyncedTime();
+    unsigned long timeSyncPings = 0;
+    long long timeSyncOffsets[5];
 
     String currentSessionId = "";
     int currentRound = 1;

@@ -54,21 +54,25 @@ void GameEngine::processSocketEvents() {
                 currentSequence.sessionId = doc["sessionId"].as<String>();
                 currentRound = doc["round"] | 1;
 
-                long startInMs = doc["startInMs"] | -1;
-                if (startInMs >= 0) {
-                    currentSequence.sequenceStartAt = millis() + startInMs;
-                    Serial.printf("[DEBUG][IOT] Using relative startInMs=%ld, sequenceStartAt=%lu\n", startInMs, currentSequence.sequenceStartAt);
-                } else if (wifiManager.isTimeSynced()) {
-                    long long startAt = doc["startAt"] | 0LL;
-                    struct timeval tv;
-                    gettimeofday(&tv, NULL);
-                    long long serverNow = (long long)tv.tv_sec * 1000LL + (long long)tv.tv_usec / 1000LL;
-                    long long delayMs = startAt - serverNow;
-                    currentSequence.sequenceStartAt = millis() + (delayMs > 0 ? delayMs : 0);
-                    Serial.printf("[DEBUG][IOT] Precision startAt=%lld, serverNow=%lld, delayMs=%lld, sequenceStartAt=%lu\n", startAt, serverNow, delayMs, currentSequence.sequenceStartAt);
+                long long startAt = doc["startAt"] | 0LL;
+                if (startAt > 0) {
+                    if (timeSynced) {
+                        long long delayMs = startAt - getSyncedTime();
+                        currentSequence.sequenceStartAt = millis() + (delayMs > 0 ? delayMs : 0);
+                        Serial.printf("[DEBUG][IOT] Precision startAt=%lld, getSyncedTime=%llu, delayMs=%lld, sequenceStartAt=%lu\n", startAt, getSyncedTime(), delayMs, currentSequence.sequenceStartAt);
+                    } else if (wifiManager.isTimeSynced()) {
+                        struct timeval tv;
+                        gettimeofday(&tv, NULL);
+                        long long serverNow = (long long)tv.tv_sec * 1000LL + (long long)tv.tv_usec / 1000LL;
+                        long long delayMs = startAt - serverNow;
+                        currentSequence.sequenceStartAt = millis() + (delayMs > 0 ? delayMs : 0);
+                        Serial.printf("[DEBUG][IOT] Fallback NTP startAt=%lld, serverNow=%lld, delayMs=%lld, sequenceStartAt=%lu\n", startAt, serverNow, delayMs, currentSequence.sequenceStartAt);
+                    } else {
+                        currentSequence.sequenceStartAt = millis();
+                        Serial.printf("[DEBUG][IOT] No sync available, starting immediately\n");
+                    }
                 } else {
                     currentSequence.sequenceStartAt = millis();
-                    Serial.printf("[DEBUG][IOT] NTP not synced, starting immediately\n");
                 }
                 
                 if (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT || currentState == GameState::SELECT_MODE) {
@@ -86,6 +90,37 @@ void GameEngine::processSocketEvents() {
             String sessionId = doc["id"].as<String>();
             if (sessionId.length() > 0) currentSessionId = sessionId;
             currentRound = doc["currentRound"] | 1;
+        }
+    } else if (event == "time:sync:ack") {
+        JsonDocument doc;
+        if (!deserializeJson(doc, payload)) {
+            unsigned long receiveTime = millis();
+            long long clientTime = doc["clientTime"] | 0LL;
+            long long serverTime = doc["serverTime"] | 0LL;
+            if (clientTime > 0 && serverTime > 0) {
+                long long latency = (receiveTime - clientTime) / 2;
+                long long offset = serverTime - (clientTime + latency);
+                if (timeSyncPings < 5) {
+                    timeSyncOffsets[timeSyncPings++] = offset;
+                    if (timeSyncPings == 5) {
+                        for (int i = 0; i < 4; i++) {
+                            for (int j = 0; j < 4 - i; j++) {
+                                if (timeSyncOffsets[j] > timeSyncOffsets[j+1]) {
+                                    long long temp = timeSyncOffsets[j];
+                                    timeSyncOffsets[j] = timeSyncOffsets[j+1];
+                                    timeSyncOffsets[j+1] = temp;
+                                }
+                            }
+                        }
+                        timeOffset = timeSyncOffsets[2];
+                        timeSynced = true;
+                        Serial.printf("[DEBUG][IOT] TimeSync Complete. offset=%lldms, latency=%lldms\n", timeOffset, latency);
+                    } else {
+                        // send next ping
+                        socketClient.emit("time:sync", String("{\"clientTime\":") + millis() + "}");
+                    }
+                }
+            }
         }
     } else if (event == "round:result") {
         JsonDocument doc;

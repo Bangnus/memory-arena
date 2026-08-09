@@ -5,6 +5,7 @@ import { useSocket } from './useSocket';
 import { gameService } from '@/services/game.service';
 import { DIFFICULTY_CONFIG } from '@/constants/game.config';
 import { useGameSocketEvents } from './useGameSocketEvents';
+import { useTimeSync } from './useTimeSync';
 
 export interface PlayerState {
   id: string;
@@ -29,6 +30,7 @@ export interface GameSession {
 
 export function useGameEngine() {
   const { socket, isConnected } = useSocket();
+  const { getSyncedTime, isSynced } = useTimeSync();
   const [session, setSession] = useState<GameSession | null>(null);
   const [countdown, setCountdown] = useState<number | null>(null);
   const [sequence, setSequence] = useState<string[]>([]);
@@ -109,6 +111,7 @@ export function useGameEngine() {
     sequenceStartAt,
     sequenceId,
     toggleReady,
-    submitSequence
+    submitSequence,
+    getSyncedTime
   };
 }

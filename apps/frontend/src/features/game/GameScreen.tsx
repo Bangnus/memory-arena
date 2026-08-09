@@ -12,12 +12,13 @@ interface GameScreenProps {
   isInputPhase: boolean; isSequenceDisplaying: boolean; roundWinner: string | null; matchWinner: string | null;
   p1LiveInputs?: string[]; p2LiveInputs?: string[]; currentUserId: string | undefined;
   onReady: () => void; onSubmitSequence: (seq: string[]) => void; sequenceStartAt?: number | null; sequenceId?: number;
+  getSyncedTime: () => number;
 }
 
 export function GameScreen({
   session, countdown, sequence, displaySpeedMs = 800, isInputPhase, isSequenceDisplaying,
   roundWinner, matchWinner, p1LiveInputs = [], p2LiveInputs = [], currentUserId,
-  onReady, onSubmitSequence, sequenceStartAt, sequenceId = 0,
+  onReady, onSubmitSequence, sequenceStartAt, sequenceId = 0, getSyncedTime,
 }: GameScreenProps) {
   const {
     activeColor, roundCountdown, me, isSpectator, effectiveSequence,
@@ -26,6 +27,7 @@ export function GameScreen({
     session, countdown, sequence, displaySpeedMs, isInputPhase,
     roundWinner, matchWinner, currentUserId, onSubmitSequence,
     sequenceStartAt, sequenceId, p1LiveInputs, p2LiveInputs,
+    getSyncedTime,
   });
 
   if (!session || !session.players) {

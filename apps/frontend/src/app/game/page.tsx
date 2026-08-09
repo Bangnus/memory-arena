@@ -32,7 +32,8 @@ export default function GamePage() {
     sequenceStartAt,
     sequenceId,
     toggleReady,
-    submitSequence
+    submitSequence,
+    getSyncedTime
   } = useGameEngine();
 
   // Poll IoT status until connected
@@ -161,6 +162,7 @@ export default function GamePage() {
             onSubmitSequence={submitSequence}
             sequenceStartAt={sequenceStartAt}
             sequenceId={sequenceId}
+            getSyncedTime={getSyncedTime}
           />
         ) : (
           <div className="text-xl text-muted-foreground">

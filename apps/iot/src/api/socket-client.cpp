@@ -137,6 +137,8 @@ void SocketClient::handleEvent(socketIOmessageType_t type, uint8_t * payload, si
             Serial.printf("[SOCKET] Connected at %lu ms (heap:%d)\n", millis(), ESP.getFreeHeap());
             connected = true;
             lastDisconnectTime = 0;
+            // Start time sync
+            emit("time:sync", String("{\"clientTime\":") + millis() + "}");
             break;
             
         case sIOtype_EVENT: {

@@ -7,11 +7,13 @@ interface UseGameScreenStateProps {
   isInputPhase: boolean; roundWinner: string | null; matchWinner: string | null;
   currentUserId: string | undefined; onSubmitSequence: (seq: string[]) => void;
   sequenceStartAt?: number | null; sequenceId?: number; p1LiveInputs: string[]; p2LiveInputs: string[];
+  getSyncedTime: () => number;
 }
 
 export function useGameScreenState({
   session, countdown, sequence, displaySpeedMs, isInputPhase, roundWinner, matchWinner,
   currentUserId, onSubmitSequence, sequenceStartAt, sequenceId = 0, p1LiveInputs, p2LiveInputs,
+  getSyncedTime,
 }: UseGameScreenStateProps) {
   const [playerInput, setPlayerInput] = useState<string[]>([]);
   const [activeColor, setActiveColor] = useState<string | null>(null);
@@ -50,37 +52,56 @@ export function useGameScreenState({
       return;
     }
     const gen = ++seqAnimRef.current;
-    const startDelay = sequenceStartAt - Date.now();
-    let mainTimer: NodeJS.Timeout;
-    let nextTimer: NodeJS.Timeout;
-    let offTimer: NodeJS.Timeout;
-
-    mainTimer = setTimeout(() => {
+    
+    let rafId: number;
+    let localActiveColor: string | null = null;
+    
+    const loop = () => {
       if (gen !== seqAnimRef.current) return;
-      let i = 0;
-      const showNext = () => {
-        if (gen !== seqAnimRef.current || i >= sequence.length) {
+      
+      const now = getSyncedTime();
+      if (now < sequenceStartAt) {
+        rafId = requestAnimationFrame(loop);
+        return;
+      }
+      
+      const elapsed = now - sequenceStartAt;
+      const stepIndex = Math.floor(elapsed / displaySpeedMs);
+      
+      if (stepIndex >= sequence.length) {
+        if (localActiveColor !== null) {
+          localActiveColor = null;
           setActiveColor(null);
-          return;
         }
-        setActiveColor(sequence[i]);
-        offTimer = setTimeout(() => {
-          if (gen === seqAnimRef.current) setActiveColor(null);
-        }, displaySpeedMs * 0.65);
-        i++;
-        nextTimer = setTimeout(showNext, displaySpeedMs);
-      };
-      showNext();
-    }, Math.max(0, startDelay));
+        return; // done
+      }
+      
+      // Active for 65% of the step duration
+      const stepElapsed = elapsed % displaySpeedMs;
+      if (stepElapsed < displaySpeedMs * 0.65) {
+        if (localActiveColor !== sequence[stepIndex]) {
+          localActiveColor = sequence[stepIndex];
+          setActiveColor(sequence[stepIndex]);
+          console.log(`[DEBUG][FRONTEND][${Date.now()}] RAF Active color flash: ${sequence[stepIndex]} at step ${stepIndex + 1}/${sequence.length}`);
+        }
+      } else {
+        if (localActiveColor !== null) {
+          localActiveColor = null;
+          setActiveColor(null);
+        }
+      }
+      
+      rafId = requestAnimationFrame(loop);
+    };
+
+    rafId = requestAnimationFrame(loop);
 
     return () => {
-      clearTimeout(mainTimer);
-      clearTimeout(nextTimer);
-      clearTimeout(offTimer);
+      cancelAnimationFrame(rafId);
       seqAnimRef.current++;
       setActiveColor(null);
     };
-  }, [sequenceId, sequence, sequenceStartAt, isInputPhase, displaySpeedMs]);
+  }, [sequenceId, sequence, sequenceStartAt, isInputPhase, displaySpeedMs, getSyncedTime]);
 
   useEffect(() => {
     if (isInputPhase) {
