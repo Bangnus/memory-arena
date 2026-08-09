@@ -54,16 +54,12 @@ void GameEngine::handleShowSequence() {
         if (sequenceDisplayIndex < currentSequence.length) {
             String colorStr = currentSequence.sequence[sequenceDisplayIndex];
             LedColor color = LedColor::NONE;
-            if (colorStr == "RED") {
-                color = LedColor::RED;
-                buzzerManager.play(BuzzerSound::FLASH_RED);
-            } else if (colorStr == "BLUE") {
-                color = LedColor::BLUE;
-                buzzerManager.play(BuzzerSound::FLASH_BLUE);
-            }
+            if (colorStr == "RED") color = LedColor::RED;
+            else if (colorStr == "BLUE") color = LedColor::BLUE;
             
             Serial.printf("[DEBUG][IOT][%lu] LED step %d/%d: %s\n", millis(), sequenceDisplayIndex + 1, currentSequence.length, colorStr.c_str());
             ledManager.turnOn(color);
+            buzzerManager.play(BuzzerSound::BEEP);
             sequenceDisplayIndex++;
         } else {
             Serial.printf("[DEBUG][IOT][%lu] sequence display complete, entering PLAYER_INPUT\n", millis());

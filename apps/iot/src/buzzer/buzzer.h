@@ -8,8 +8,6 @@ enum class BuzzerSound {
     BOOT,
     BEEP,
     COUNTDOWN,
-    FLASH_RED,
-    FLASH_BLUE,
     BUTTON_PRESS,
     INPUT_READY,
     GAME_START,
