@@ -57,7 +57,7 @@ void GameEngine::handleCountdown() {
         if (countdownStep > 0) {
             Serial.printf("[DEBUG][IOT][%lu] countdown: %d\n", now, countdownStep);
             if (!waitingCountdownActive) {
-                buzzerManager.play(BuzzerSound::BEEP);
+                buzzerManager.play(BuzzerSound::COUNTDOWN);
             }
             countdownStep--;
         } else {
