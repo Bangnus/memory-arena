@@ -41,12 +41,12 @@ void BuzzerManager::play(BuzzerSound sound) {
             playTone(1000, 150);
             break;
         case BuzzerSound::BEEP:
-            // Single crisp tone (1000 Hz, 120 ms) for all sequence color flashes
-            playTone(1000, 120);
+            // Bright vibrant tone (1600 Hz, 120 ms) for sequence color flashes
+            playTone(1600, 120);
             break;
         case BuzzerSound::COUNTDOWN:
-            // Short subtle low tick (500 Hz, 80 ms) for 3-2-1 countdown
-            playTone(500, 80);
+            // Crisp short digital tick (1000 Hz, 60 ms) for 3-2-1 countdown
+            playTone(1000, 60);
             break;
         case BuzzerSound::BUTTON_PRESS:
             // Single short click when pressing button
