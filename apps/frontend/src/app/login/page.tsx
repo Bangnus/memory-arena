@@ -131,8 +131,8 @@ function CentralDisplayContent() {
 
   useEffect(() => {
     if (session?.player1Id && session?.player2Id && redirectCountdown === null) {
-      console.log(`[DEBUG][LOGIN][${Date.now()}] Fallback: both players ready, starting countdown=7`);
-      setRedirectCountdown(7);
+      console.log(`[DEBUG][LOGIN][${Date.now()}] Fallback: both players ready, starting countdown=5`);
+      setRedirectCountdown(5);
     }
   }, [session, redirectCountdown]);
 

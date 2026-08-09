@@ -100,10 +100,10 @@ export class SessionService {
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
 
-    // Emit game:waiting when both players are ready (triggers 7s countdown on web + IoT)
+    // Emit game:waiting when both players are ready (triggers 5s countdown on web + IoT)
     if (hasP1 && hasP2) {
-      this.broadcast.emit('game:waiting', { countdown: 7 });
-      this.logger.log(`Both players joined. Starting 7s countdown before match start for session: ${session.id}`);
+      this.broadcast.emit('game:waiting', { countdown: 5 });
+      this.logger.log(`Both players joined. Starting 5s countdown before match start for session: ${session.id}`);
       
       setTimeout(async () => {
         try {
@@ -111,15 +111,15 @@ export class SessionService {
             where: { id: session.id },
           });
           if (currentSession && currentSession.player1Id && currentSession.player2Id) {
-            this.logger.log(`7s countdown complete. Starting match for session: ${session.id}`);
+            this.logger.log(`5s countdown complete. Starting match for session: ${session.id}`);
             await this.startMatch();
           } else {
-            this.logger.log(`7s countdown complete but players left. Aborting match start for session: ${session.id}`);
+            this.logger.log(`5s countdown complete but players left. Aborting match start for session: ${session.id}`);
           }
         } catch (err) {
           this.logger.error(`Failed to automatically start match: ${err.message}`);
         }
-      }, 7000);
+      }, 5000);
     }
 
     return sessionWithPlayers;
