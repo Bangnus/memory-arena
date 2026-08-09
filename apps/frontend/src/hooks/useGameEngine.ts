@@ -71,6 +71,7 @@ export function useGameEngine() {
 
   useGameSocketEvents({
     socket,
+    getSyncedTime,
     setSession,
     setCountdown,
     setSequence,

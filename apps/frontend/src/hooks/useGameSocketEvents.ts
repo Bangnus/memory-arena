@@ -5,6 +5,7 @@ import { GameSession } from './useGameEngine';
 
 interface GameSocketEventsProps {
   socket: Socket | null;
+  getSyncedTime?: () => number;
   setSession: React.Dispatch<React.SetStateAction<GameSession | null>>;
   setCountdown: React.Dispatch<React.SetStateAction<number | null>>;
   setSequence: React.Dispatch<React.SetStateAction<string[]>>;
@@ -21,6 +22,7 @@ interface GameSocketEventsProps {
 
 export function useGameSocketEvents({
   socket,
+  getSyncedTime = Date.now,
   setSession,
   setCountdown,
   setSequence,
@@ -38,7 +40,7 @@ export function useGameSocketEvents({
     if (!socket) return;
 
     socket.on(SOCKET_EVENTS.SESSION_UPDATE, (updatedSession: GameSession & { startAt?: number }) => {
-      console.log(`[DEBUG][GAME][${Date.now()}] session:update received: status=${updatedSession.status}, round=${updatedSession.currentRound}, startAt=${updatedSession.startAt}`);
+      console.log(`[DEBUG][GAME][${getSyncedTime()}] session:update received: status=${updatedSession.status}, round=${updatedSession.currentRound}, startAt=${updatedSession.startAt}`);
       setSession(updatedSession);
       if (updatedSession.currentSequence && Array.isArray(updatedSession.currentSequence) && updatedSession.currentSequence.length > 0) {
         setSequence(updatedSession.currentSequence);
@@ -47,17 +49,17 @@ export function useGameSocketEvents({
         setSequenceStartAt(prev => {
           const incomingStartAt = updatedSession.startAt!;
           if (!prev || incomingStartAt > prev) {
-            console.log(`[DEBUG][GAME][${Date.now()}] session:update upgrading startAt: ${prev} -> ${incomingStartAt}`);
+            console.log(`[DEBUG][GAME][${getSyncedTime()}] session:update upgrading startAt: ${prev} -> ${incomingStartAt}`);
             return incomingStartAt;
           }
-          console.log(`[DEBUG][GAME][${Date.now()}] session:update NOT overwriting startAt: current=${prev}, incoming=${incomingStartAt}`);
+          console.log(`[DEBUG][GAME][${getSyncedTime()}] session:update NOT overwriting startAt: current=${prev}, incoming=${incomingStartAt}`);
           return prev;
         });
       }
     });
 
     socket.on(SOCKET_EVENTS.COUNTDOWN_START, (data: { count: number; startAt?: number }) => {
-      console.log(`[DEBUG][GAME][${Date.now()}] countdown:start received: count=${data.count}, startAt=${data.startAt}`);
+      console.log(`[DEBUG][GAME][${getSyncedTime()}] countdown:start received: count=${data.count}, startAt=${data.startAt}`);
       setP1LiveInputs([]);
       setP2LiveInputs([]);
       setSequenceStartAt(null);
@@ -68,11 +70,11 @@ export function useGameSocketEvents({
       const tick = () => {
         if (current > 1) {
           current--;
-          console.log(`[DEBUG][GAME][${Date.now()}] countdown tick: ${current}`);
+          console.log(`[DEBUG][GAME][${getSyncedTime()}] countdown tick: ${current}`);
           setCountdown(current);
           setTimeout(tick, 1000);
         } else {
-          console.log(`[DEBUG][GAME][${Date.now()}] countdown complete`);
+          console.log(`[DEBUG][GAME][${getSyncedTime()}] countdown complete`);
           setCountdown(null);
         }
       };
@@ -81,7 +83,7 @@ export function useGameSocketEvents({
 
     socket.on(SOCKET_EVENTS.SEQUENCE_SHOW, (data: { sequence: string[]; displaySpeed?: number; displaySpeedMs?: number; startAt?: number; startInMs?: number }) => {
       const speed = data.displaySpeed ?? data.displaySpeedMs ?? 0;
-      console.log(`[DEBUG][GAME][${Date.now()}] sequence:show received: seq=${JSON.stringify(data.sequence)}, speed=${speed}ms (raw displaySpeed=${data.displaySpeed}, displaySpeedMs=${data.displaySpeedMs}), startAt=${data.startAt}, startInMs=${data.startInMs}`);
+      console.log(`[DEBUG][GAME][${getSyncedTime()}] sequence:show received: seq=${JSON.stringify(data.sequence)}, speed=${speed}ms (raw displaySpeed=${data.displaySpeed}, displaySpeedMs=${data.displaySpeedMs}), startAt=${data.startAt}, startInMs=${data.startInMs}`);
       setSequence(data.sequence);
       setDisplaySpeedMs(speed);
       setIsInputPhase(false);
@@ -89,10 +91,13 @@ export function useGameSocketEvents({
       setP1LiveInputs([]);
       setP2LiveInputs([]);
       if (data.startInMs !== undefined) {
-        setSequenceStartAt(Date.now() + data.startInMs);
+        setSequenceStartAt(getSyncedTime() + data.startInMs);
       } else if (data.startAt) {
         setSequenceStartAt(data.startAt);
       }
+      setSequenceId(prev => prev + 1);
+      setIsSequenceDisplaying(true);
+    });
       setSequenceId(prev => prev + 1);
       setIsSequenceDisplaying(true);
     });

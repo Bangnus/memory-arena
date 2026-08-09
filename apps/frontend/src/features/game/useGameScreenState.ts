@@ -82,7 +82,7 @@ export function useGameScreenState({
         if (localActiveColor !== sequence[stepIndex]) {
           localActiveColor = sequence[stepIndex];
           setActiveColor(sequence[stepIndex]);
-          console.log(`[DEBUG][FRONTEND][${Date.now()}] RAF Active color flash: ${sequence[stepIndex]} at step ${stepIndex + 1}/${sequence.length}`);
+          console.log(`[DEBUG][FRONTEND][${now}] (local=${Date.now()}) RAF Active color flash: ${sequence[stepIndex]} at step ${stepIndex + 1}/${sequence.length}`);
         }
       } else {
         if (localActiveColor !== null) {
