@@ -188,12 +188,8 @@ export class SessionService {
 
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
 
-    const startAt = Date.now() + 3000;
+    const startAt = Date.now() + 500;
     this.broadcast.sequenceStartAt.set(session.id, startAt);
-    this.broadcast.emit(SocketEvent.COUNTDOWN_START, {
-      count: 3,
-      startAt,
-    });
 
     const displaySpeed =
       GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty] || 500;
@@ -204,7 +200,7 @@ export class SessionService {
       sessionId: session.id,
       round: 1,
       startAt,
-      startInMs: 3000,
+      startInMs: 500,
     });
 
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
