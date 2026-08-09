@@ -46,6 +46,32 @@ export function useGameScreenState({
     }
   }, [roundCountdown]);
 
+  const [liveCountdown, setLiveCountdown] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!sequenceStartAt || isInputPhase) {
+      setLiveCountdown(null);
+      return;
+    }
+
+    const updateCountdown = () => {
+      const remaining = sequenceStartAt - getSyncedTime();
+      if (remaining > 2000) {
+        setLiveCountdown(3);
+      } else if (remaining > 1000) {
+        setLiveCountdown(2);
+      } else if (remaining > 100) {
+        setLiveCountdown(1);
+      } else {
+        setLiveCountdown(null);
+      }
+    };
+
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 50);
+    return () => clearInterval(interval);
+  }, [sequenceStartAt, isInputPhase, getSyncedTime]);
+
   useEffect(() => {
     if (sequence.length === 0 || !sequenceStartAt || isInputPhase) {
       setActiveColor(null);
@@ -123,6 +149,6 @@ export function useGameScreenState({
 
   return {
     playerInput, activeColor, roundCountdown, me, isSpectator,
-    effectiveSequence, showInputArea, handleColorClick, activeCountdown: roundCountdown ?? countdown,
+    effectiveSequence, showInputArea, handleColorClick, activeCountdown: roundCountdown ?? liveCountdown ?? countdown,
   };
 }
