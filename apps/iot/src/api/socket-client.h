@@ -28,6 +28,7 @@ public:
     void signalStart();
     void signalModeChange(int mode);
     void setDifficulty(const String& difficulty);
+    void sendSystemReset();
     
     // Register callback for incoming events
     void onEvent(SocketEventCallback callback);

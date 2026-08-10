@@ -4,6 +4,7 @@ import { BroadcastService } from './broadcast.service';
 import { GameModule } from '../game/game.module';
 import { DeviceModule } from '../device/device.module';
 import { SessionModule } from '../session/session.module';
+import { AdminModule } from '../admin/admin.module';
 
 @Global()
 @Module({
@@ -11,6 +12,7 @@ import { SessionModule } from '../session/session.module';
     forwardRef(() => GameModule),
     forwardRef(() => DeviceModule),
     forwardRef(() => SessionModule),
+    AdminModule,
   ],
   providers: [SocketGateway, BroadcastService],
   exports: [BroadcastService],

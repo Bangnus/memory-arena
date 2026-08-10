@@ -125,6 +125,10 @@ void SocketClient::setDifficulty(const String& difficulty) {
     emit("session:difficulty", payload);
 }
 
+void SocketClient::sendSystemReset() {
+    emit("system:reset", "{}");
+}
+
 void SocketClient::handleEvent(socketIOmessageType_t type, uint8_t * payload, size_t length) {
     switch (type) {
         case sIOtype_DISCONNECT:

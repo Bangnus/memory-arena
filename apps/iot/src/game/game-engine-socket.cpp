@@ -131,5 +131,9 @@ void GameEngine::processSocketEvents() {
         }
     } else if (event == "match:result") {
         changeState(GameState::GAME_RESULT);
+    } else if (event == "system:reset") {
+        Serial.println("[SOCKET] Received system:reset -> Resetting to WAIT_PLAYERS");
+        buzzerManager.playReset();
+        changeState(GameState::WAIT_PLAYERS);
     }
 }

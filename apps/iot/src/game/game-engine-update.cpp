@@ -6,6 +6,14 @@
 void GameEngine::updateState() {
     unsigned long now = millis();
     
+    if (buttonManager.isRestartPressed()) {
+        Serial.println("[RESTART] Physical RESTART button pressed! Triggering system:reset...");
+        buzzerManager.playReset();
+        socketClient.sendSystemReset();
+        changeState(GameState::WAIT_PLAYERS);
+        return;
+    }
+
     switch (currentState) {
         case GameState::BOOT: {
             static unsigned long lastBootCheck = 0;

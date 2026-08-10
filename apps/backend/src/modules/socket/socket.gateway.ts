@@ -14,6 +14,7 @@ import { BroadcastService } from './broadcast.service';
 import { GameEngineService } from '../game/services/game-engine.service';
 import { DeviceService } from '../device/device.service';
 import { SessionService } from '../session/session.service';
+import { AdminService } from '../admin/admin.service';
 
 @WebSocketGateway({
   cors: {
@@ -36,6 +37,7 @@ export class SocketGateway
     private readonly gameEngine: GameEngineService,
     private readonly deviceService: DeviceService,
     private readonly sessionService: SessionService,
+    private readonly adminService: AdminService,
   ) {}
 
   afterInit(server: Server): void {
@@ -107,5 +109,11 @@ export class SocketGateway
     } catch (err) {
       client.emit('session:difficulty:ack', { success: false, error: err.message });
     }
+  }
+
+  @SubscribeMessage('system:reset')
+  async handleSystemReset() {
+    this.logger.warn('[WS] System reset requested');
+    return await this.adminService.resetSystem();
   }
 }
