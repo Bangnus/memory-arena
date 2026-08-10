@@ -21,6 +21,7 @@ public:
     bool isStartPressed();
     bool isNextPressed();
     bool isPrevPressed();
+    bool isRestartPressed();
 
     void handleInterrupt(uint8_t pin);
 

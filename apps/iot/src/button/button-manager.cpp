@@ -51,6 +51,7 @@ void ButtonManager::init() {
     setupPin(PIN_BTN_START);
     setupPin(PIN_BTN_NEXT);
     setupPin(PIN_BTN_PREV);
+    setupPin(PIN_BTN_RESTART);
 
     attachInterrupt(digitalPinToInterrupt(PIN_P1_RED), isr_p1_red, FALLING);
     attachInterrupt(digitalPinToInterrupt(PIN_P1_BLUE), isr_p1_blue, FALLING);
@@ -124,6 +125,25 @@ bool ButtonManager::isPrevPressed() {
     static unsigned long lastDebounce = 0;
     unsigned long now = millis();
     bool currentState = digitalRead(PIN_BTN_PREV);
+    bool pressed = false;
+    
+    if (lastState == HIGH && currentState == LOW) {
+        if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
+            pressed = true;
+            lastDebounce = now;
+        }
+    } else if (lastState == LOW && currentState == HIGH) {
+        lastDebounce = now;
+    }
+    lastState = currentState;
+    return pressed;
+}
+
+bool ButtonManager::isRestartPressed() {
+    static bool lastState = HIGH;
+    static unsigned long lastDebounce = 0;
+    unsigned long now = millis();
+    bool currentState = digitalRead(PIN_BTN_RESTART);
     bool pressed = false;
     
     if (lastState == HIGH && currentState == LOW) {
