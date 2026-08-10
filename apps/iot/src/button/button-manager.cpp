@@ -10,10 +10,15 @@ static volatile bool playerButtonsEnabled = false;
 
 static unsigned long lastDebounceTime[40] = {0};
 
-void IRAM_ATTR isr_p1_red()  { buttonManager.handleInterrupt(PIN_P1_RED); }
-void IRAM_ATTR isr_p1_blue() { buttonManager.handleInterrupt(PIN_P1_BLUE); }
-void IRAM_ATTR isr_p2_red()  { buttonManager.handleInterrupt(PIN_P2_RED); }
-void IRAM_ATTR isr_p2_blue() { buttonManager.handleInterrupt(PIN_P2_BLUE); }
+void IRAM_ATTR isr_p1_red()    { buttonManager.handleInterrupt(PIN_P1_RED); }
+void IRAM_ATTR isr_p1_green()  { buttonManager.handleInterrupt(PIN_P1_GREEN); }
+void IRAM_ATTR isr_p1_blue()   { buttonManager.handleInterrupt(PIN_P1_BLUE); }
+void IRAM_ATTR isr_p1_yellow() { buttonManager.handleInterrupt(PIN_P1_YELLOW); }
+
+void IRAM_ATTR isr_p2_red()    { buttonManager.handleInterrupt(PIN_P2_RED); }
+void IRAM_ATTR isr_p2_green()  { buttonManager.handleInterrupt(PIN_P2_GREEN); }
+void IRAM_ATTR isr_p2_blue()   { buttonManager.handleInterrupt(PIN_P2_BLUE); }
+void IRAM_ATTR isr_p2_yellow() { buttonManager.handleInterrupt(PIN_P2_YELLOW); }
 
 void ButtonManager::handleInterrupt(uint8_t pin) {
     if (!playerButtonsEnabled) return;
@@ -25,9 +30,13 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
 
     ButtonType btn = ButtonType::NONE;
     if (pin == PIN_P1_RED) btn = ButtonType::P1_RED;
+    else if (pin == PIN_P1_GREEN) btn = ButtonType::P1_GREEN;
     else if (pin == PIN_P1_BLUE) btn = ButtonType::P1_BLUE;
+    else if (pin == PIN_P1_YELLOW) btn = ButtonType::P1_YELLOW;
     else if (pin == PIN_P2_RED) btn = ButtonType::P2_RED;
+    else if (pin == PIN_P2_GREEN) btn = ButtonType::P2_GREEN;
     else if (pin == PIN_P2_BLUE) btn = ButtonType::P2_BLUE;
+    else if (pin == PIN_P2_YELLOW) btn = ButtonType::P2_YELLOW;
 
     if (btn != ButtonType::NONE) {
         int nextHead = (queueHead + 1) % QUEUE_SIZE;
@@ -45,18 +54,29 @@ void ButtonManager::setupPin(uint8_t pin) {
 
 void ButtonManager::init() {
     setupPin(PIN_P1_RED);
+    setupPin(PIN_P1_GREEN);
     setupPin(PIN_P1_BLUE);
+    setupPin(PIN_P1_YELLOW);
+
     setupPin(PIN_P2_RED);
+    setupPin(PIN_P2_GREEN);
     setupPin(PIN_P2_BLUE);
+    setupPin(PIN_P2_YELLOW);
+
     setupPin(PIN_BTN_START);
     setupPin(PIN_BTN_NEXT);
     setupPin(PIN_BTN_PREV);
     setupPin(PIN_BTN_RESTART);
 
     attachInterrupt(digitalPinToInterrupt(PIN_P1_RED), isr_p1_red, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_GREEN), isr_p1_green, FALLING);
     attachInterrupt(digitalPinToInterrupt(PIN_P1_BLUE), isr_p1_blue, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_YELLOW), isr_p1_yellow, FALLING);
+
     attachInterrupt(digitalPinToInterrupt(PIN_P2_RED), isr_p2_red, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_GREEN), isr_p2_green, FALLING);
     attachInterrupt(digitalPinToInterrupt(PIN_P2_BLUE), isr_p2_blue, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_YELLOW), isr_p2_yellow, FALLING);
 }
 
 void ButtonManager::enablePlayerButtons() {

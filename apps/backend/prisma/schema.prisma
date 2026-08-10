@@ -28,7 +28,9 @@ enum SessionStatus {
 
 enum Color {
   RED
+  GREEN
   BLUE
+  YELLOW
 }
 
 model Player {

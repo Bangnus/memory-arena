@@ -3,24 +3,59 @@
 LedManager ledManager;
 
 void LedManager::init() {
-    pinMode(PIN_LED_RED, OUTPUT);
-    pinMode(PIN_LED_BLUE, OUTPUT);
+    pinMode(PIN_LED_P1_RED, OUTPUT);
+    pinMode(PIN_LED_P1_GREEN, OUTPUT);
+    pinMode(PIN_LED_P1_BLUE, OUTPUT);
+    pinMode(PIN_LED_P1_YELLOW, OUTPUT);
+
+    pinMode(PIN_LED_P2_RED, OUTPUT);
+    pinMode(PIN_LED_P2_GREEN, OUTPUT);
+    pinMode(PIN_LED_P2_BLUE, OUTPUT);
+    pinMode(PIN_LED_P2_YELLOW, OUTPUT);
     turnOffAll();
 }
 
 void LedManager::turnOffAll() {
-    digitalWrite(PIN_LED_RED, LOW);
-    digitalWrite(PIN_LED_BLUE, LOW);
+    digitalWrite(PIN_LED_P1_RED, LOW);
+    digitalWrite(PIN_LED_P1_GREEN, LOW);
+    digitalWrite(PIN_LED_P1_BLUE, LOW);
+    digitalWrite(PIN_LED_P1_YELLOW, LOW);
+
+    digitalWrite(PIN_LED_P2_RED, LOW);
+    digitalWrite(PIN_LED_P2_GREEN, LOW);
+    digitalWrite(PIN_LED_P2_BLUE, LOW);
+    digitalWrite(PIN_LED_P2_YELLOW, LOW);
 }
 
 void LedManager::turnOn(LedColor color) {
     turnOffAll();
     switch (color) {
-        case LedColor::RED:  digitalWrite(PIN_LED_RED, HIGH); break;
-        case LedColor::BLUE: digitalWrite(PIN_LED_BLUE, HIGH); break;
+        case LedColor::RED:
+            digitalWrite(PIN_LED_P1_RED, HIGH);
+            digitalWrite(PIN_LED_P2_RED, HIGH);
+            break;
+        case LedColor::GREEN:
+            digitalWrite(PIN_LED_P1_GREEN, HIGH);
+            digitalWrite(PIN_LED_P2_GREEN, HIGH);
+            break;
+        case LedColor::BLUE:
+            digitalWrite(PIN_LED_P1_BLUE, HIGH);
+            digitalWrite(PIN_LED_P2_BLUE, HIGH);
+            break;
+        case LedColor::YELLOW:
+            digitalWrite(PIN_LED_P1_YELLOW, HIGH);
+            digitalWrite(PIN_LED_P2_YELLOW, HIGH);
+            break;
         case LedColor::ALL:
-            digitalWrite(PIN_LED_RED, HIGH);
-            digitalWrite(PIN_LED_BLUE, HIGH);
+            digitalWrite(PIN_LED_P1_RED, HIGH);
+            digitalWrite(PIN_LED_P1_GREEN, HIGH);
+            digitalWrite(PIN_LED_P1_BLUE, HIGH);
+            digitalWrite(PIN_LED_P1_YELLOW, HIGH);
+
+            digitalWrite(PIN_LED_P2_RED, HIGH);
+            digitalWrite(PIN_LED_P2_GREEN, HIGH);
+            digitalWrite(PIN_LED_P2_BLUE, HIGH);
+            digitalWrite(PIN_LED_P2_YELLOW, HIGH);
             break;
         default: break;
     }

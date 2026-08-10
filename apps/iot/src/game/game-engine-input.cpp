@@ -10,13 +10,25 @@ void GameEngine::handlePlayerInput() {
         bool isP1 = false;
         
         if (evt.button == ButtonType::P1_RED) { colorStr = "RED"; isP1 = true; }
+        else if (evt.button == ButtonType::P1_GREEN) { colorStr = "GREEN"; isP1 = true; }
         else if (evt.button == ButtonType::P1_BLUE) { colorStr = "BLUE"; isP1 = true; }
+        else if (evt.button == ButtonType::P1_YELLOW) { colorStr = "YELLOW"; isP1 = true; }
         else if (evt.button == ButtonType::P2_RED) { colorStr = "RED"; isP1 = false; }
+        else if (evt.button == ButtonType::P2_GREEN) { colorStr = "GREEN"; isP1 = false; }
         else if (evt.button == ButtonType::P2_BLUE) { colorStr = "BLUE"; isP1 = false; }
+        else if (evt.button == ButtonType::P2_YELLOW) { colorStr = "YELLOW"; isP1 = false; }
         
         if (colorStr != "") {
             socketClient.sendButtonPress(isP1 ? 1 : 2, colorStr);
             buzzerManager.playButtonPress();
+            
+            // Instant LED Illumination Feedback on physical button press
+            LedColor pressedColor = LedColor::NONE;
+            if (colorStr == "RED") pressedColor = LedColor::RED;
+            else if (colorStr == "GREEN") pressedColor = LedColor::GREEN;
+            else if (colorStr == "BLUE") pressedColor = LedColor::BLUE;
+            else if (colorStr == "YELLOW") pressedColor = LedColor::YELLOW;
+            ledManager.turnOn(pressedColor);
             
             if (isP1 && !p1Finished) {
                 if (p1Input.length < currentSequence.length) {

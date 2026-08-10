@@ -17,15 +17,17 @@ enum class GameState {
 enum class LedColor {
     NONE = 0,
     RED,
+    GREEN,
     BLUE,
+    YELLOW,
     ALL
 };
 
 enum class ButtonType {
     NONE = 0,
-    P1_RED, P1_BLUE,
-    P2_RED, P2_BLUE,
-    CTRL_START
+    P1_RED, P1_GREEN, P1_BLUE, P1_YELLOW,
+    P2_RED, P2_GREEN, P2_BLUE, P2_YELLOW,
+    CTRL_START, CTRL_NEXT, CTRL_PREV, CTRL_RESTART
 };
 
 constexpr int MAX_SEQUENCE_LENGTH = 20;

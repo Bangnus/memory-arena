@@ -55,7 +55,9 @@ void GameEngine::handleShowSequence() {
             String colorStr = currentSequence.sequence[sequenceDisplayIndex];
             LedColor color = LedColor::NONE;
             if (colorStr == "RED") color = LedColor::RED;
+            else if (colorStr == "GREEN") color = LedColor::GREEN;
             else if (colorStr == "BLUE") color = LedColor::BLUE;
+            else if (colorStr == "YELLOW") color = LedColor::YELLOW;
             
             Serial.printf("[DEBUG][IOT][%lu] LED step %d/%d: %s\n", millis(), sequenceDisplayIndex + 1, currentSequence.length, colorStr.c_str());
             ledManager.turnOn(color);

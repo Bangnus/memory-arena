@@ -59,7 +59,9 @@ export function GameArena({
 
       <div className="grid grid-cols-2 gap-4 md:gap-6 p-6 md:p-8 bg-white/95 backdrop-blur-xl rounded-[3rem] border-4 border-purple-300/40 shadow-2xl relative">
         <ColorPad color={COLOR.RED} activeColor={activeColor} showInputArea={showInputArea} isSpectator={isSpectator} onClick={handleColorClick} />
+        <ColorPad color={COLOR.GREEN} activeColor={activeColor} showInputArea={showInputArea} isSpectator={isSpectator} onClick={handleColorClick} />
         <ColorPad color={COLOR.BLUE} activeColor={activeColor} showInputArea={showInputArea} isSpectator={isSpectator} onClick={handleColorClick} />
+        <ColorPad color={COLOR.YELLOW} activeColor={activeColor} showInputArea={showInputArea} isSpectator={isSpectator} onClick={handleColorClick} />
       </div>
     </div>
   );
