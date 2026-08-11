@@ -6,6 +6,25 @@ A two-player IoT memory game built for exhibition and portfolio purposes.
 
 Players authenticate using LINE Login via a Next.js web application. The game hardware is controlled by an ESP32 running Arduino Framework with PlatformIO. Backend services are implemented using NestJS and PostgreSQL.
 
+## Game Rules & Mechanics (กติกาการเล่นเกม)
+
+Memory Battle is a fast-paced cognitive arcade game supporting **4 colors** (แดง / Red, เขียว / Green, น้ำเงิน / Blue, เหลือง / Yellow) played in a **Best of 3** rounds match format.
+
+### Difficulty Modes (ระดับความยาก)
+Adjustable using physical control buttons before starting a game:
+* **Easy:** Sequence of 3 steps, flashing at 1.0s interval.
+* **Medium:** Sequence of 4 steps, flashing at 0.75s interval.
+* **Hard:** Sequence of 6 steps, flashing at 0.5s interval.
+
+### Round Rules & Edge Cases (เงื่อนไขและกรณีพิเศษ)
+1. **Sequence Phase:** Players must watch the sequence and cannot input answers. Button presses during this phase are ignored.
+2. **Input Phase:** Once sequence display is complete, players reproduce the exact color sequence. Instant LED feedback glows when pressing buttons.
+3. **Winner Decision (Tie Breaker):** If both players enter the correct sequence, **the player who finished the sequence faster wins the round** (calculated in milliseconds).
+4. **Instant Strike Out:** If a player inputs a wrong color, they immediately lose the round.
+5. **No Input / Timeout:** Players have **15 seconds** to input. If the timer expires or both players input incorrectly (Double Fault), the round is voided and restarted with a new sequence.
+6. **Early Termination:** If one player inputs the correct sequence and has guaranteed a win, the round finishes immediately without waiting for the slower player.
+7. **Game Reset (Restart):** Pressing the physical **RESTART** button immediately clears the active session and redirects the web interface to the login screen for a fresh start.
+
 ## Architecture
 
 ```
