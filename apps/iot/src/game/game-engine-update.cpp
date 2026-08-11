@@ -2,6 +2,7 @@
 #include "../buzzer/buzzer.h"
 #include "../button/button-manager.h"
 #include "../wifi/wifi-manager.h"
+#include "../api/serial-manager.h"
 
 void GameEngine::updateState() {
     unsigned long now = millis();
@@ -10,6 +11,7 @@ void GameEngine::updateState() {
         Serial.println("[RESTART] Physical RESTART button pressed! Triggering system:reset...");
         buzzerManager.playReset();
         socketClient.sendSystemReset();
+        serialManager.sendRestart();
         changeState(GameState::WAIT_PLAYERS);
         return;
     }

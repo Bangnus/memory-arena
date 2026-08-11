@@ -2,6 +2,7 @@
 #include "../led/led-manager.h"
 #include "../buzzer/buzzer.h"
 #include "../button/button-manager.h"
+#include "../api/serial-manager.h"
 
 void GameEngine::handlePlayerInput() {
     while (buttonManager.hasEvent()) {
@@ -20,6 +21,7 @@ void GameEngine::handlePlayerInput() {
         
         if (colorStr != "") {
             socketClient.sendButtonPress(isP1 ? 1 : 2, colorStr);
+            serialManager.sendButtonPress(String(isP1 ? "P1_" : "P2_") + colorStr);
             buzzerManager.playButtonPress();
             
             // Instant LED Illumination Feedback on physical button press

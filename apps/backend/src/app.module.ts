@@ -12,6 +12,7 @@ import { HistoryModule } from './modules/history/history.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { DeviceModule } from './modules/device/device.module';
 import { HealthModule } from './modules/health/health.module';
+import { SerialModule } from './modules/serial/serial.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { HealthModule } from './modules/health/health.module';
     AdminModule,
     DeviceModule,
     HealthModule,
+    SerialModule,
   ],
 })
 export class AppModule {}

@@ -5,10 +5,11 @@
 #include "wifi/wifi-manager.h"
 #include "api/api-client.h"
 #include "api/socket-client.h"
+#include "api/serial-manager.h"
 #include "game/game-engine.h"
 
 void setup() {
-    Serial.begin(115200);
+    serialManager.init();
     Serial.println("Memory Arena ESP32 Starting...");
     
     // Initialize hardware drivers
@@ -25,5 +26,6 @@ void setup() {
 }
 
 void loop() {
+    serialManager.loop();
     gameEngine.loop();
 }
