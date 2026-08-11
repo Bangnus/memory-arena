@@ -1,47 +1,47 @@
-# Memory Arena
+# Memory Arena (เมมโมรี่ อารีน่า)
 
-A two-player IoT memory game built for exhibition and portfolio purposes.
+เกมต่อสู้ฝึกความจำแบบผู้เล่น 2 คนผ่านอุปกรณ์ IoT ที่พัฒนาขึ้นสำหรับการจัดแสดงนิทรรศการและพอร์ตโฟลิโอ
 
-## Project Overview
+## ภาพรวมโครงการ (Project Overview)
 
-Players authenticate using LINE Login via a Next.js web application. The game hardware is controlled by an ESP32 running Arduino Framework with PlatformIO. Backend services are implemented using NestJS and PostgreSQL.
+ผู้เล่นทำการยืนยันตัวตนเพื่อเข้าเล่นเกมโดยใช้ LINE Login ผ่านเว็บแอปพลิเคชัน Next.js อุปกรณ์ควบคุมหลักของเกมควบคุมผ่านบอร์ด ESP32 ที่เขียนโปรแกรมด้วยเฟรมเวิร์ก Arduino บน PlatformIO บริการฝั่งหลังบ้าน (Backend) ขับเคลื่อนด้วย NestJS และเชื่อมต่อฐานข้อมูล PostgreSQL
 
-## Game Rules & Mechanics (กติกาการเล่นเกม)
+## กติกาการเล่นเกมและระบบการแข่งขัน (Game Rules & Mechanics)
 
-Memory Battle is a fast-paced cognitive arcade game supporting **4 colors** (แดง / Red, เขียว / Green, น้ำเงิน / Blue, เหลือง / Yellow) played in a **Best of 3** rounds match format.
+Memory Battle เป็นเกมแข่งขันความจำระดับมิลลิวินาทีที่รองรับการเล่น **4 สีหลัก** (**แดง, เขียว, น้ำเงิน, เหลือง**) แข่งขันกันในรูปแบบชนะ 2 ใน 3 รอบ (**Best of 3**)
 
-### Difficulty Modes (ระดับความยาก)
-Adjustable using physical control buttons before starting a game:
-* **Easy:** Sequence of 3 steps, flashing at 1.0s interval.
-* **Medium:** Sequence of 4 steps, flashing at 0.75s interval.
-* **Hard:** Sequence of 6 steps, flashing at 0.5s interval.
+### ระดับความยาก (Difficulty Modes)
+ผู้เล่นสามารถกดปรับเลือกความยากผ่านปุ่มควบคุมบนบอร์ดก่อนเริ่มเกมได้ 3 ระดับ:
+* **Easy (ง่าย):** สุ่มลำดับโจทย์ 3 ขั้นตอน สว่างดวงละ 1.0 วินาที
+* **Medium (ปานกลาง):** สุ่มลำดับโจทย์ 4 ขั้นตอน สว่างดวงละ 0.75 วินาที
+* **Hard (ยาก):** สุ่มลำดับโจทย์ 6 ขั้นตอน สว่างดวงละ 0.5 วินาที
 
-### Round Rules & Edge Cases (เงื่อนไขและกรณีพิเศษ)
-1. **Sequence Phase:** Players must watch the sequence and cannot input answers. Button presses during this phase are ignored.
-2. **Input Phase:** Once sequence display is complete, players reproduce the exact color sequence. Instant LED feedback glows when pressing buttons.
-3. **Winner Decision (Tie Breaker):** If both players enter the correct sequence, **the player who finished the sequence faster wins the round** (calculated in milliseconds).
-4. **Instant Strike Out:** If a player inputs a wrong color, they immediately lose the round.
-5. **No Input / Timeout:** Players have **15 seconds** to input. If the timer expires or both players input incorrectly (Double Fault), the round is voided and restarted with a new sequence.
-6. **Early Termination:** If one player inputs the correct sequence and has guaranteed a win, the round finishes immediately without waiting for the slower player.
-7. **Game Reset (Restart):** Pressing the physical **RESTART** button immediately clears the active session and redirects the web interface to the login screen for a fresh start.
+### กติการอบแข่งขันและกรณีพิเศษ (Round Rules & Edge Cases)
+1. **เฟสแสดงโจทย์ (Sequence Phase):** ผู้เล่นต้องจดจำสัญญาณไฟตามจังหวะ ห้ามกดปุ่มตอบในขณะที่สัญญาณไฟกำลังติดอยู่ (ระบบจะไม่รับข้อมูลจังหวะนี้)
+2. **เฟสตอบคำถาม (Input Phase):** เมื่อสัญญาณโจทย์จบลง ระบบจะปลดล็อกให้กดตอบคำตอบ ปุ่มกดจะสว่างตอบสนองทันทีที่กดพิน
+3. **การตัดสินความเร็ว (Tie Breaker):** หากผู้เล่นทั้งสองคนกดถูกต้องเหมือนกันทั้งหมด **ผู้ที่กดถูกต้องครบลำดับได้เร็วที่สุด (มีเวลา Elapsed Time น้อยที่สุด) จะเป็นผู้ชนะในรอบนั้น**
+4. **กดผิดแพ้ทันที (Instant Strike Out):** หากผู้เล่นคนใดคนหนึ่งกดผิดลำดับจากโจทย์แม้แต่ปุ่มเดียว จะปรับตกรอบและให้แต้มกับฝั่งตรงข้ามทันที
+5. **การหมดเวลา / ตอบผิดคู่ (Timeout / Draw):** ผู้เล่นมีเวลา 15 วินาทีในการตอบคำตอบ หากไม่มีการกดหรือกดผิดทั้งคู่ รอบนั้นจะถือเป็นโมฆะและระบบจะทำการสุ่มโจทย์เริ่มรอบนั้นใหม่
+6. **การตัดรอบเร็ว (Early Termination):** เมื่อคนใดคนหนึ่งกดถูกต้องครบถ้วนและได้แต้มชนะไปเรียบร้อยแล้ว ระบบจะสั่งจบรอบทันทีโดยไม่ต้องรอผู้เล่นที่ทำเวลารองลงมา
+7. **ปุ่มเริ่มเกมใหม่ทั้งหมด (Restart Game):** เมื่อกดปุ่ม **RESTART** บนบอร์ดระบบจะล้างข้อมูลเกมทั้งหมดใน Database และเด้งหน้าเว็บกลับไปที่หน้าแรกเพื่อบังคับ LINE Login ใหม่อีกครั้งทันที
 
-## Architecture
+## สถาปัตยกรรมระบบ (Architecture)
 
 ```
-Frontend (Next.js)
+เว็บแอปพลิเคชัน Next.js
         │
-Socket.IO / REST
+เชื่อมต่อด้วย Socket.IO / REST API
         │
-Backend (NestJS)
+เซิร์ฟเวอร์หลังบ้าน NestJS (Database: PostgreSQL)
         │
-REST
+เชื่อมต่อด้วย REST API / Socket.IO
         │
-ESP32
+บอร์ดควบคุม ESP32 (IoT)
 ```
 
-## Tech Stack
+## เทคโนโลยีหลัก (Tech Stack)
 
-### Frontend
+### ฝั่งหน้าบ้าน (Frontend)
 - Next.js 15 + React 19
 - TypeScript
 - Tailwind CSS v4
@@ -49,102 +49,102 @@ ESP32
 - TanStack Query
 - Socket.IO Client
 
-### Backend
+### ฝั่งหลังบ้าน (Backend)
 - NestJS
 - Prisma ORM
 - PostgreSQL
 - Socket.IO
 - JWT + LINE Login
-- Swagger
+- Swagger API Docs
 
-### IoT
+### ฝั่งบอร์ดควบคุม (IoT)
 - ESP32 Dev Module
 - Arduino Framework
 - PlatformIO
 
-## Quick Start
+## การเริ่มต้นใช้งานอย่างรวดเร็ว (Quick Start)
 
-### Prerequisites
-- Node.js 20+
+### ความต้องการของระบบ (Prerequisites)
+- Node.js 20 ขึ้นไป
 - Docker & Docker Compose
-- PlatformIO (for IoT development)
+- PlatformIO (สำหรับฝั่ง IoT)
 
-### Development with Docker
+### การรันระบบเพื่อการพัฒนาด้วย Docker (Development)
 
-1. Clone the repository
+1. ดาวน์โหลดโค้ดโครงการ
 ```bash
 git clone <repository-url>
 cd Memory-Battle
 ```
 
-2. Start development environment
+2. เริ่มต้นระบบบริการ
 ```bash
 make dev
 ```
 
-3. Run database migrations
+3. ทำการจัดการ Migration ฐานข้อมูล
 ```bash
 make db-migrate
 ```
 
-4. Access the application
-- Frontend: http://localhost:3001
-- Backend API: http://localhost:3000
-- Swagger docs: http://localhost:3000/api
+4. เข้าใช้งานแอปพลิเคชัน
+- เว็บไซต์ (Frontend): http://localhost:3001
+- บริการ API (Backend): http://localhost:3000
+- หน้าเอกสารระบบ API (Swagger): http://localhost:3000/api
 
-### Production with Docker
+### การรันระบบจริงด้วย Docker (Production)
 
-1. Create environment file
+1. คัดลอกไฟล์การตั้งค่าระบบ
 ```bash
 cp .env.docker .env
-# Edit .env with your production values
+# ทำการแก้ไขค่าคอนฟิกใน .env ตามการตั้งค่าจริงของคุณ
 ```
 
-2. Start production environment
+2. รันแอปพลิเคชันเพื่อให้บริการจริง
 ```bash
 make start
 ```
 
-## Docker Commands
+## คำสั่ง Docker ใน Makefile
 
-| Command | Description |
+| คำสั่ง | รายละเอียดการทำงาน |
 |---------|-------------|
-| `make dev` | Start development environment |
-| `make start` | Start production environment |
-| `make stop` | Stop all containers |
-| `make restart` | Restart all containers |
-| `make logs` | View logs |
-| `make build` | Build all images |
-| `make clean` | Remove all containers and volumes |
-| `make db-reset` | Reset database |
-| `make db-migrate` | Run database migrations |
-| `make db-seed` | Seed database |
+| `make dev` | รันระบบบริการสำหรับการพัฒนา (Development) |
+| `make start` | รันระบบบริการเพื่อใช้งานจริง (Production) |
+| `make stop` | หยุดการทำงานของตู้คอนเทนเนอร์ทั้งหมด |
+| `make restart` | เริ่มต้นระบบบริการใหม่ทั้งหมด |
+| `make logs` | แสดงผลดูประวัติ Log ของคอนเทนเนอร์ |
+| `make build` | บิลด์สร้าง Image ทั้งหมดใหม่ |
+| `make clean` | ลบคอนเทนเนอร์และ Volume ของฐานข้อมูลทั้งหมด |
+| `make db-reset` | ล้างฐานข้อมูลและตั้งค่าใหม่ |
+| `make db-migrate` | รัน Migration จัดระบบตารางฐานข้อมูลใหม่ |
+| `make db-seed` | รันข้อมูลตัวอย่างจำลองเข้าสู่ฐานข้อมูล |
 
-## Folder Structure
+## โครงสร้างโฟลเดอร์โครงการ (Folder Structure)
 
 ```
 Memory-Battle/
 ├── apps/
-│   ├── frontend/          # Next.js 15
-│   ├── backend/           # NestJS + Prisma
-│   └── iot/               # ESP32 PlatformIO
+│   ├── frontend/          # หน้าบ้าน Next.js 15
+│   ├── backend/           # หลังบ้าน NestJS + Prisma
+│   └── iot/               # โค้ด ESP32 บน PlatformIO
 ├── packages/
-│   └── shared/            # Shared types, DTOs, constants
-├── docs/                  # Documentation
-├── docker-compose.yml     # Production Docker
-├── docker-compose.dev.yml # Development Docker
-├── Makefile               # Docker commands
+│   └── shared/            # ตัวแปรร่วม โครงสร้างข้อมูล และค่าคงที่
+├── docs/                  # เอกสารโครงการ
+├── docker-compose.yml     # การรันระบบ Production
+├── docker-compose.dev.yml # การรันระบบ Development
+├── Makefile               # คำสั่งควบคุม Docker
 └── README.md
 ```
 
-## Environment Variables
+## ตัวแปรสภาพแวดล้อม (Environment Variables)
 
-See `.env.docker` for available configuration options.
+สามารถดูรายละเอียดการตั้งค่าที่ระบุไว้ในไฟล์ `.env.docker`
 
-## License
+## ลิขสิทธิ์ระบบ (License)
 
 MIT
 
-## Authors
+## ผู้จัดทำ (Authors)
 
 Nus Peerapat
