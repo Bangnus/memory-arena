@@ -45,3 +45,10 @@ backend-logs: ## View backend logs
 
 db-logs: ## View database logs
 	docker compose -f docker-compose.dev.yml logs -f postgres
+
+run-local: ## Run NestJS + Next.js + Ngrok locally on Windows (DB in Docker, apps locally)
+	docker compose up -d postgres
+	cd apps/backend && npx prisma migrate deploy
+	cmd.exe /c start cmd /k "echo Starting Backend... && cd apps/backend && npm run start:dev"
+	cmd.exe /c start cmd /k "echo Starting Frontend... && cd apps/frontend && npm run dev"
+	cmd.exe /c start cmd /k "echo Starting Ngrok... && ngrok http --domain=equivocal-unmapped-pecan.ngrok-free.dev 3000"

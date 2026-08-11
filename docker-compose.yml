@@ -76,7 +76,9 @@ services:
     environment:
       NGROK_AUTHTOKEN: ${NGROK_AUTHTOKEN:-}
       NGROK_ARGS: --log=stdout
-    command: "http backend:3000"
+    command: "http host.docker.internal:3000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - backend
 

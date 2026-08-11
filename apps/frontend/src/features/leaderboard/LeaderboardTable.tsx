@@ -34,7 +34,7 @@ export function LeaderboardTable() {
         <div className="flex flex-col gap-2.5">
           {players.length === 0 ? (
             <div className="text-center py-10 text-purple-600 font-semibold bg-purple-50/60 rounded-2xl border-2 border-dashed border-purple-200">
-              ไม่มีข้อมูล
+              No data available
             </div>
           ) : (
             players.map((entry, idx) => {

@@ -1,6 +1,7 @@
 #include "game-engine.h"
 #include "../buzzer/buzzer.h"
 #include "../button/button-manager.h"
+#include "../api/serial-manager.h"
 
 void GameEngine::handleSelectMode() {
     unsigned long now = millis();
@@ -12,6 +13,7 @@ void GameEngine::handleSelectMode() {
         Serial.printf("[DEBUG][IOT] Button NEXT (pin %d) pressed. Changed mode to: %s (%d)\n", PIN_BTN_NEXT, modes[selectedMode], selectedMode);
         buzzerManager.play(BuzzerSound::BEEP);
         socketClient.signalModeChange(selectedMode);
+        serialManager.sendButtonPress("NEXT");
     }
 
     if (buttonManager.isPrevPressed()) {
@@ -20,6 +22,7 @@ void GameEngine::handleSelectMode() {
         Serial.printf("[DEBUG][IOT] Button PREV (pin %d) pressed. Changed mode to: %s (%d)\n", PIN_BTN_PREV, modes[selectedMode], selectedMode);
         buzzerManager.play(BuzzerSound::BEEP);
         socketClient.signalModeChange(selectedMode);
+        serialManager.sendButtonPress("PREV");
     }
 
     if (buttonManager.isStartPressed()) {
@@ -28,6 +31,7 @@ void GameEngine::handleSelectMode() {
         Serial.printf("[MODE] Selected: %s\n", modes[selectedMode]);
         socketClient.setDifficulty(modes[selectedMode]);
         socketClient.signalStart();
+        serialManager.sendButtonPress("START");
     }
 }
 

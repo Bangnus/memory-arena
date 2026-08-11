@@ -18,6 +18,7 @@ import { SerialModule } from './modules/serial/serial.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['.env', '../../.env', '../.env'],
       load: [configuration],
     }),
     PrismaModule,

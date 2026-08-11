@@ -1,6 +1,11 @@
 #include "game-engine.h"
 
 void GameEngine::pollBackend() {
+#ifdef HARDWARE_MODE
+    if (String(HARDWARE_MODE) == "USB") {
+        return; // Disable network polling completely in USB mode
+    }
+#endif
     unsigned long now = millis();
     unsigned long pollInterval = (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT) ? 500 : 2000;
     

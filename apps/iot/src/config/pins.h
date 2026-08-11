@@ -28,7 +28,7 @@ constexpr int PIN_P2_BLUE = 22;
 constexpr int PIN_P2_YELLOW = 25;
 
 // Control Buttons (4 Buttons: START, NEXT, PREV, RESTART)
-constexpr int PIN_BTN_START = 34; // Input-only pin 34 (10k pullup) or 14
+constexpr int PIN_BTN_START = 14; // Input-only pin 34 (10k pullup) or 14
 constexpr int PIN_BTN_NEXT = 26;
 constexpr int PIN_BTN_PREV = 27;
 constexpr int PIN_BTN_RESTART = 39; // Restart Game Button (Input-only pin 39, 10k pullup)

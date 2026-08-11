@@ -27,6 +27,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body
+        suppressHydrationWarning
         className={`${inter.variable} ${orbitron.variable} antialiased h-screen w-screen overflow-hidden font-inter bg-main text-foreground`}
       >
         <Providers>

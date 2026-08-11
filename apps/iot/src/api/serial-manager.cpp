@@ -1,12 +1,19 @@
 #include "serial-manager.h"
+#include "../config/config.h"
 #include "../led/led-manager.h"
 #include "../buzzer/buzzer.h"
+
+// Heartbeat interval over USB Serial so the backend can track device online status.
+// Keep it well below the backend's 30s online threshold (DeviceService).
+constexpr unsigned long USB_HEARTBEAT_INTERVAL_MS = 10000UL;
 
 SerialManager serialManager;
 
 void SerialManager::init() {
     Serial.begin(115200);
     Serial.println("SYS:READY_USB");
+    lastHeartbeatTime = millis();
+    sendHeartbeat(); // Immediate presence signal so the frontend sees the device quickly
 }
 
 void SerialManager::loop() {
@@ -17,6 +24,13 @@ void SerialManager::loop() {
             parseIncomingLine(line);
         }
     }
+
+    // Periodic heartbeat over USB Serial (works in WiFi mode too when plugged in)
+    unsigned long now = millis();
+    if (now - lastHeartbeatTime >= USB_HEARTBEAT_INTERVAL_MS) {
+        lastHeartbeatTime = now;
+        sendHeartbeat();
+    }
 }
 
 void SerialManager::sendButtonPress(const String& btnName) {
@@ -25,6 +39,10 @@ void SerialManager::sendButtonPress(const String& btnName) {
 
 void SerialManager::sendRestart() {
     Serial.println("RESTART");
+}
+
+void SerialManager::sendHeartbeat() {
+    Serial.println("HB:" + String(DEVICE_ID));
 }
 
 void SerialManager::sendEvent(const String& eventName, const String& data) {

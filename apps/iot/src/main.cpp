@@ -17,9 +17,18 @@ void setup() {
     buttonManager.init();
     buzzerManager.init();
     
-    // Initialize network and game logic
+    // Initialize network and game logic if not in USB-only mode
+#ifdef HARDWARE_MODE
+    if (String(HARDWARE_MODE) != "USB") {
+        wifiManager.init();
+        apiClient.init();
+    } else {
+        Serial.println("[SYSTEM] USB Serial Mode: Wi-Fi initialization disabled.");
+    }
+#else
     wifiManager.init();
     apiClient.init();
+#endif
     gameEngine.init();
     
     Serial.println("Initialization complete.");

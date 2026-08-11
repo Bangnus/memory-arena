@@ -4,6 +4,7 @@ import { ReadlineParser } from '@serialport/parser-readline';
 import { GameEngineService } from '../game/services/game-engine.service';
 import { BroadcastService } from '../socket/broadcast.service';
 import { AdminService } from '../admin/admin.service';
+import { DeviceService } from '../device/device.service';
 
 @Injectable()
 export class SerialService implements OnModuleInit, OnModuleDestroy {
@@ -16,6 +17,7 @@ export class SerialService implements OnModuleInit, OnModuleDestroy {
     private readonly gameEngine: GameEngineService,
     private readonly broadcast: BroadcastService,
     private readonly adminService: AdminService,
+    private readonly deviceService: DeviceService,
   ) {}
 
   async onModuleInit() {
@@ -70,7 +72,7 @@ export class SerialService implements OnModuleInit, OnModuleDestroy {
         autoOpen: false,
       });
 
-      this.parser = this.port.pipe(new ReadlineParser({ delimiter: '\r\n' }));
+      this.parser = this.port.pipe(new ReadlineParser({ delimiter: '\n' }));
 
       this.port.open((err) => {
         if (err) {
@@ -101,7 +103,12 @@ export class SerialService implements OnModuleInit, OnModuleDestroy {
     if (!line) return;
     this.logger.log(`[USB Serial IN]: ${line}`);
 
-    if (line.startsWith('BTN:')) {
+    if (line.startsWith('HB:')) {
+      // Heartbeat over USB Serial keeps the device marked online in DeviceService
+      const deviceId = line.substring(3).trim() || 'ESP32-USB';
+      this.logger.debug(`[USB Serial] Heartbeat from device: ${deviceId}`);
+      this.deviceService.updateHeartbeat(deviceId);
+    } else if (line.startsWith('BTN:')) {
       const btn = line.substring(4);
       this.processButtonEvent(btn);
     } else if (line === 'RESTART') {

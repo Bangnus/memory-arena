@@ -18,7 +18,15 @@ void GameEngine::updateState() {
 
     switch (currentState) {
         case GameState::BOOT: {
+#ifdef HARDWARE_MODE
+            if (String(HARDWARE_MODE) == "USB") {
+                Serial.println("[BOOT] USB Mode detected. Skipping network boot checks. Transitioning to WAIT_PLAYERS.");
+                changeState(GameState::WAIT_PLAYERS);
+                break;
+            }
+#endif
             static unsigned long lastBootCheck = 0;
+            static unsigned long bootStart = millis();
             if (now - lastBootCheck < 2000) break;
             lastBootCheck = now;
             
@@ -35,6 +43,9 @@ void GameEngine::updateState() {
                 } else {
                     changeState(GameState::WAIT_PLAYERS);
                 }
+            } else if (now - bootStart > 5000) {
+                Serial.println("[BOOT] Wi-Fi or API check timed out. Proceeding to WAIT_PLAYERS for USB Serial Mode.");
+                changeState(GameState::WAIT_PLAYERS);
             }
             break;
         }
@@ -47,6 +58,7 @@ void GameEngine::updateState() {
                 lastButtonTime = now;
                 buzzerManager.playGameStart();
                 socketClient.signalStart();
+                serialManager.sendButtonPress("START");
                 changeState(GameState::SELECT_MODE);
             }
             if (!socketClient.isConnected()) pollBackend();
