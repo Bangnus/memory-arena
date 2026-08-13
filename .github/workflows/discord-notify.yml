@@ -1,0 +1,23 @@
+name: Discord Notify on Push
+
+on:
+  push:
+    branches:
+      - master  # เปลี่ยนเป็น Branch ที่ต้องการ เช่น develop
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send Discord Notification
+        uses: Ilshidur/action-discord@master
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        with:
+          args: |
+            🚀 **มีคน Push โค้ดใหม่เข้ามาจ้า!**
+            * **Repository:** ${{ github.repository }}
+            * **Branch:** `${{ github.ref_name }}`
+            * **ผู้ Push:** ${{ github.actor }}
+            * **Commit Message:** ${{ github.event.head_commit.message }}
+            * **ดูรายละเอียด:** ${{ github.event.head_commit.url }}

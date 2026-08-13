@@ -101,14 +101,19 @@ export class SerialService implements OnModuleInit, OnModuleDestroy {
 
   private handleIncomingData(line: string) {
     if (!line) return;
-    this.logger.log(`[USB Serial IN]: ${line}`);
 
+    // Heartbeat over USB Serial keeps the device marked online in DeviceService.
+    // Handled first and kept quiet to avoid log spam (fires every 10s).
     if (line.startsWith('HB:')) {
-      // Heartbeat over USB Serial keeps the device marked online in DeviceService
       const deviceId = line.substring(3).trim() || 'ESP32-USB';
       this.logger.debug(`[USB Serial] Heartbeat from device: ${deviceId}`);
       this.deviceService.updateHeartbeat(deviceId);
-    } else if (line.startsWith('BTN:')) {
+      return;
+    }
+
+    this.logger.log(`[USB Serial IN]: ${line}`);
+
+    if (line.startsWith('BTN:')) {
       const btn = line.substring(4);
       this.processButtonEvent(btn);
     } else if (line === 'RESTART') {
