@@ -1,64 +1,115 @@
 #include "led-manager.h"
+#include "../expander/pcf8575-manager.h"
 
 LedManager ledManager;
 
 void LedManager::init() {
-    pinMode(PIN_LED_P1_RED, OUTPUT);
-    pinMode(PIN_LED_P1_GREEN, OUTPUT);
-    pinMode(PIN_LED_P1_BLUE, OUTPUT);
-    pinMode(PIN_LED_P1_YELLOW, OUTPUT);
-
-    pinMode(PIN_LED_P2_RED, OUTPUT);
-    pinMode(PIN_LED_P2_GREEN, OUTPUT);
-    pinMode(PIN_LED_P2_BLUE, OUTPUT);
-    pinMode(PIN_LED_P2_YELLOW, OUTPUT);
     turnOffAll();
 }
 
 void LedManager::turnOffAll() {
-    digitalWrite(PIN_LED_P1_RED, LOW);
-    digitalWrite(PIN_LED_P1_GREEN, LOW);
-    digitalWrite(PIN_LED_P1_BLUE, LOW);
-    digitalWrite(PIN_LED_P1_YELLOW, LOW);
+    // If Active-LOW: HIGH (1) turns off LED. All 16 pins set to LED_OFF_STATE.
+    if (LED_OFF_STATE == HIGH) {
+        ioExpander.write16(0xFFFF);
+    } else {
+        ioExpander.write16(0x0000);
+    }
+}
 
-    digitalWrite(PIN_LED_P2_RED, LOW);
-    digitalWrite(PIN_LED_P2_GREEN, LOW);
-    digitalWrite(PIN_LED_P2_BLUE, LOW);
-    digitalWrite(PIN_LED_P2_YELLOW, LOW);
+void LedManager::turnOnMain(LedColor color) {
+    // Turn off main LEDs first
+    ioExpander.writePin(PCF_LED_MAIN_RED, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_MAIN_GREEN, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_MAIN_BLUE, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_MAIN_YELLOW, LED_OFF_STATE);
+
+    switch (color) {
+        case LedColor::RED:
+            ioExpander.writePin(PCF_LED_MAIN_RED, LED_ON_STATE);
+            break;
+        case LedColor::GREEN:
+            ioExpander.writePin(PCF_LED_MAIN_GREEN, LED_ON_STATE);
+            break;
+        case LedColor::BLUE:
+            ioExpander.writePin(PCF_LED_MAIN_BLUE, LED_ON_STATE);
+            break;
+        case LedColor::YELLOW:
+            ioExpander.writePin(PCF_LED_MAIN_YELLOW, LED_ON_STATE);
+            break;
+        case LedColor::ALL:
+            ioExpander.writePin(PCF_LED_MAIN_RED, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_MAIN_GREEN, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_MAIN_BLUE, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_MAIN_YELLOW, LED_ON_STATE);
+            break;
+        default: break;
+    }
+}
+
+void LedManager::turnOnPlayer1(LedColor color) {
+    ioExpander.writePin(PCF_LED_P1_RED, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_P1_GREEN, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_P1_BLUE, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_P1_YELLOW, LED_OFF_STATE);
+
+    switch (color) {
+        case LedColor::RED:
+            ioExpander.writePin(PCF_LED_P1_RED, LED_ON_STATE);
+            break;
+        case LedColor::GREEN:
+            ioExpander.writePin(PCF_LED_P1_GREEN, LED_ON_STATE);
+            break;
+        case LedColor::BLUE:
+            ioExpander.writePin(PCF_LED_P1_BLUE, LED_ON_STATE);
+            break;
+        case LedColor::YELLOW:
+            ioExpander.writePin(PCF_LED_P1_YELLOW, LED_ON_STATE);
+            break;
+        case LedColor::ALL:
+            ioExpander.writePin(PCF_LED_P1_RED, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_P1_GREEN, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_P1_BLUE, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_P1_YELLOW, LED_ON_STATE);
+            break;
+        default: break;
+    }
+}
+
+void LedManager::turnOnPlayer2(LedColor color) {
+    ioExpander.writePin(PCF_LED_P2_RED, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_P2_GREEN, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_P2_BLUE, LED_OFF_STATE);
+    ioExpander.writePin(PCF_LED_P2_YELLOW, LED_OFF_STATE);
+
+    switch (color) {
+        case LedColor::RED:
+            ioExpander.writePin(PCF_LED_P2_RED, LED_ON_STATE);
+            break;
+        case LedColor::GREEN:
+            ioExpander.writePin(PCF_LED_P2_GREEN, LED_ON_STATE);
+            break;
+        case LedColor::BLUE:
+            ioExpander.writePin(PCF_LED_P2_BLUE, LED_ON_STATE);
+            break;
+        case LedColor::YELLOW:
+            ioExpander.writePin(PCF_LED_P2_YELLOW, LED_ON_STATE);
+            break;
+        case LedColor::ALL:
+            ioExpander.writePin(PCF_LED_P2_RED, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_P2_GREEN, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_P2_BLUE, LED_ON_STATE);
+            ioExpander.writePin(PCF_LED_P2_YELLOW, LED_ON_STATE);
+            break;
+        default: break;
+    }
 }
 
 void LedManager::turnOn(LedColor color) {
     turnOffAll();
-    switch (color) {
-        case LedColor::RED:
-            digitalWrite(PIN_LED_P1_RED, HIGH);
-            digitalWrite(PIN_LED_P2_RED, HIGH);
-            break;
-        case LedColor::GREEN:
-            digitalWrite(PIN_LED_P1_GREEN, HIGH);
-            digitalWrite(PIN_LED_P2_GREEN, HIGH);
-            break;
-        case LedColor::BLUE:
-            digitalWrite(PIN_LED_P1_BLUE, HIGH);
-            digitalWrite(PIN_LED_P2_BLUE, HIGH);
-            break;
-        case LedColor::YELLOW:
-            digitalWrite(PIN_LED_P1_YELLOW, HIGH);
-            digitalWrite(PIN_LED_P2_YELLOW, HIGH);
-            break;
-        case LedColor::ALL:
-            digitalWrite(PIN_LED_P1_RED, HIGH);
-            digitalWrite(PIN_LED_P1_GREEN, HIGH);
-            digitalWrite(PIN_LED_P1_BLUE, HIGH);
-            digitalWrite(PIN_LED_P1_YELLOW, HIGH);
-
-            digitalWrite(PIN_LED_P2_RED, HIGH);
-            digitalWrite(PIN_LED_P2_GREEN, HIGH);
-            digitalWrite(PIN_LED_P2_BLUE, HIGH);
-            digitalWrite(PIN_LED_P2_YELLOW, HIGH);
-            break;
-        default: break;
-    }
+    // Turn on across Main, P1, and P2
+    turnOnMain(color);
+    turnOnPlayer1(color);
+    turnOnPlayer2(color);
 }
 
 void LedManager::startBlinking() {
@@ -96,10 +147,12 @@ void LedManager::loop() {
     } else if (currentAnimation == Animation::CYCLING) {
         if (now - lastUpdate >= 300) {
             lastUpdate = now;
-            animationStep = (animationStep + 1) % 2;
+            animationStep = (animationStep + 1) % 4;
             switch(animationStep) {
                 case 0: turnOn(LedColor::RED); break;
-                case 1: turnOn(LedColor::BLUE); break;
+                case 1: turnOn(LedColor::GREEN); break;
+                case 2: turnOn(LedColor::BLUE); break;
+                case 3: turnOn(LedColor::YELLOW); break;
             }
         }
     }

@@ -1,4 +1,5 @@
 #include <Arduino.h>
+#include "expander/pcf8575-manager.h"
 #include "led/led-manager.h"
 #include "button/button-manager.h"
 #include "buzzer/buzzer.h"
@@ -13,6 +14,7 @@ void setup() {
     Serial.println("Memory Arena ESP32 Starting...");
     
     // Initialize hardware drivers
+    ioExpander.init();
     ledManager.init();
     buttonManager.init();
     buzzerManager.init();

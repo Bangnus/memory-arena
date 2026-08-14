@@ -8,8 +8,12 @@ class LedManager {
 public:
     void init();
     void turnOffAll();
-    void turnOn(LedColor color);
     
+    void turnOn(LedColor color);
+    void turnOnMain(LedColor color);
+    void turnOnPlayer1(LedColor color);
+    void turnOnPlayer2(LedColor color);
+
     void loop();
     
     void startBlinking();
