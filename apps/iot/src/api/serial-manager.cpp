@@ -2,6 +2,7 @@
 #include "../config/config.h"
 #include "../led/led-manager.h"
 #include "../buzzer/buzzer.h"
+#include "../game/game-engine.h"
 
 // Heartbeat interval over USB Serial so the backend can track device online status.
 // Keep it well below the backend's 30s online threshold (DeviceService).
@@ -57,6 +58,17 @@ void SerialManager::parseIncomingLine(const String& line) {
     if (line == "RESET") {
         ledManager.turnOffAll();
         buzzerManager.playReset();
+        gameEngine.handleSocketEvent("system:reset", "{}");
+    } else if (line.startsWith("EVT:")) {
+        int firstColon = line.indexOf(':', 4);
+        if (firstColon != -1) {
+            String eventName = line.substring(4, firstColon);
+            String payload = line.substring(firstColon + 1);
+            gameEngine.handleSocketEvent(eventName, payload);
+        } else {
+            String eventName = line.substring(4);
+            gameEngine.handleSocketEvent(eventName, "{}");
+        }
     } else if (line.startsWith("LED:")) {
         String colorStr = line.substring(4);
         if (colorStr == "RED") ledManager.turnOn(LedColor::RED);

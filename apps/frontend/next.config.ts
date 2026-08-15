@@ -8,8 +8,8 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 // Dynamically expose variables to client bundle
 process.env.NEXT_PUBLIC_LINE_CLIENT_ID = process.env.LINE_CLIENT_ID || "";
 process.env.NEXT_PUBLIC_LINE_CALLBACK_URL = process.env.LINE_CALLBACK_URL || "";
-process.env.NEXT_PUBLIC_API_URL = `http://${process.env.LOCAL_IP || "localhost"}:3000/api/v1`;
-process.env.NEXT_PUBLIC_SOCKET_URL = `http://${process.env.LOCAL_IP || "localhost"}:3000`;
+process.env.NEXT_PUBLIC_API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api/v1";
+process.env.NEXT_PUBLIC_SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3000";
 
 const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
 let devOrigin = '';

@@ -21,11 +21,22 @@ export class SerialService implements OnModuleInit, OnModuleDestroy {
   ) {}
 
   async onModuleInit() {
+    this.broadcast.setSerialSender((event, data) => this.forwardBroadcastToSerial(event, data));
     await this.initSerialPort();
   }
 
   onModuleDestroy() {
     this.closePort();
+  }
+
+  private forwardBroadcastToSerial(event: string, data: unknown) {
+    if (event === 'system:reset') {
+      this.send('RESET');
+    } else if (data) {
+      this.send(`EVT:${event}:${JSON.stringify(data)}`);
+    } else {
+      this.send(`EVT:${event}`);
+    }
   }
 
   private async initSerialPort() {

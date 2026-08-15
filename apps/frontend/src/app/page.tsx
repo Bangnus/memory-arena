@@ -23,7 +23,7 @@ export default function Home() {
       toast.info('Game starting from IoT device!');
       setTimeout(() => {
         router.push('/mode');
-      }, 2000);
+      }, 400);
     };
 
     socket.on(SOCKET_EVENTS.DEVICE_START, handleDeviceStart);

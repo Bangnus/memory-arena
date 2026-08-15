@@ -11,23 +11,15 @@ interface SocketContextType {
 
 const SocketContext = React.createContext<SocketContextType | undefined>(undefined);
 
-const getSocketUrl = () => {
-  let url = process.env.NEXT_PUBLIC_SOCKET_URL || '';
-  if (!url && typeof window !== 'undefined') {
-    url = `${window.location.protocol}//${window.location.hostname}:3000`;
-  }
-  return url || 'http://localhost:3000';
-};
+const SOCKET_URL = process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3000';
 
 export function SocketProvider({ children }: { children: React.ReactNode }) {
   const { token } = useAuth();
-  const socketRef = React.useRef<Socket | null>(null);
+  const [socket, setSocket] = React.useState<Socket | null>(null);
   const [isConnected, setIsConnected] = React.useState(false);
 
   React.useEffect(() => {
-    const socketUrl = getSocketUrl();
-
-    const newSocket = io(socketUrl, {
+    const newSocket = io(SOCKET_URL, {
       auth: token ? { token } : undefined,
       transports: ['websocket', 'polling'],
       reconnection: true,
@@ -45,14 +37,13 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       console.log('Socket disconnected');
     });
 
-    socketRef.current = newSocket;
+    setSocket(newSocket);
 
     return () => {
       newSocket.disconnect();
+      setSocket(null);
     };
   }, [token]);
-
-  const socket = socketRef.current;
 
   return (
     <SocketContext.Provider value={{ socket, isConnected }}>

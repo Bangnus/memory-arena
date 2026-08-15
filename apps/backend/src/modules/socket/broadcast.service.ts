@@ -6,11 +6,17 @@ import { SocketEvent } from '../../common/enums';
 export class BroadcastService {
   private readonly logger = new Logger(BroadcastService.name);
   private server: Server | null = null;
+  private serialSender: ((event: string, data: unknown) => void) | null = null;
   public readonly sequenceStartAt = new Map<string, number>();
 
   setServer(server: Server): void {
     this.server = server;
     this.logger.log('Socket.IO Server instance assigned to BroadcastService');
+  }
+
+  setSerialSender(sender: (event: string, data: unknown) => void): void {
+    this.serialSender = sender;
+    this.logger.log('Serial sender registered with BroadcastService');
   }
 
   emit(event: SocketEvent | string, data: unknown): void {
@@ -23,6 +29,14 @@ export class BroadcastService {
       this.logger.warn(
         `Socket Broadcast skipped (Server not ready) -> [${event}]`,
       );
+    }
+
+    if (this.serialSender) {
+      try {
+        this.serialSender(String(event), data);
+      } catch (err) {
+        this.logger.error(`Error forwarding event to Serial: ${err.message}`);
+      }
     }
   }
 
