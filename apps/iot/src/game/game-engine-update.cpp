@@ -7,8 +7,14 @@
 void GameEngine::updateState() {
     unsigned long now = millis();
     
-    if (buttonManager.isRestartPressed()) {
-        Serial.println("[RESTART] Physical RESTART button pressed! Triggering system:reset...");
+    bool isInGame = (currentState == GameState::COUNTDOWN ||
+                     currentState == GameState::SHOW_SEQUENCE ||
+                     currentState == GameState::PLAYER_INPUT ||
+                     currentState == GameState::ROUND_RESULT ||
+                     currentState == GameState::GAME_RESULT);
+
+    if (isInGame && buttonManager.isRestartPressed()) {
+        Serial.println("[RESTART] Physical RESTART button pressed during active game! Triggering system:reset...");
         socketClient.sendSystemReset();
         serialManager.sendRestart();
         changeState(GameState::WAIT_PLAYERS);
