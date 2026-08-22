@@ -127,6 +127,17 @@ export class SerialService implements OnModuleInit, OnModuleDestroy {
     if (line.startsWith('BTN:')) {
       const btn = line.substring(4);
       this.processButtonEvent(btn);
+    } else if (line.startsWith('EVT:game:input:') || line.startsWith('INPUT:')) {
+      const jsonStart = line.indexOf('{');
+      if (jsonStart !== -1) {
+        try {
+          const dto = JSON.parse(line.substring(jsonStart));
+          this.logger.log(`[USB Serial] Processing game:input for round ${dto.round}`);
+          this.gameEngine.processRoundInput(dto);
+        } catch (err) {
+          this.logger.error(`Failed to parse USB game:input: ${err.message}`);
+        }
+      }
     } else if (line === 'RESTART') {
       this.logger.warn('[USB Serial] Physical RESTART button pressed via USB!');
       this.adminService.resetSystem();

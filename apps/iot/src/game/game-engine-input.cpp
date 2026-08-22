@@ -76,6 +76,7 @@ void GameEngine::handlePlayerInput() {
         p2Json += "]";
         
         socketClient.submitInput(currentSessionId, currentRound, p1Json, p1Input.time, p2Json, p2Input.time);
+        serialManager.sendInput(currentSessionId, currentRound, p1Json, p1Input.time, p2Json, p2Input.time);
         Serial.printf("[RESULT] R%d P1:%dms P2:%dms\n", currentRound, p1Input.time, p2Input.time);
         changeState(GameState::ROUND_RESULT);
     }

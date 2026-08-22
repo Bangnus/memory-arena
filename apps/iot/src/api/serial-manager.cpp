@@ -46,6 +46,28 @@ void SerialManager::sendHeartbeat() {
     Serial.println("HB:" + String(DEVICE_ID));
 }
 
+void SerialManager::sendInput(const String& sessionId, int round,
+                              const String& p1Inputs, int p1Time,
+                              const String& p2Inputs, int p2Time) {
+    JsonDocument doc;
+    doc["sessionId"] = sessionId;
+    doc["round"] = round;
+    
+    JsonDocument p1Doc;
+    deserializeJson(p1Doc, p1Inputs);
+    doc["player1"]["input"] = p1Doc;
+    doc["player1"]["time"] = p1Time;
+    
+    JsonDocument p2Doc;
+    deserializeJson(p2Doc, p2Inputs);
+    doc["player2"]["input"] = p2Doc;
+    doc["player2"]["time"] = p2Time;
+    
+    String payload;
+    serializeJson(doc, payload);
+    Serial.println("EVT:game:input:" + payload);
+}
+
 void SerialManager::sendEvent(const String& eventName, const String& data) {
     if (data.length() > 0) {
         Serial.println("EVT:" + eventName + ":" + data);
