@@ -112,9 +112,11 @@ export class SocketGateway
   }
 
   @SubscribeMessage('device:sound')
-  handleSoundToggle(@MessageBody() data: { enabled: boolean }) {
-    this.logger.log(`Sound toggle from client: enabled=${data?.enabled}`);
-    this.broadcastService.emit('device:sound', { enabled: data?.enabled ?? true });
+  handleSoundToggle(@MessageBody() data: { bgm?: boolean; sfx?: boolean; enabled?: boolean }) {
+    const bgm = data?.bgm !== undefined ? data.bgm : (data?.enabled ?? true);
+    const sfx = data?.sfx !== undefined ? data.sfx : (data?.enabled ?? true);
+    this.logger.log(`Sound config from client: bgm=${bgm}, sfx=${sfx}`);
+    this.broadcastService.emit('device:sound', { bgm, sfx, enabled: bgm || sfx });
   }
 
   @SubscribeMessage('system:reset')

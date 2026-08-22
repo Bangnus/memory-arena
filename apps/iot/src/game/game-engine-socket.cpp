@@ -129,11 +129,21 @@ void GameEngine::handleSocketEvent(const String& event, const String& payload) {
     } else if (event == "device:sound") {
         JsonDocument doc;
         if (!deserializeJson(doc, payload)) {
-            bool enabled = doc["enabled"] | true;
-            buzzerManager.setMuted(!enabled);
-            Serial.printf("[DEBUG][IOT] Sound %s\n", enabled ? "ENABLED" : "MUTED");
-            if (enabled && currentState == GameState::WAIT_PLAYERS) {
-                buzzerManager.playStandbyTheme();
+            if (doc["bgm"].is<bool>() || doc["sfx"].is<bool>()) {
+                bool bgm = doc["bgm"] | true;
+                bool sfx = doc["sfx"] | true;
+                buzzerManager.setSoundConfig(bgm, sfx);
+                Serial.printf("[DEBUG][IOT] Sound Config -> BGM:%s, SFX:%s\n", bgm ? "ON" : "OFF", sfx ? "ON" : "OFF");
+                if (bgm && currentState == GameState::WAIT_PLAYERS) {
+                    buzzerManager.playStandbyTheme();
+                }
+            } else {
+                bool enabled = doc["enabled"] | true;
+                buzzerManager.setMuted(!enabled);
+                Serial.printf("[DEBUG][IOT] Sound %s\n", enabled ? "ENABLED" : "MUTED");
+                if (enabled && currentState == GameState::WAIT_PLAYERS) {
+                    buzzerManager.playStandbyTheme();
+                }
             }
         }
     }

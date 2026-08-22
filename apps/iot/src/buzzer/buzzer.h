@@ -34,6 +34,11 @@ public:
     void playStandbyTheme();
     void stop();
     void setMuted(bool mute);
+    void setBgmMuted(bool mute);
+    void setSfxMuted(bool mute);
+    void setSoundConfig(bool bgmEnabled, bool sfxEnabled);
+    bool isBgmMutedState() const;
+    bool isSfxMutedState() const;
     bool isSoundMuted() const;
     void loop();
 
@@ -42,7 +47,8 @@ private:
     unsigned long currentToneDuration = 0;
     unsigned long notePauseUntil = 0;
 
-    bool isMuted = false;
+    bool isBgmMuted = false;
+    bool isSfxMuted = false;
     int melodyStep = 0;
     BuzzerSound currentSound = BuzzerSound::NONE;
 

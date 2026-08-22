@@ -10,7 +10,6 @@ void BuzzerManager::init() {
 }
 
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration, uint32_t dutyCycle) {
-    if (isMuted) return;
     ledcWriteTone(0, frequency);
     ledcWrite(0, dutyCycle);
     currentToneStart = millis();
@@ -23,8 +22,12 @@ void BuzzerManager::stopTone() {
 }
 
 void BuzzerManager::setMuted(bool mute) {
-    isMuted = mute;
-    if (isMuted) {
+    setSoundConfig(!mute, !mute);
+}
+
+void BuzzerManager::setBgmMuted(bool mute) {
+    isBgmMuted = mute;
+    if (isBgmMuted && currentSound == BuzzerSound::STANDBY_THEME) {
         stopTone();
         currentSound = BuzzerSound::NONE;
         currentToneDuration = 0;
@@ -33,8 +36,32 @@ void BuzzerManager::setMuted(bool mute) {
     }
 }
 
+void BuzzerManager::setSfxMuted(bool mute) {
+    isSfxMuted = mute;
+    if (isSfxMuted && currentSound != BuzzerSound::STANDBY_THEME) {
+        stopTone();
+        currentSound = BuzzerSound::NONE;
+        currentToneDuration = 0;
+        notePauseUntil = 0;
+        melodyStep = 0;
+    }
+}
+
+void BuzzerManager::setSoundConfig(bool bgmEnabled, bool sfxEnabled) {
+    setBgmMuted(!bgmEnabled);
+    setSfxMuted(!sfxEnabled);
+}
+
+bool BuzzerManager::isBgmMutedState() const {
+    return isBgmMuted;
+}
+
+bool BuzzerManager::isSfxMutedState() const {
+    return isSfxMuted;
+}
+
 bool BuzzerManager::isSoundMuted() const {
-    return isMuted;
+    return isBgmMuted && isSfxMuted;
 }
 
 struct MelodyNote {
@@ -97,7 +124,9 @@ void BuzzerManager::playStandbyTheme() { play(BuzzerSound::STANDBY_THEME); }
 void BuzzerManager::stop() { play(BuzzerSound::NONE); }
 
 void BuzzerManager::play(BuzzerSound sound) {
-    if (isMuted && sound != BuzzerSound::NONE) return;
+    if (sound == BuzzerSound::STANDBY_THEME && isBgmMuted) return;
+    if (sound != BuzzerSound::STANDBY_THEME && sound != BuzzerSound::NONE && isSfxMuted) return;
+
     currentSound = sound;
     melodyStep = 0;
     notePauseUntil = 0;
@@ -155,7 +184,9 @@ void BuzzerManager::play(BuzzerSound sound) {
 }
 
 void BuzzerManager::loop() {
-    if (isMuted || currentSound == BuzzerSound::NONE) return;
+    if (currentSound == BuzzerSound::NONE) return;
+    if (currentSound == BuzzerSound::STANDBY_THEME && isBgmMuted) return;
+    if (currentSound != BuzzerSound::STANDBY_THEME && isSfxMuted) return;
 
     unsigned long now = millis();
 
