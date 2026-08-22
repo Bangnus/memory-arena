@@ -12,8 +12,8 @@ void BuzzerManager::init() {
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
     if (isMuted) return;
     ledcWriteTone(0, frequency);
-    // Set 50% duty cycle for pleasant and balanced acoustic tone
-    ledcWrite(0, 512);
+    // Set 35% duty cycle for mellow, warm and non-piercing acoustic sound
+    ledcWrite(0, 358);
     currentToneStart = millis();
     currentToneDuration = duration;
 }
@@ -41,26 +41,26 @@ struct MelodyNote {
     uint16_t pause;
 };
 
-// Smooth 8-bit Tetris Arcade Melody (Harmonious mid-range notes, no harsh pitch jumps)
+// Warm & Smooth 8-bit Tetris Lo-Fi Melody (Lower Octave 3-4: 220-330Hz, zero harsh beeps)
 static const MelodyNote STANDBY_THEME_NOTES[] = {
-    {659, 220, 60},  // E5
-    {494, 120, 40},  // B4
-    {523, 140, 40},  // C5
-    {587, 220, 60},  // D5
-    {523, 140, 40},  // C5
-    {494, 140, 40},  // B4
-    {440, 240, 60},  // A4
-    {523, 140, 40},  // C5
-    {659, 240, 60},  // E5
-    {587, 140, 40},  // D5
-    {523, 140, 40},  // C5
-    {494, 260, 80},  // B4
-    {523, 140, 40},  // C5
-    {587, 240, 60},  // D5
-    {659, 260, 60},  // E5
-    {523, 220, 50},  // C5
-    {440, 240, 60},  // A4
-    {440, 350, 700}  // A4 (gentle pause before loop repeats)
+    {330, 240, 60},  // E4 (warm, low)
+    {247, 130, 40},  // B3
+    {262, 150, 40},  // C4
+    {294, 240, 60},  // D4
+    {262, 150, 40},  // C4
+    {247, 150, 40},  // B3
+    {220, 260, 60},  // A3 (deep, soft)
+    {262, 150, 40},  // C4
+    {330, 260, 60},  // E4
+    {294, 150, 40},  // D4
+    {262, 150, 40},  // C4
+    {247, 280, 80},  // B3
+    {262, 150, 40},  // C4
+    {294, 260, 60},  // D4
+    {330, 280, 60},  // E4
+    {262, 240, 50},  // C4
+    {220, 260, 60},  // A3
+    {220, 380, 800}  // A3 (gentle deep finish before peaceful loop)
 };
 
 static const int STANDBY_THEME_LEN = sizeof(STANDBY_THEME_NOTES) / sizeof(MelodyNote);
