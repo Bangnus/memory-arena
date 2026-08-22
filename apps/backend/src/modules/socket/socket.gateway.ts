@@ -111,6 +111,12 @@ export class SocketGateway
     }
   }
 
+  @SubscribeMessage('device:sound')
+  handleSoundToggle(@MessageBody() data: { enabled: boolean }) {
+    this.logger.log(`Sound toggle from client: enabled=${data?.enabled}`);
+    this.broadcastService.emit('device:sound', { enabled: data?.enabled ?? true });
+  }
+
   @SubscribeMessage('system:reset')
   async handleSystemReset() {
     this.logger.warn('[WS] System reset requested');

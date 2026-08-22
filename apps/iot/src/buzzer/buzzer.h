@@ -32,6 +32,8 @@ public:
     void playReset();
     void playStandbyTheme();
     void stop();
+    void setMuted(bool mute);
+    bool isSoundMuted() const;
     void loop();
 
 private:
@@ -39,6 +41,7 @@ private:
     unsigned long currentToneDuration = 0;
     unsigned long notePauseUntil = 0;
 
+    bool isMuted = false;
     int melodyStep = 0;
     BuzzerSound currentSound = BuzzerSound::NONE;
 

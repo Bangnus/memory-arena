@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Gamepad2, Play, Sparkles, Trophy, Cpu } from 'lucide-react';
+import { Gamepad2, Play, Sparkles, Trophy, Cpu, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LeaderboardTable } from '@/features/leaderboard/LeaderboardTable';
 import { useSocket } from '@/hooks/useSocket';
@@ -14,6 +14,7 @@ export default function Home() {
   const router = useRouter();
   const { socket, isConnected } = useSocket();
   const [starting, setStarting] = useState(false);
+  const [isSoundEnabled, setIsSoundEnabled] = useState(true);
 
   useEffect(() => {
     if (!socket) return;
@@ -26,15 +27,58 @@ export default function Home() {
       }, 400);
     };
 
+    const handleSoundChange = (data: { enabled: boolean }) => {
+      setIsSoundEnabled(data.enabled);
+    };
+
     socket.on(SOCKET_EVENTS.DEVICE_START, handleDeviceStart);
+    socket.on('device:sound', handleSoundChange);
 
     return () => {
       socket.off(SOCKET_EVENTS.DEVICE_START, handleDeviceStart);
+      socket.off('device:sound', handleSoundChange);
     };
   }, [socket, router]);
 
+  const toggleSound = () => {
+    if (!socket) return;
+    const nextState = !isSoundEnabled;
+    setIsSoundEnabled(nextState);
+    socket.emit('device:sound', { enabled: nextState });
+    if (nextState) {
+      toast.success('Sound Enabled 🔊', { duration: 1500 });
+    } else {
+      toast.info('Sound Muted 🔇', { duration: 1500 });
+    }
+  };
+
   return (
     <main className="flex h-screen max-h-screen w-screen flex-col items-center justify-between bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden text-white py-4 px-4">
+      
+      {/* Top Bar Controls (Sound Toggle) */}
+      <div className="absolute top-4 right-4 z-40 flex items-center gap-3">
+        <button
+          onClick={toggleSound}
+          title={isSoundEnabled ? 'Mute Game Sound' : 'Unmute Game Sound'}
+          className={`flex items-center gap-2 px-4 py-2 rounded-2xl border-2 backdrop-blur-xl transition-all duration-300 shadow-lg cursor-pointer hover:scale-105 active:scale-95 ${
+            isSoundEnabled
+              ? 'bg-emerald-500/20 border-emerald-300/40 text-emerald-100 hover:bg-emerald-500/30'
+              : 'bg-rose-500/20 border-rose-300/40 text-rose-100 hover:bg-rose-500/30'
+          }`}
+        >
+          {isSoundEnabled ? (
+            <>
+              <Volume2 className="w-5 h-5 text-emerald-300 animate-pulse" />
+              <span className="text-xs font-black font-orbitron tracking-wider">SOUND ON</span>
+            </>
+          ) : (
+            <>
+              <VolumeX className="w-5 h-5 text-rose-300" />
+              <span className="text-xs font-black font-orbitron tracking-wider">MUTED</span>
+            </>
+          )}
+        </button>
+      </div>
       
       {/* Overlay animation ตอนกด START */}
       {starting && (

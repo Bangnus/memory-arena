@@ -125,5 +125,15 @@ void GameEngine::handleSocketEvent(const String& event, const String& payload) {
         Serial.println("[SOCKET] Received system:reset -> Resetting to WAIT_PLAYERS");
         buzzerManager.playReset();
         changeState(GameState::WAIT_PLAYERS);
+    } else if (event == "device:sound") {
+        JsonDocument doc;
+        if (!deserializeJson(doc, payload)) {
+            bool enabled = doc["enabled"] | true;
+            buzzerManager.setMuted(!enabled);
+            Serial.printf("[DEBUG][IOT] Sound %s\n", enabled ? "ENABLED" : "MUTED");
+            if (enabled && currentState == GameState::WAIT_PLAYERS) {
+                buzzerManager.playStandbyTheme();
+            }
+        }
     }
 }

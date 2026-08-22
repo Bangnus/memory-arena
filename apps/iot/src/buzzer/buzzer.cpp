@@ -10,6 +10,7 @@ void BuzzerManager::init() {
 }
 
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
+    if (isMuted) return;
     ledcWriteTone(0, frequency);
     // Set 50% duty cycle for pleasant and balanced acoustic tone
     ledcWrite(0, 512);
@@ -20,6 +21,18 @@ void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
 void BuzzerManager::stopTone() {
     ledcWriteTone(0, 0);
     ledcWrite(0, 0);
+}
+
+void BuzzerManager::setMuted(bool mute) {
+    isMuted = mute;
+    if (isMuted) {
+        stopTone();
+        currentSound = BuzzerSound::NONE;
+    }
+}
+
+bool BuzzerManager::isSoundMuted() const {
+    return isMuted;
 }
 
 struct MelodyNote {
