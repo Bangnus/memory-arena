@@ -149,7 +149,7 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-2 border-2 border-white/20 bg-white/10 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-sm">
               <Trophy className="w-5 h-5 text-pink-300" />
-              <span className="text-sm font-bold tracking-wider font-orbitron text-white">BEST OF 3</span>
+              <span className="text-sm font-bold tracking-wider font-orbitron text-white">BEST OF 5</span>
             </div>
           </div>
 
