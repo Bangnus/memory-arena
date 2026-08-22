@@ -16,6 +16,11 @@ const orbitron = Orbitron({
 export const metadata: Metadata = {
   title: "Memory Arena",
   description: "A realtime IoT memory game",
+  icons: {
+    icon: "/icon.png",
+    shortcut: "/icon.png",
+    apple: "/icon.png",
+  },
 };
 
 export default function RootLayout({
