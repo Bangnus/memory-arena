@@ -8,8 +8,7 @@ static volatile int queueHead = 0;
 static volatile int queueTail = 0;
 static volatile bool playerButtonsEnabled = false;
 
-static unsigned long lastDebounceTime[40] = {0};
-static volatile bool pinHeldState[40] = {false};
+static unsigned long lastPressTime[40] = {0};
 static portMUX_TYPE buttonMux = portMUX_INITIALIZER_UNLOCKED;
 
 void IRAM_ATTR isr_p1_red()    { buttonManager.handleInterrupt(PIN_P1_RED); }
@@ -26,43 +25,29 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
     if (!playerButtonsEnabled) return;
 
     unsigned long now = millis();
-    int state = digitalRead(pin);
 
-    if (state == HIGH) {
-        // Button physically released: ALWAYS unlatch held state cleanly
-        pinHeldState[pin] = false;
-        lastDebounceTime[pin] = now;
-        return;
-    }
+    // Per-pin debounce lockout: ignore contact bounce chatter within 120ms for this same pin
+    if (now - lastPressTime[pin] < DEBOUNCE_DELAY_MS) return;
 
-    // State is LOW (Button Pressed)
-    // If still held down or within per-pin debounce lockout -> ignore chatter
-    if (pinHeldState[pin]) return;
-    if (now - lastDebounceTime[pin] < DEBOUNCE_DELAY_MS) return;
-
-    // Disallow simultaneous button presses (chording / multiple buttons at once)
-    // Check if any other button of the same player is physically held down (active LOW)
+    // Disallow simultaneous button presses: check if another pin of this player is currently held LOW
     if (pin == PIN_P1_RED || pin == PIN_P1_GREEN || pin == PIN_P1_BLUE || pin == PIN_P1_YELLOW) {
         const uint8_t p1Pins[4] = { PIN_P1_RED, PIN_P1_GREEN, PIN_P1_BLUE, PIN_P1_YELLOW };
         for (int i = 0; i < 4; i++) {
             if (p1Pins[i] != pin && digitalRead(p1Pins[i]) == LOW) {
-                // Another P1 button is physically held down! Reject simultaneous press
-                return;
+                return; // Another button of P1 is held down simultaneously
             }
         }
     } else if (pin == PIN_P2_RED || pin == PIN_P2_GREEN || pin == PIN_P2_BLUE || pin == PIN_P2_YELLOW) {
         const uint8_t p2Pins[4] = { PIN_P2_RED, PIN_P2_GREEN, PIN_P2_BLUE, PIN_P2_YELLOW };
         for (int i = 0; i < 4; i++) {
             if (p2Pins[i] != pin && digitalRead(p2Pins[i]) == LOW) {
-                // Another P2 button is physically held down! Reject simultaneous press
-                return;
+                return; // Another button of P2 is held down simultaneously
             }
         }
     }
 
-    // Register valid unique single press
-    pinHeldState[pin] = true;
-    lastDebounceTime[pin] = now;
+    // Valid unique single press
+    lastPressTime[pin] = now;
 
     ButtonType btn = ButtonType::NONE;
     if (pin == PIN_P1_RED) btn = ButtonType::P1_RED;
@@ -106,16 +91,16 @@ void ButtonManager::init() {
     setupPin(PIN_BTN_PREV);
     setupPin(PIN_BTN_RESTART);
 
-    // Use CHANGE to detect both Press (LOW) and Release (HIGH) cleanly
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_RED), isr_p1_red, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_GREEN), isr_p1_green, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_BLUE), isr_p1_blue, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_YELLOW), isr_p1_yellow, CHANGE);
+    // Use FALLING to trigger cleanly only on button press down (HIGH to LOW)
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_RED), isr_p1_red, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_GREEN), isr_p1_green, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_BLUE), isr_p1_blue, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_YELLOW), isr_p1_yellow, FALLING);
 
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_RED), isr_p2_red, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_GREEN), isr_p2_green, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_BLUE), isr_p2_blue, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_YELLOW), isr_p2_yellow, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_RED), isr_p2_red, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_GREEN), isr_p2_green, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_BLUE), isr_p2_blue, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_YELLOW), isr_p2_yellow, FALLING);
 }
 
 void ButtonManager::enablePlayerButtons() {
@@ -123,8 +108,7 @@ void ButtonManager::enablePlayerButtons() {
     queueHead = 0;
     queueTail = 0;
     for (int i = 0; i < 40; i++) {
-        pinHeldState[i] = false;
-        lastDebounceTime[i] = 0;
+        lastPressTime[i] = 0;
     }
     playerButtonsEnabled = true;
     portEXIT_CRITICAL(&buttonMux);
