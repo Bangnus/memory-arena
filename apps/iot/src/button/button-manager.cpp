@@ -21,13 +21,22 @@ void IRAM_ATTR isr_p2_blue()   { buttonManager.handleInterrupt(PIN_P2_BLUE); }
 void IRAM_ATTR isr_p2_yellow() { buttonManager.handleInterrupt(PIN_P2_YELLOW); }
 
 static unsigned long lastPlayerDebounceTime[2] = {0, 0}; // [0]=P1, [1]=P2
+static volatile bool pinHeldState[40] = {false};
 
 void ButtonManager::handleInterrupt(uint8_t pin) {
     if (!playerButtonsEnabled) return;
 
     unsigned long now = millis();
+    if (digitalRead(pin) == HIGH) {
+        // Button is released -> reset held state
+        pinHeldState[pin] = false;
+        return;
+    }
+
+    // If button was already registered and hasn't been released yet -> ignore chatter
+    if (pinHeldState[pin]) return;
+
     if (now - lastDebounceTime[pin] < DEBOUNCE_DELAY_MS) return;
-    if (digitalRead(pin) == HIGH) return; // Ignore transient noise spikes
 
     bool isP1 = (pin == PIN_P1_RED || pin == PIN_P1_GREEN || pin == PIN_P1_BLUE || pin == PIN_P1_YELLOW);
     int playerIdx = isP1 ? 0 : 1;
@@ -35,6 +44,7 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
 
     lastDebounceTime[pin] = now;
     lastPlayerDebounceTime[playerIdx] = now;
+    pinHeldState[pin] = true; // Mark as pressed until released
 
     ButtonType btn = ButtonType::NONE;
     if (pin == PIN_P1_RED) btn = ButtonType::P1_RED;
@@ -90,6 +100,12 @@ void ButtonManager::init() {
 void ButtonManager::enablePlayerButtons() {
     queueHead = 0;
     queueTail = 0;
+    for (int i = 0; i < 40; i++) {
+        pinHeldState[i] = false;
+        lastDebounceTime[i] = 0;
+    }
+    lastPlayerDebounceTime[0] = 0;
+    lastPlayerDebounceTime[1] = 0;
     playerButtonsEnabled = true;
 }
 
