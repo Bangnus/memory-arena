@@ -24,7 +24,6 @@ void GameEngine::loop() {
     socketClient.loop();
     yield();
     
-    processSocketEvents();
     handleWaitingCountdown();
     updateState();
 }

@@ -6,17 +6,7 @@
 #include <sys/time.h>
 
 void GameEngine::handleSocketEvent(const String& event, const String& payload) {
-    pendingEvent = event;
-    pendingPayload = payload;
-    hasPendingEvent = true;
     Serial.printf("[SOCKET] Received: %s\n", event.c_str());
-}
-
-void GameEngine::processSocketEvents() {
-    if (!hasPendingEvent) return;
-    String event = pendingEvent;
-    String payload = pendingPayload;
-    hasPendingEvent = false;
     unsigned long now = millis();
     
     if (event == "device:start") {

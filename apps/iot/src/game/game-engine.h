@@ -49,14 +49,8 @@ private:
     const char* modes[3] = {"EASY", "MEDIUM", "HARD"};
     unsigned long lastButtonTime = 0;
 
-    // Socket event queue for thread-safe processing
-    String pendingEvent = "";
-    String pendingPayload = "";
-    bool hasPendingEvent = false;
-
     void changeState(GameState newState);
     void pollBackend();
-    void processSocketEvents();
     void updateState();
 
     void handleSelectMode();

@@ -84,6 +84,16 @@ export default function GamePage() {
     return () => { socket.off('device:start', handleDeviceStart); };
   }, [socket, router]);
 
+  // IoT Physical / Admin RESTART button → redirect to /login
+  useEffect(() => {
+    if (!socket) return;
+    const handleSystemReset = () => {
+      router.push('/login');
+    };
+    socket.on('system:reset', handleSystemReset);
+    return () => { socket.off('system:reset', handleSystemReset); };
+  }, [socket, router]);
+
   // Match finished → auto go home after 5 seconds
   useEffect(() => {
     if (!matchWinner) return;

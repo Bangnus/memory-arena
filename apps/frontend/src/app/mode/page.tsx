@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSocket } from '@/hooks/useSocket';
 import { gameService } from '@/services/game.service';
@@ -19,19 +19,25 @@ export default function ModePage() {
   const [selectedIndex, setSelectedIndex] = useState(1);
   const [selecting, setSelecting] = useState(false);
   const [starting, setStarting] = useState(false);
+  const selectedIndexRef = useRef(selectedIndex);
+
+  useEffect(() => {
+    selectedIndexRef.current = selectedIndex;
+  }, [selectedIndex]);
 
   // Listen for IoT device:start event
   useEffect(() => {
     if (!socket) return;
 
     const handleDeviceStart = async () => {
+      const currentMode = MODES[selectedIndexRef.current].name;
       try {
-        await gameService.setDifficulty(MODES[selectedIndex].name);
+        await gameService.setDifficulty(currentMode);
       } catch (err) {
         console.error('Failed to set difficulty on device start', err);
       }
       setSelecting(true);
-      toast.success(`Starting ${MODES[selectedIndex].name} mode!`);
+      toast.success(`Starting ${currentMode} mode!`);
       setTimeout(() => {
         router.push('/login');
       }, 1500);
@@ -39,18 +45,31 @@ export default function ModePage() {
 
     socket.on('device:start', handleDeviceStart);
 
+    const handleSystemReset = () => {
+      router.push('/login');
+    };
+    socket.on('system:reset', handleSystemReset);
+
     return () => {
       socket.off('device:start', handleDeviceStart);
+      socket.off('system:reset', handleSystemReset);
     };
-  }, [socket, router, selectedIndex]);
+  }, [socket, router]);
 
   // Listen for IoT mode change events
   useEffect(() => {
     if (!socket) return;
 
-    const handleModeChange = (data: { mode: number }) => {
-      if (data.mode >= 0 && data.mode < MODES.length) {
+    const handleModeChange = (data: { mode?: number | string; direction?: 'NEXT' | 'PREV' }) => {
+      if (data?.direction === 'NEXT') {
+        setSelectedIndex((prev) => (prev - 1 + MODES.length) % MODES.length);
+      } else if (data?.direction === 'PREV') {
+        setSelectedIndex((prev) => (prev + 1) % MODES.length);
+      } else if (typeof data?.mode === 'number' && data.mode >= 0 && data.mode < MODES.length) {
         setSelectedIndex(data.mode);
+      } else if (typeof data?.mode === 'string') {
+        const idx = MODES.findIndex((m) => m.name.toUpperCase() === (data.mode as string).toUpperCase());
+        if (idx !== -1) setSelectedIndex(idx);
       }
     };
 

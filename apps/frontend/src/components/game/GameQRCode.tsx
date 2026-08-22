@@ -1,7 +1,18 @@
 'use client';
 
+import React from 'react';
 import QRCode from 'react-qr-code';
 import { Smartphone, Sparkles, Zap } from 'lucide-react';
+
+const QRCodeRenderer = QRCode as unknown as React.ComponentType<{
+  value: string;
+  size?: number;
+  level?: string;
+  fgColor?: string;
+  bgColor?: string;
+  className?: string;
+  style?: React.CSSProperties;
+}>;
 
 interface GameQRCodeProps {
   value: string;
@@ -78,7 +89,7 @@ export default function GameQRCode({ value, size = 200, accentColor = 'cyan' }: 
         >
           {/* QR Code */}
           <div className="rounded-2xl p-2 relative z-10" style={{ backgroundColor: '#FFFFFF' }}>
-            <QRCode value={value} size={size} level="H" fgColor={t.qrFg} bgColor="#FFFFFF" />
+            <QRCodeRenderer value={value} size={size} level="H" fgColor={t.qrFg} bgColor="#FFFFFF" />
           </div>
         </div>
       </div>
