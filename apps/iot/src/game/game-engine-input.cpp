@@ -5,12 +5,6 @@
 #include "../api/serial-manager.h"
 
 void GameEngine::handlePlayerInput() {
-    // Software-level duplicate press prevention (defense-in-depth)
-    // Minimum interval between accepted presses per player (ms)
-    static constexpr unsigned long MIN_PRESS_INTERVAL_MS = 250;
-    static unsigned long lastP1PressTime = 0;
-    static unsigned long lastP2PressTime = 0;
-
     while (buttonManager.hasEvent()) {
         ButtonEvent evt = buttonManager.popEvent();
         String colorStr = "";
@@ -26,15 +20,6 @@ void GameEngine::handlePlayerInput() {
         else if (evt.button == ButtonType::P2_YELLOW) { colorStr = "YELLOW"; isP1 = false; }
         
         if (colorStr != "") {
-            // Software debounce: reject press if too close to previous press for this player
-            unsigned long& lastPress = isP1 ? lastP1PressTime : lastP2PressTime;
-            if (evt.timestamp - lastPress < MIN_PRESS_INTERVAL_MS) {
-                Serial.printf("[INPUT] Rejected duplicate %s_%s (delta=%lums)\n",
-                    isP1 ? "P1" : "P2", colorStr.c_str(), evt.timestamp - lastPress);
-                continue;
-            }
-            lastPress = evt.timestamp;
-
             socketClient.sendButtonPress(isP1 ? 1 : 2, colorStr);
             serialManager.sendButtonPress(String(isP1 ? "P1_" : "P2_") + colorStr);
             buzzerManager.playButtonPress();
