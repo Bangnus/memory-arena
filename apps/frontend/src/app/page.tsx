@@ -95,23 +95,23 @@ export default function Home() {
   };
 
   return (
-    <main className="flex h-screen max-h-screen w-screen flex-col items-center justify-between bg-gradient-to-br from-sky-500 via-indigo-600 to-orange-500 relative overflow-hidden text-white py-4 px-4 select-none">
+    <main className="flex h-screen max-h-screen w-screen flex-col items-center justify-between bg-gradient-to-br from-sky-400 via-blue-500 to-orange-400 relative overflow-hidden text-white py-4 px-4 select-none">
       
       {/* Background Cyber Grid / Ambient Energy Field */}
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,rgba(255,255,255,0.08)_1px,transparent_1px)] bg-[size:32px_32px] pointer-events-none opacity-60" />
       
-      {/* Floating Animated Orbs */}
+      {/* Floating Animated Orbs (Original Colors with smooth motion) */}
       <motion.div 
-        animate={{ y: [-15, 15, -15], scale: [1, 1.1, 1], opacity: [0.35, 0.5, 0.35] }}
+        animate={{ y: [-15, 15, -15], scale: [1, 1.08, 1], opacity: [0.35, 0.5, 0.35] }}
         transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -top-24 -left-24 w-[500px] h-[500px] bg-sky-300/40 rounded-full blur-[120px] pointer-events-none" 
+        className="absolute -top-20 -left-20 w-[550px] h-[550px] bg-yellow-200/40 rounded-full blur-3xl pointer-events-none" 
       />
       <motion.div 
-        animate={{ y: [15, -15, 15], scale: [1.1, 1, 1.1], opacity: [0.35, 0.5, 0.35] }}
+        animate={{ y: [15, -15, 15], scale: [1.08, 1, 1.08], opacity: [0.35, 0.5, 0.35] }}
         transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -bottom-24 -right-24 w-[550px] h-[550px] bg-orange-400/40 rounded-full blur-[120px] pointer-events-none" 
+        className="absolute -bottom-20 -right-20 w-[550px] h-[550px] bg-orange-300/40 rounded-full blur-3xl pointer-events-none" 
       />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] bg-purple-500/20 rounded-full blur-[140px] pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-sky-200/30 rounded-full blur-3xl pointer-events-none" />
 
       {/* Top Bar Controls (Sound Settings Button) */}
       <div className="absolute top-4 right-4 z-40 flex items-center gap-3">
