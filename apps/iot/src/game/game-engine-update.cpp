@@ -56,7 +56,6 @@ void GameEngine::updateState() {
         case GameState::WAIT_PLAYERS:
             if (buttonManager.isStartPressed() && (now - lastButtonTime >= 500)) {
                 lastButtonTime = now;
-                buzzerManager.playGameStart();
                 socketClient.signalStart();
                 serialManager.sendButtonPress("START");
                 changeState(GameState::SELECT_MODE);
