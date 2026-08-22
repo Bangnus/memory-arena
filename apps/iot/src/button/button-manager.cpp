@@ -29,17 +29,20 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
     int state = digitalRead(pin);
 
     if (state == HIGH) {
-        // Physical release detected -> Unlock immediately for the next tap
-        pinHeldState[pin] = false;
+        // Physical release: only unlatch if debounce window has passed since press!
+        // Prevents release chatter/bounce from resetting held state prematurely
+        if (now - lastDebounceTime[pin] >= DEBOUNCE_DELAY_MS) {
+            pinHeldState[pin] = false;
+        }
         return;
     }
 
     // State is LOW (Button Pressed)
-    // If already held down or within per-pin debounce lockout -> ignore chatter
+    // If still held down or within per-pin debounce lockout -> ignore chatter
     if (pinHeldState[pin]) return;
     if (now - lastDebounceTime[pin] < DEBOUNCE_DELAY_MS) return;
 
-    // Register valid press
+    // Register valid unique press
     pinHeldState[pin] = true;
     lastDebounceTime[pin] = now;
 
