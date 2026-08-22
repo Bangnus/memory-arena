@@ -131,6 +131,9 @@ void GameEngine::handleSocketEvent(const String& event, const String& payload) {
             bool enabled = doc["enabled"] | true;
             buzzerManager.setMuted(!enabled);
             Serial.printf("[DEBUG][IOT] Sound %s\n", enabled ? "ENABLED" : "MUTED");
+            if (enabled && currentState == GameState::WAIT_PLAYERS) {
+                buzzerManager.playStandbyTheme();
+            }
         }
     }
 }

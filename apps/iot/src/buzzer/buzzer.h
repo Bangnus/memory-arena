@@ -13,7 +13,8 @@ enum class BuzzerSound {
     GAME_START,
     CORRECT,
     WRONG,
-    VICTORY
+    VICTORY,
+    STANDBY_THEME
 };
 
 class BuzzerManager {
@@ -29,6 +30,7 @@ public:
     void playWrong();
     void playWinner();
     void playReset();
+    void playStandbyTheme();
     void stop();
     void setMuted(bool mute);
     bool isSoundMuted() const;
@@ -37,6 +39,7 @@ public:
 private:
     unsigned long currentToneStart = 0;
     unsigned long currentToneDuration = 0;
+    unsigned long notePauseUntil = 0;
 
     bool isMuted = false;
     int melodyStep = 0;
