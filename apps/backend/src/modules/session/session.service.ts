@@ -188,12 +188,14 @@ export class SessionService {
 
     const sessionWithPlayers = await this.attachPlayers(updatedSession);
 
-    const startAt = Date.now() + 1500;
+    const countdownDuration = GAME_CONSTANTS.COUNTDOWN_DURATION_MS;
+    const startAt = Date.now() + countdownDuration;
     this.broadcast.sequenceStartAt.set(session.id, startAt);
 
     const displaySpeed =
       GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty] || 500;
 
+    this.broadcast.emit(SocketEvent.COUNTDOWN_START, { count: 3, startAt });
     this.broadcast.emit(SocketEvent.SEQUENCE_SHOW, {
       sequence: initialSequence,
       displaySpeed,
