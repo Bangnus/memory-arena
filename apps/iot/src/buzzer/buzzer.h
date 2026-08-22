@@ -13,7 +13,8 @@ enum class BuzzerSound {
     GAME_START,
     CORRECT,
     WRONG,
-    VICTORY
+    VICTORY,
+    STANDBY_THEME
 };
 
 class BuzzerManager {
@@ -29,11 +30,14 @@ public:
     void playWrong();
     void playWinner();
     void playReset();
+    void playStandbyTheme();
+    void stop();
     void loop();
 
 private:
     unsigned long currentToneStart = 0;
     unsigned long currentToneDuration = 0;
+    unsigned long notePauseUntil = 0;
 
     int melodyStep = 0;
     BuzzerSound currentSound = BuzzerSound::NONE;

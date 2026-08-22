@@ -22,6 +22,44 @@ void BuzzerManager::stopTone() {
     ledcWrite(0, 0);
 }
 
+struct MelodyNote {
+    uint16_t freq;
+    uint16_t duration;
+    uint16_t pause;
+};
+
+// 8-bit Retro Standby Theme (Catchy Game Arcade Melody Loop)
+static const MelodyNote STANDBY_THEME_NOTES[] = {
+    {659, 100, 40},  // E5
+    {659, 100, 100}, // E5
+    {659, 100, 100}, // E5
+    {523, 100, 40},  // C5
+    {659, 100, 100}, // E5
+    {784, 160, 140}, // G5
+    {392, 160, 250}, // G4
+
+    {523, 140, 60},  // C5
+    {392, 140, 60},  // G4
+    {330, 140, 100}, // E4
+    {440, 110, 50},  // A4
+    {494, 110, 50},  // B4
+    {466, 110, 50},  // Bb4
+    {440, 140, 100}, // A4
+
+    {392, 110, 50},  // G4
+    {659, 110, 50},  // E5
+    {784, 110, 50},  // G5
+    {880, 140, 70},  // A5
+    {698, 110, 50},  // F5
+    {784, 110, 50},  // G5
+    {659, 140, 100}, // E5
+    {523, 110, 50},  // C5
+    {587, 110, 50},  // D5
+    {494, 160, 800}  // B4 (pause 800ms before looping)
+};
+
+static const int STANDBY_THEME_LEN = sizeof(STANDBY_THEME_NOTES) / sizeof(MelodyNote);
+
 void BuzzerManager::playBoot() { play(BuzzerSound::BOOT); }
 void BuzzerManager::playCountdown() { play(BuzzerSound::COUNTDOWN); }
 void BuzzerManager::playButtonPress() { play(BuzzerSound::BUTTON_PRESS); }
@@ -31,10 +69,13 @@ void BuzzerManager::playCorrect() { play(BuzzerSound::CORRECT); }
 void BuzzerManager::playWrong() { play(BuzzerSound::WRONG); }
 void BuzzerManager::playWinner() { play(BuzzerSound::VICTORY); }
 void BuzzerManager::playReset() { play(BuzzerSound::NONE); }
+void BuzzerManager::playStandbyTheme() { play(BuzzerSound::STANDBY_THEME); }
+void BuzzerManager::stop() { play(BuzzerSound::NONE); }
 
 void BuzzerManager::play(BuzzerSound sound) {
     currentSound = sound;
     melodyStep = 0;
+    notePauseUntil = 0;
 
     switch (sound) {
         case BuzzerSound::BOOT:
@@ -54,6 +95,7 @@ void BuzzerManager::play(BuzzerSound sound) {
             break;
         case BuzzerSound::INPUT_READY:
             currentSound = BuzzerSound::NONE;
+            stopTone();
             break;
         case BuzzerSound::GAME_START:
             // Rising 3-note game start fanfare
@@ -68,6 +110,9 @@ void BuzzerManager::play(BuzzerSound sound) {
         case BuzzerSound::VICTORY:
             playTone(1000, 200);
             break;
+        case BuzzerSound::STANDBY_THEME:
+            playTone(STANDBY_THEME_NOTES[0].freq, STANDBY_THEME_NOTES[0].duration);
+            break;
         case BuzzerSound::NONE:
         default:
             stopTone();
@@ -79,11 +124,15 @@ void BuzzerManager::loop() {
     if (currentSound == BuzzerSound::NONE) return;
 
     unsigned long now = millis();
+
+    // Handle tone duration and note stopping
     if (currentToneDuration > 0 && now - currentToneStart >= currentToneDuration) {
         stopTone();
         currentToneDuration = 0;
 
-        if (currentSound == BuzzerSound::VICTORY) {
+        if (currentSound == BuzzerSound::STANDBY_THEME) {
+            notePauseUntil = now + STANDBY_THEME_NOTES[melodyStep].pause;
+        } else if (currentSound == BuzzerSound::VICTORY) {
             melodyStep++;
             if (melodyStep == 1) {
                 playTone(1200, 200);
@@ -112,6 +161,15 @@ void BuzzerManager::loop() {
             }
         } else {
             currentSound = BuzzerSound::NONE;
+        }
+    }
+
+    // Handle standby theme looping with pauses between notes
+    if (currentSound == BuzzerSound::STANDBY_THEME && currentToneDuration == 0) {
+        if (now >= notePauseUntil) {
+            melodyStep = (melodyStep + 1) % STANDBY_THEME_LEN;
+            const MelodyNote& note = STANDBY_THEME_NOTES[melodyStep];
+            playTone(note.freq, note.duration);
         }
     }
 }

@@ -16,12 +16,13 @@ void GameEngine::changeState(GameState newState) {
             break;
         case GameState::SELECT_MODE:
             selectedMode = 1;
+            buzzerManager.stop();
             ledManager.turnOffAll();
             break;
         case GameState::WAIT_PLAYERS:
             Serial.println("[STATE] WAIT_PLAYERS");
-            ledManager.startBlinking();
-            buzzerManager.playReset();
+            ledManager.startCycling();
+            buzzerManager.playStandbyTheme();
             buttonManager.disablePlayerButtons();
             currentSequence.length = 0;
             currentSequence.sequenceStartAt = 0;
