@@ -22,7 +22,7 @@ export function MatchWinnerOverlay({
         initial={{ scale: 0.85, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.9, opacity: 0 }}
-        className="max-w-md w-full bg-gradient-to-b from-slate-900 via-indigo-950 to-slate-900 rounded-[3rem] border-4 border-amber-400 shadow-[0_0_80px_rgba(251,191,36,0.4)] p-8 text-center text-white flex flex-col items-center relative overflow-hidden"
+        className="max-w-md w-full bg-gradient-to-b from-slate-900 via-sky-950 to-blue-950 rounded-[3rem] border-4 border-amber-400 shadow-[0_0_80px_rgba(251,191,36,0.4)] p-8 text-center text-white flex flex-col items-center relative overflow-hidden"
       >
         <div className="w-22 h-22 bg-gradient-to-br from-yellow-300 via-amber-400 to-orange-500 text-slate-950 rounded-3xl flex items-center justify-center mb-4 shadow-[0_0_30px_rgba(251,191,36,0.5)] border-2 border-white transform -rotate-3">
           <Trophy className="w-12 h-12 fill-slate-950" />
