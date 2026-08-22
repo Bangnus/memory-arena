@@ -31,7 +31,7 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
 
     bool isP1 = (pin == PIN_P1_RED || pin == PIN_P1_GREEN || pin == PIN_P1_BLUE || pin == PIN_P1_YELLOW);
     int playerIdx = isP1 ? 0 : 1;
-    if (now - lastPlayerDebounceTime[playerIdx] < 80) return; // Player-level anti-chatter
+    if (now - lastPlayerDebounceTime[playerIdx] < 45) return; // Ultra-fast player anti-chatter
 
     lastDebounceTime[pin] = now;
     lastPlayerDebounceTime[playerIdx] = now;
