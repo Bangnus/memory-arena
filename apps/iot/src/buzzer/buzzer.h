@@ -45,7 +45,7 @@ private:
     int melodyStep = 0;
     BuzzerSound currentSound = BuzzerSound::NONE;
 
-    void playTone(unsigned int frequency, unsigned long duration);
+    void playTone(unsigned int frequency, unsigned long duration, uint32_t dutyCycle = 820);
     void stopTone();
 };
 
