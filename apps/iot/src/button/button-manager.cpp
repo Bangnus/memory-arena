@@ -42,7 +42,37 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
     if (pinHeldState[pin]) return;
     if (now - lastDebounceTime[pin] < DEBOUNCE_DELAY_MS) return;
 
-    // Register valid unique press
+    // Disallow simultaneous button presses (chording / multiple buttons at once)
+    // 1. Check Player 1 buttons
+    if (pin == PIN_P1_RED || pin == PIN_P1_GREEN || pin == PIN_P1_BLUE || pin == PIN_P1_YELLOW) {
+        const uint8_t p1Pins[4] = { PIN_P1_RED, PIN_P1_GREEN, PIN_P1_BLUE, PIN_P1_YELLOW };
+        for (int i = 0; i < 4; i++) {
+            if (p1Pins[i] != pin) {
+                if (pinHeldState[p1Pins[i]] || digitalRead(p1Pins[i]) == LOW) {
+                    // Simultaneous button press detected for Player 1! Reject this press
+                    pinHeldState[pin] = true;
+                    lastDebounceTime[pin] = now;
+                    return;
+                }
+            }
+        }
+    }
+    // 2. Check Player 2 buttons
+    else if (pin == PIN_P2_RED || pin == PIN_P2_GREEN || pin == PIN_P2_BLUE || pin == PIN_P2_YELLOW) {
+        const uint8_t p2Pins[4] = { PIN_P2_RED, PIN_P2_GREEN, PIN_P2_BLUE, PIN_P2_YELLOW };
+        for (int i = 0; i < 4; i++) {
+            if (p2Pins[i] != pin) {
+                if (pinHeldState[p2Pins[i]] || digitalRead(p2Pins[i]) == LOW) {
+                    // Simultaneous button press detected for Player 2! Reject this press
+                    pinHeldState[pin] = true;
+                    lastDebounceTime[pin] = now;
+                    return;
+                }
+            }
+        }
+    }
+
+    // Register valid unique single press
     pinHeldState[pin] = true;
     lastDebounceTime[pin] = now;
 
@@ -140,8 +170,12 @@ bool ButtonManager::isStartPressed() {
     
     if (lastState == HIGH && currentState == LOW) {
         if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
-            pressed = true;
-            lastDebounce = now;
+            if (digitalRead(PIN_BTN_NEXT) == HIGH &&
+                digitalRead(PIN_BTN_PREV) == HIGH &&
+                digitalRead(PIN_BTN_RESTART) == HIGH) {
+                pressed = true;
+                lastDebounce = now;
+            }
         }
     } else if (lastState == LOW && currentState == HIGH) {
         lastDebounce = now;
@@ -159,8 +193,12 @@ bool ButtonManager::isNextPressed() {
     
     if (lastState == HIGH && currentState == LOW) {
         if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
-            pressed = true;
-            lastDebounce = now;
+            if (digitalRead(PIN_BTN_START) == HIGH &&
+                digitalRead(PIN_BTN_PREV) == HIGH &&
+                digitalRead(PIN_BTN_RESTART) == HIGH) {
+                pressed = true;
+                lastDebounce = now;
+            }
         }
     } else if (lastState == LOW && currentState == HIGH) {
         lastDebounce = now;
@@ -178,8 +216,12 @@ bool ButtonManager::isPrevPressed() {
     
     if (lastState == HIGH && currentState == LOW) {
         if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
-            pressed = true;
-            lastDebounce = now;
+            if (digitalRead(PIN_BTN_START) == HIGH &&
+                digitalRead(PIN_BTN_NEXT) == HIGH &&
+                digitalRead(PIN_BTN_RESTART) == HIGH) {
+                pressed = true;
+                lastDebounce = now;
+            }
         }
     } else if (lastState == LOW && currentState == HIGH) {
         lastDebounce = now;
@@ -197,8 +239,12 @@ bool ButtonManager::isRestartPressed() {
     
     if (lastState == HIGH && currentState == LOW) {
         if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
-            pressed = true;
-            lastDebounce = now;
+            if (digitalRead(PIN_BTN_START) == HIGH &&
+                digitalRead(PIN_BTN_NEXT) == HIGH &&
+                digitalRead(PIN_BTN_PREV) == HIGH) {
+                pressed = true;
+                lastDebounce = now;
+            }
         }
     } else if (lastState == LOW && currentState == HIGH) {
         lastDebounce = now;
