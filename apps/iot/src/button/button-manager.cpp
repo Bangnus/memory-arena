@@ -145,9 +145,9 @@ bool ButtonManager::isStartPressed() {
             if (digitalRead(PIN_BTN_NEXT) == HIGH &&
                 digitalRead(PIN_BTN_PREV) == HIGH &&
                 digitalRead(PIN_BTN_RESTART) == HIGH) {
-                pressed = true;
-                lastDebounce = now;
-            }
+            pressed = true;
+            lastDebounce = now;
+        }
         }
     } else if (lastState == LOW && currentState == HIGH) {
         lastDebounce = now;
@@ -168,9 +168,9 @@ bool ButtonManager::isNextPressed() {
             if (digitalRead(PIN_BTN_START) == HIGH &&
                 digitalRead(PIN_BTN_PREV) == HIGH &&
                 digitalRead(PIN_BTN_RESTART) == HIGH) {
-                pressed = true;
-                lastDebounce = now;
-            }
+            pressed = true;
+            lastDebounce = now;
+        }
         }
     } else if (lastState == LOW && currentState == HIGH) {
         lastDebounce = now;
@@ -191,9 +191,9 @@ bool ButtonManager::isPrevPressed() {
             if (digitalRead(PIN_BTN_START) == HIGH &&
                 digitalRead(PIN_BTN_NEXT) == HIGH &&
                 digitalRead(PIN_BTN_RESTART) == HIGH) {
-                pressed = true;
-                lastDebounce = now;
-            }
+            pressed = true;
+            lastDebounce = now;
+        }
         }
     } else if (lastState == LOW && currentState == HIGH) {
         lastDebounce = now;
@@ -214,9 +214,9 @@ bool ButtonManager::isRestartPressed() {
             if (digitalRead(PIN_BTN_START) == HIGH &&
                 digitalRead(PIN_BTN_NEXT) == HIGH &&
                 digitalRead(PIN_BTN_PREV) == HIGH) {
-                pressed = true;
-                lastDebounce = now;
-            }
+            pressed = true;
+            lastDebounce = now;
+        }
         }
     } else if (lastState == LOW && currentState == HIGH) {
         lastDebounce = now;
