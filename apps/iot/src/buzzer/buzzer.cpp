@@ -11,8 +11,8 @@ void BuzzerManager::init() {
 
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
     ledcWriteTone(0, frequency);
-    // Set 80% duty cycle for louder sound (max is 1023 for 10-bit)
-    ledcWrite(0, 819);
+    // Set 50% duty cycle for pleasant and balanced acoustic tone
+    ledcWrite(0, 512);
     currentToneStart = millis();
     currentToneDuration = duration;
 }
@@ -28,34 +28,26 @@ struct MelodyNote {
     uint16_t pause;
 };
 
-// 8-bit Retro Standby Theme (Catchy Game Arcade Melody Loop)
+// Smooth 8-bit Tetris Arcade Melody (Harmonious mid-range notes, no harsh pitch jumps)
 static const MelodyNote STANDBY_THEME_NOTES[] = {
-    {659, 100, 40},  // E5
-    {659, 100, 100}, // E5
-    {659, 100, 100}, // E5
-    {523, 100, 40},  // C5
-    {659, 100, 100}, // E5
-    {784, 160, 140}, // G5
-    {392, 160, 250}, // G4
-
-    {523, 140, 60},  // C5
-    {392, 140, 60},  // G4
-    {330, 140, 100}, // E4
-    {440, 110, 50},  // A4
-    {494, 110, 50},  // B4
-    {466, 110, 50},  // Bb4
-    {440, 140, 100}, // A4
-
-    {392, 110, 50},  // G4
-    {659, 110, 50},  // E5
-    {784, 110, 50},  // G5
-    {880, 140, 70},  // A5
-    {698, 110, 50},  // F5
-    {784, 110, 50},  // G5
-    {659, 140, 100}, // E5
-    {523, 110, 50},  // C5
-    {587, 110, 50},  // D5
-    {494, 160, 800}  // B4 (pause 800ms before looping)
+    {659, 220, 60},  // E5
+    {494, 120, 40},  // B4
+    {523, 140, 40},  // C5
+    {587, 220, 60},  // D5
+    {523, 140, 40},  // C5
+    {494, 140, 40},  // B4
+    {440, 240, 60},  // A4
+    {523, 140, 40},  // C5
+    {659, 240, 60},  // E5
+    {587, 140, 40},  // D5
+    {523, 140, 40},  // C5
+    {494, 260, 80},  // B4
+    {523, 140, 40},  // C5
+    {587, 240, 60},  // D5
+    {659, 260, 60},  // E5
+    {523, 220, 50},  // C5
+    {440, 240, 60},  // A4
+    {440, 350, 700}  // A4 (gentle pause before loop repeats)
 };
 
 static const int STANDBY_THEME_LEN = sizeof(STANDBY_THEME_NOTES) / sizeof(MelodyNote);
