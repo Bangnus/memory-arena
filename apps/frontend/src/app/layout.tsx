@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Inter, Orbitron } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
-import { DevNavToolbar } from "@/components/DevNavToolbar";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,7 +31,6 @@ export default function RootLayout({
       >
         <Providers>
           {children}
-          <DevNavToolbar />
         </Providers>
       </body>
     </html>
