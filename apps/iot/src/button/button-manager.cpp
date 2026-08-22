@@ -33,6 +33,9 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
         // Prevents release chatter/bounce from resetting held state prematurely
         if (now - lastDebounceTime[pin] >= DEBOUNCE_DELAY_MS) {
             pinHeldState[pin] = false;
+            // Update debounce time on release to prevent post-release bounce
+            // from being registered as a new press
+            lastDebounceTime[pin] = now;
         }
         return;
     }

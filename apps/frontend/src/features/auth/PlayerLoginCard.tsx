@@ -26,38 +26,35 @@ export function PlayerLoginCard({
     ? {
         titleColor: 'text-sky-500',
         titleGradient: 'from-sky-400 via-blue-500 to-indigo-500',
-        cardBorderReady: 'border-sky-400 shadow-[0_0_35px_rgba(56,189,248,0.35)] ring-2 ring-sky-300/40',
-        cardBorderPending: 'border-sky-300/80 shadow-xl',
-        avatarBorder: 'border-sky-400 shadow-lg shadow-sky-400/25',
+        cardBorderReady: 'border border-sky-300/60 shadow-[0_15px_40px_rgba(56,189,248,0.22)]',
+        cardBorderPending: 'border border-white/80 shadow-2xl shadow-sky-900/10',
+        avatarBorder: 'border-2 border-sky-300 shadow-md',
         badgeBg: 'bg-gradient-to-r from-sky-400 to-blue-500',
         glowBg: 'bg-sky-400/10',
-        tagBg: 'bg-sky-100 text-sky-700',
+        tagBg: 'bg-sky-50 text-sky-600 border border-sky-200/60',
         subtextColor: 'text-sky-600',
         pulseColor: 'bg-sky-400',
       }
     : {
         titleColor: 'text-orange-500',
         titleGradient: 'from-orange-400 via-amber-500 to-yellow-500',
-        cardBorderReady: 'border-orange-400 shadow-[0_0_35px_rgba(251,146,60,0.35)] ring-2 ring-orange-300/40',
-        cardBorderPending: 'border-orange-300/80 shadow-xl',
-        avatarBorder: 'border-orange-400 shadow-lg shadow-orange-400/25',
+        cardBorderReady: 'border border-orange-300/60 shadow-[0_15px_40px_rgba(251,146,60,0.22)]',
+        cardBorderPending: 'border border-white/80 shadow-2xl shadow-orange-900/10',
+        avatarBorder: 'border-2 border-orange-300 shadow-md',
         badgeBg: 'bg-gradient-to-r from-orange-400 to-amber-500',
         glowBg: 'bg-orange-400/10',
-        tagBg: 'bg-orange-100 text-orange-700',
+        tagBg: 'bg-orange-50 text-orange-600 border border-orange-200/60',
         subtextColor: 'text-orange-600',
         pulseColor: 'bg-orange-400',
       };
 
   return (
     <Card
-      className={`relative overflow-hidden border-4 transition-all duration-500 ${
+      className={`relative overflow-hidden transition-all duration-500 ${
         isReady ? theme.cardBorderReady : theme.cardBorderPending
-      } bg-white/95 backdrop-blur-xl rounded-[2.25rem] min-h-[410px] flex flex-col justify-between`}
+      } bg-white/95 backdrop-blur-2xl rounded-[2.25rem] min-h-[410px] flex flex-col justify-between`}
     >
-      {/* Decorative top accent glow */}
-      <div
-        className={`absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r ${theme.titleGradient}`}
-      />
+
 
       <CardHeader className="text-center pb-2 pt-6">
         <div className="flex items-center justify-center gap-2">

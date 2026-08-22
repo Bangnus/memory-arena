@@ -20,9 +20,11 @@ import { AdminService } from '../admin/admin.service';
   cors: {
     origin: '*',
   },
-  pingInterval: 25000,
-  pingTimeout: 60000,
+  pingInterval: 10000,
+  pingTimeout: 20000,
   allowEIO3: true,
+  transports: ['websocket', 'polling'],
+  allowUpgrades: true,
 })
 export class SocketGateway
   implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect

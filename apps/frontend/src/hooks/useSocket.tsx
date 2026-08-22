@@ -24,7 +24,9 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       transports: ['websocket', 'polling'],
       reconnection: true,
       reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 3000,
+      timeout: 10000,
     });
 
     newSocket.on('connect', () => {
@@ -32,9 +34,21 @@ export function SocketProvider({ children }: { children: React.ReactNode }) {
       console.log('Socket connected:', newSocket.id);
     });
 
-    newSocket.on('disconnect', () => {
+    newSocket.on('disconnect', (reason) => {
       setIsConnected(false);
-      console.log('Socket disconnected');
+      console.log('Socket disconnected:', reason);
+      // Server-initiated disconnects need manual reconnect
+      if (reason === 'io server disconnect') {
+        newSocket.connect();
+      }
+    });
+
+    newSocket.on('reconnect', (attempt: number) => {
+      console.log(`Socket reconnected after ${attempt} attempt(s)`);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.warn('Socket connect_error:', err.message);
     });
 
     setSocket(newSocket);
