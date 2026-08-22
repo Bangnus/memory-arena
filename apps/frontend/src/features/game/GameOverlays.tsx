@@ -30,7 +30,7 @@ export function GameOverlays({
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 1.1, opacity: 0 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md rounded-[3rem]"
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-slate-950/85 backdrop-blur-md rounded-[2.5rem]"
           >
             <div className="text-sm md:text-base font-black font-orbitron text-amber-300 uppercase tracking-widest mb-2 drop-shadow-md">
               {roundCountdown !== null ? 'NEXT ROUND STARTING...' : 'GET READY!'}
@@ -58,7 +58,7 @@ export function GameOverlays({
           <motion.div 
             initial={{ y: 50, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-xl rounded-[3rem] border-4 border-amber-400 shadow-2xl p-6 text-center text-slate-900"
+            className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-white/95 backdrop-blur-xl rounded-[2.5rem] border-4 border-amber-400 shadow-2xl p-6 text-center text-slate-900"
           >
             <div className="w-20 h-20 bg-amber-400 text-amber-950 rounded-3xl flex items-center justify-center mb-3 shadow-xl border-4 border-amber-300 transform -rotate-3">
               <Trophy className="w-12 h-12 fill-amber-950" />
