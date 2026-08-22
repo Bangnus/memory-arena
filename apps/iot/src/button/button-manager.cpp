@@ -20,13 +20,21 @@ void IRAM_ATTR isr_p2_green()  { buttonManager.handleInterrupt(PIN_P2_GREEN); }
 void IRAM_ATTR isr_p2_blue()   { buttonManager.handleInterrupt(PIN_P2_BLUE); }
 void IRAM_ATTR isr_p2_yellow() { buttonManager.handleInterrupt(PIN_P2_YELLOW); }
 
+static unsigned long lastPlayerDebounceTime[2] = {0, 0}; // [0]=P1, [1]=P2
+
 void ButtonManager::handleInterrupt(uint8_t pin) {
     if (!playerButtonsEnabled) return;
 
     unsigned long now = millis();
     if (now - lastDebounceTime[pin] < DEBOUNCE_DELAY_MS) return;
     if (digitalRead(pin) == HIGH) return; // Ignore transient noise spikes
+
+    bool isP1 = (pin == PIN_P1_RED || pin == PIN_P1_GREEN || pin == PIN_P1_BLUE || pin == PIN_P1_YELLOW);
+    int playerIdx = isP1 ? 0 : 1;
+    if (now - lastPlayerDebounceTime[playerIdx] < 80) return; // Player-level anti-chatter
+
     lastDebounceTime[pin] = now;
+    lastPlayerDebounceTime[playerIdx] = now;
 
     ButtonType btn = ButtonType::NONE;
     if (pin == PIN_P1_RED) btn = ButtonType::P1_RED;

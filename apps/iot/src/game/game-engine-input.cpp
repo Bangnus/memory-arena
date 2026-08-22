@@ -24,13 +24,8 @@ void GameEngine::handlePlayerInput() {
             serialManager.sendButtonPress(String(isP1 ? "P1_" : "P2_") + colorStr);
             buzzerManager.playButtonPress();
             
-            // Instant LED Illumination Feedback on physical button press
-            LedColor pressedColor = LedColor::NONE;
-            if (colorStr == "RED") pressedColor = LedColor::RED;
-            else if (colorStr == "GREEN") pressedColor = LedColor::GREEN;
-            else if (colorStr == "BLUE") pressedColor = LedColor::BLUE;
-            else if (colorStr == "YELLOW") pressedColor = LedColor::YELLOW;
-            ledManager.turnOn(pressedColor);
+            // Main LED remains off during player input (per user requirement)
+            ledManager.turnOffAll();
             
             if (isP1 && !p1Finished) {
                 if (p1Input.length < currentSequence.length) {
