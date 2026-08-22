@@ -12,8 +12,8 @@ void BuzzerManager::init() {
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
     if (isMuted) return;
     ledcWriteTone(0, frequency);
-    // Set 45% duty cycle for clear, crisp, and non-piercing 8-bit arcade sound
-    ledcWrite(0, 460);
+    // Optimized 60% duty cycle for clean, pleasant and clear acoustic resonance
+    ledcWrite(0, 614);
     currentToneStart = millis();
     currentToneDuration = duration;
 }
@@ -35,45 +35,6 @@ bool BuzzerManager::isSoundMuted() const {
     return isMuted;
 }
 
-struct MelodyNote {
-    uint16_t freq;
-    uint16_t duration;
-    uint16_t pause;
-};
-
-// Classic Super Mario 8-bit Arcade Theme (Smoothed & balanced, no harsh high beeps)
-static const MelodyNote STANDBY_THEME_NOTES[] = {
-    // Intro Fanfare
-    {659, 100, 50},  // E5
-    {659, 100, 120}, // E5
-    {659, 100, 120}, // E5
-    {523, 100, 50},  // C5
-    {659, 100, 120}, // E5
-    {784, 150, 150}, // G5
-    {392, 180, 250}, // G4
-
-    // Main Catchy Groove
-    {523, 140, 60},  // C5
-    {392, 140, 60},  // G4
-    {330, 140, 100}, // E4
-    {440, 120, 50},  // A4
-    {494, 120, 50},  // B4
-    {466, 120, 50},  // Bb4
-    {440, 150, 100}, // A4
-
-    // Response Phrase (Smoothed mid-range, no 880Hz spike)
-    {392, 120, 50},  // G4
-    {659, 120, 50},  // E5
-    {784, 130, 60},  // G5
-    {698, 120, 50},  // F5
-    {659, 140, 80},  // E5
-    {523, 120, 50},  // C5
-    {587, 120, 50},  // D5
-    {494, 180, 800}  // B4 (gentle pause before loop repeats)
-};
-
-static const int STANDBY_THEME_LEN = sizeof(STANDBY_THEME_NOTES) / sizeof(MelodyNote);
-
 void BuzzerManager::playBoot() { play(BuzzerSound::BOOT); }
 void BuzzerManager::playCountdown() { play(BuzzerSound::COUNTDOWN); }
 void BuzzerManager::playButtonPress() { play(BuzzerSound::BUTTON_PRESS); }
@@ -83,49 +44,49 @@ void BuzzerManager::playCorrect() { play(BuzzerSound::CORRECT); }
 void BuzzerManager::playWrong() { play(BuzzerSound::WRONG); }
 void BuzzerManager::playWinner() { play(BuzzerSound::VICTORY); }
 void BuzzerManager::playReset() { play(BuzzerSound::NONE); }
-void BuzzerManager::playStandbyTheme() { play(BuzzerSound::STANDBY_THEME); }
 void BuzzerManager::stop() { play(BuzzerSound::NONE); }
 
 void BuzzerManager::play(BuzzerSound sound) {
+    if (isMuted && sound != BuzzerSound::NONE) return;
     currentSound = sound;
     melodyStep = 0;
-    notePauseUntil = 0;
 
     switch (sound) {
         case BuzzerSound::BOOT:
-            playTone(1000, 150);
+            // Soft warm boot ping
+            playTone(988, 120);
             break;
         case BuzzerSound::BEEP:
-            // Warm pleasant 2-note musical chime (1000 Hz -> 1300 Hz) for sequence color flash
-            playTone(1000, 70);
+            // Warm pleasant 2-note musical chime (1047 Hz -> 1319 Hz) for sequence color flash
+            playTone(1047, 70);
             break;
         case BuzzerSound::COUNTDOWN:
-            // Soft clean tick (750 Hz, 50 ms) for 3-2-1 countdown
-            playTone(750, 50);
+            // Soft clean tick (784 Hz, 50 ms) for 3-2-1 countdown
+            playTone(784, 50);
             break;
         case BuzzerSound::BUTTON_PRESS:
-            // Single short click when pressing button
-            playTone(2000, 20);
+            // Single short tactile click when pressing button
+            playTone(1760, 25);
             break;
         case BuzzerSound::INPUT_READY:
             currentSound = BuzzerSound::NONE;
             stopTone();
             break;
         case BuzzerSound::GAME_START:
-            // Rising 3-note game start fanfare
-            playTone(600, 80);
+            // Smooth rising 3-note game start fanfare (523 -> 659 -> 1047 Hz)
+            playTone(523, 80);
             break;
         case BuzzerSound::CORRECT:
-            playTone(1200, 200);
+            // Crisp high chime for correct answer
+            playTone(1319, 180);
             break;
         case BuzzerSound::WRONG:
-            playTone(300, 500);
+            // Low soft error tone
+            playTone(262, 350);
             break;
         case BuzzerSound::VICTORY:
-            playTone(1000, 200);
-            break;
-        case BuzzerSound::STANDBY_THEME:
-            playTone(STANDBY_THEME_NOTES[0].freq, STANDBY_THEME_NOTES[0].duration);
+            // Triumphant 3-note victory melody
+            playTone(784, 150);
             break;
         case BuzzerSound::NONE:
         default:
@@ -138,20 +99,16 @@ void BuzzerManager::loop() {
     if (currentSound == BuzzerSound::NONE) return;
 
     unsigned long now = millis();
-
-    // Handle tone duration and note stopping
     if (currentToneDuration > 0 && now - currentToneStart >= currentToneDuration) {
         stopTone();
         currentToneDuration = 0;
 
-        if (currentSound == BuzzerSound::STANDBY_THEME) {
-            notePauseUntil = now + STANDBY_THEME_NOTES[melodyStep].pause;
-        } else if (currentSound == BuzzerSound::VICTORY) {
+        if (currentSound == BuzzerSound::VICTORY) {
             melodyStep++;
             if (melodyStep == 1) {
-                playTone(1200, 200);
+                playTone(1047, 150); // Step 2 (C6)
             } else if (melodyStep == 2) {
-                playTone(1500, 400);
+                playTone(1319, 350); // Step 3 (E6)
             } else {
                 currentSound = BuzzerSound::NONE;
             }
@@ -160,30 +117,21 @@ void BuzzerManager::loop() {
         } else if (currentSound == BuzzerSound::BEEP) {
             melodyStep++;
             if (melodyStep == 1) {
-                playTone(1300, 90); // Note 2 — warm mid-range finish
+                playTone(1319, 80); // Step 2 — warm harmonic finish
             } else {
                 currentSound = BuzzerSound::NONE;
             }
         } else if (currentSound == BuzzerSound::GAME_START) {
             melodyStep++;
             if (melodyStep == 1) {
-                playTone(800, 80); // Note 2 — rising
+                playTone(659, 80);  // Step 2 (E5)
             } else if (melodyStep == 2) {
-                playTone(1200, 120); // Note 3 — highest, longer
+                playTone(1047, 140); // Step 3 (C6 — celebratory)
             } else {
                 currentSound = BuzzerSound::NONE;
             }
         } else {
             currentSound = BuzzerSound::NONE;
-        }
-    }
-
-    // Handle standby theme looping with pauses between notes
-    if (currentSound == BuzzerSound::STANDBY_THEME && currentToneDuration == 0) {
-        if (now >= notePauseUntil) {
-            melodyStep = (melodyStep + 1) % STANDBY_THEME_LEN;
-            const MelodyNote& note = STANDBY_THEME_NOTES[melodyStep];
-            playTone(note.freq, note.duration);
         }
     }
 }

@@ -22,7 +22,7 @@ void GameEngine::changeState(GameState newState) {
         case GameState::WAIT_PLAYERS:
             Serial.println("[STATE] WAIT_PLAYERS");
             ledManager.startSteadyOn();
-            buzzerManager.playStandbyTheme();
+            buzzerManager.playReset();
             buttonManager.disablePlayerButtons();
             currentSequence.length = 0;
             currentSequence.sequenceStartAt = 0;
