@@ -29,14 +29,9 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
     int state = digitalRead(pin);
 
     if (state == HIGH) {
-        // Physical release: only unlatch if debounce window has passed since press!
-        // Prevents release chatter/bounce from resetting held state prematurely
-        if (now - lastDebounceTime[pin] >= DEBOUNCE_DELAY_MS) {
-            pinHeldState[pin] = false;
-            // Update debounce time on release to prevent post-release bounce
-            // from being registered as a new press
-            lastDebounceTime[pin] = now;
-        }
+        // Button physically released: ALWAYS unlatch held state cleanly
+        pinHeldState[pin] = false;
+        lastDebounceTime[pin] = now;
         return;
     }
 
@@ -46,31 +41,21 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
     if (now - lastDebounceTime[pin] < DEBOUNCE_DELAY_MS) return;
 
     // Disallow simultaneous button presses (chording / multiple buttons at once)
-    // 1. Check Player 1 buttons
+    // Check if any other button of the same player is physically held down (active LOW)
     if (pin == PIN_P1_RED || pin == PIN_P1_GREEN || pin == PIN_P1_BLUE || pin == PIN_P1_YELLOW) {
         const uint8_t p1Pins[4] = { PIN_P1_RED, PIN_P1_GREEN, PIN_P1_BLUE, PIN_P1_YELLOW };
         for (int i = 0; i < 4; i++) {
-            if (p1Pins[i] != pin) {
-                if (pinHeldState[p1Pins[i]] || digitalRead(p1Pins[i]) == LOW) {
-                    // Simultaneous button press detected for Player 1! Reject this press
-                    pinHeldState[pin] = true;
-                    lastDebounceTime[pin] = now;
-                    return;
-                }
+            if (p1Pins[i] != pin && digitalRead(p1Pins[i]) == LOW) {
+                // Another P1 button is physically held down! Reject simultaneous press
+                return;
             }
         }
-    }
-    // 2. Check Player 2 buttons
-    else if (pin == PIN_P2_RED || pin == PIN_P2_GREEN || pin == PIN_P2_BLUE || pin == PIN_P2_YELLOW) {
+    } else if (pin == PIN_P2_RED || pin == PIN_P2_GREEN || pin == PIN_P2_BLUE || pin == PIN_P2_YELLOW) {
         const uint8_t p2Pins[4] = { PIN_P2_RED, PIN_P2_GREEN, PIN_P2_BLUE, PIN_P2_YELLOW };
         for (int i = 0; i < 4; i++) {
-            if (p2Pins[i] != pin) {
-                if (pinHeldState[p2Pins[i]] || digitalRead(p2Pins[i]) == LOW) {
-                    // Simultaneous button press detected for Player 2! Reject this press
-                    pinHeldState[pin] = true;
-                    lastDebounceTime[pin] = now;
-                    return;
-                }
+            if (p2Pins[i] != pin && digitalRead(p2Pins[i]) == LOW) {
+                // Another P2 button is physically held down! Reject simultaneous press
+                return;
             }
         }
     }
