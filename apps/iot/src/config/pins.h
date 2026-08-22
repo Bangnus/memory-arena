@@ -9,9 +9,9 @@ constexpr int PIN_LED_MAIN_GREEN  = 22;
 constexpr int PIN_LED_MAIN_BLUE   = 14;
 constexpr int PIN_LED_MAIN_YELLOW = 15;
 
-// LED Logic Level (Active-HIGH for direct GPIO: HIGH=ON, LOW=OFF)
-constexpr uint8_t LED_ON_STATE  = HIGH;
-constexpr uint8_t LED_OFF_STATE = LOW;
+// LED Logic Level (Active-LOW for Relay Modules: LOW=ON, HIGH=OFF)
+constexpr uint8_t LED_ON_STATE  = LOW;
+constexpr uint8_t LED_OFF_STATE = HIGH;
 
 // =================================================================
 // 2. ESP32 Direct GPIOs: Player Buttons (8 pins, Active-LOW)
