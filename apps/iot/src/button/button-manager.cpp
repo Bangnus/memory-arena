@@ -9,6 +9,8 @@ static volatile int queueTail = 0;
 static volatile bool playerButtonsEnabled = false;
 
 static unsigned long lastDebounceTime[40] = {0};
+static volatile bool pinHeldState[40] = {false};
+static portMUX_TYPE buttonMux = portMUX_INITIALIZER_UNLOCKED;
 
 void IRAM_ATTR isr_p1_red()    { buttonManager.handleInterrupt(PIN_P1_RED); }
 void IRAM_ATTR isr_p1_green()  { buttonManager.handleInterrupt(PIN_P1_GREEN); }
@@ -20,31 +22,26 @@ void IRAM_ATTR isr_p2_green()  { buttonManager.handleInterrupt(PIN_P2_GREEN); }
 void IRAM_ATTR isr_p2_blue()   { buttonManager.handleInterrupt(PIN_P2_BLUE); }
 void IRAM_ATTR isr_p2_yellow() { buttonManager.handleInterrupt(PIN_P2_YELLOW); }
 
-static unsigned long lastPlayerDebounceTime[2] = {0, 0}; // [0]=P1, [1]=P2
-static volatile bool pinHeldState[40] = {false};
-
 void ButtonManager::handleInterrupt(uint8_t pin) {
     if (!playerButtonsEnabled) return;
 
     unsigned long now = millis();
-    if (digitalRead(pin) == HIGH) {
-        // Button is released -> reset held state
+    int state = digitalRead(pin);
+
+    if (state == HIGH) {
+        // Physical release detected -> Unlock immediately for the next tap
         pinHeldState[pin] = false;
         return;
     }
 
-    // If button was already registered and hasn't been released yet -> ignore chatter
+    // State is LOW (Button Pressed)
+    // If already held down or within per-pin debounce lockout -> ignore chatter
     if (pinHeldState[pin]) return;
-
     if (now - lastDebounceTime[pin] < DEBOUNCE_DELAY_MS) return;
 
-    bool isP1 = (pin == PIN_P1_RED || pin == PIN_P1_GREEN || pin == PIN_P1_BLUE || pin == PIN_P1_YELLOW);
-    int playerIdx = isP1 ? 0 : 1;
-    if (now - lastPlayerDebounceTime[playerIdx] < 45) return; // Ultra-fast player anti-chatter
-
+    // Register valid press
+    pinHeldState[pin] = true;
     lastDebounceTime[pin] = now;
-    lastPlayerDebounceTime[playerIdx] = now;
-    pinHeldState[pin] = true; // Mark as pressed until released
 
     ButtonType btn = ButtonType::NONE;
     if (pin == PIN_P1_RED) btn = ButtonType::P1_RED;
@@ -57,12 +54,14 @@ void ButtonManager::handleInterrupt(uint8_t pin) {
     else if (pin == PIN_P2_YELLOW) btn = ButtonType::P2_YELLOW;
 
     if (btn != ButtonType::NONE) {
+        portENTER_CRITICAL_ISR(&buttonMux);
         int nextHead = (queueHead + 1) % QUEUE_SIZE;
         if (nextHead != queueTail) {
             eventQueue[queueHead].button = btn;
             eventQueue[queueHead].timestamp = now;
             queueHead = nextHead;
         }
+        portEXIT_CRITICAL_ISR(&buttonMux);
     }
 }
 
@@ -86,27 +85,28 @@ void ButtonManager::init() {
     setupPin(PIN_BTN_PREV);
     setupPin(PIN_BTN_RESTART);
 
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_RED), isr_p1_red, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_GREEN), isr_p1_green, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_BLUE), isr_p1_blue, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_YELLOW), isr_p1_yellow, FALLING);
+    // Use CHANGE to detect both Press (LOW) and Release (HIGH) cleanly
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_RED), isr_p1_red, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_GREEN), isr_p1_green, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_BLUE), isr_p1_blue, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_P1_YELLOW), isr_p1_yellow, CHANGE);
 
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_RED), isr_p2_red, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_GREEN), isr_p2_green, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_BLUE), isr_p2_blue, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_YELLOW), isr_p2_yellow, FALLING);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_RED), isr_p2_red, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_GREEN), isr_p2_green, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_BLUE), isr_p2_blue, CHANGE);
+    attachInterrupt(digitalPinToInterrupt(PIN_P2_YELLOW), isr_p2_yellow, CHANGE);
 }
 
 void ButtonManager::enablePlayerButtons() {
+    portENTER_CRITICAL(&buttonMux);
     queueHead = 0;
     queueTail = 0;
     for (int i = 0; i < 40; i++) {
         pinHeldState[i] = false;
         lastDebounceTime[i] = 0;
     }
-    lastPlayerDebounceTime[0] = 0;
-    lastPlayerDebounceTime[1] = 0;
     playerButtonsEnabled = true;
+    portEXIT_CRITICAL(&buttonMux);
 }
 
 void ButtonManager::disablePlayerButtons() {
@@ -119,10 +119,12 @@ bool ButtonManager::hasEvent() {
 
 ButtonEvent ButtonManager::popEvent() {
     ButtonEvent evt = {ButtonType::NONE, 0};
-    if (hasEvent()) {
+    portENTER_CRITICAL(&buttonMux);
+    if (queueHead != queueTail) {
         evt = eventQueue[queueTail];
         queueTail = (queueTail + 1) % QUEUE_SIZE;
     }
+    portEXIT_CRITICAL(&buttonMux);
     return evt;
 }
 
