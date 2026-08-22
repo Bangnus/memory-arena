@@ -1,12 +1,12 @@
 export const DIFFICULTY_CONFIG = {
   EASY: {
-    sequenceLength: 3,
-    displaySpeed: 1000,
+    sequenceLength: 4,
+    displaySpeed: 900,
     label: 'Easy',
   },
   MEDIUM: {
-    sequenceLength: 4,
-    displaySpeed: 750,
+    sequenceLength: 5,
+    displaySpeed: 700,
     label: 'Medium',
   },
   HARD: {
