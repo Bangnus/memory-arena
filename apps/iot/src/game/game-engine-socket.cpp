@@ -58,11 +58,12 @@ void GameEngine::handleSocketEvent(const String& event, const String& payload) {
                         currentSequence.sequenceStartAt = millis() + (delayMs > 0 ? delayMs : 0);
                         Serial.printf("[DEBUG][IOT] Fallback NTP startAt=%lld, serverNow=%lld, delayMs=%lld, sequenceStartAt=%lu\n", startAt, serverNow, delayMs, currentSequence.sequenceStartAt);
                     } else {
-                        currentSequence.sequenceStartAt = millis();
-                        Serial.printf("[DEBUG][IOT] No sync available, starting immediately\n");
+                        // In USB Serial mode: Synchronize with backend's 3-second countdown duration
+                        currentSequence.sequenceStartAt = millis() + 3000UL;
+                        Serial.printf("[DEBUG][IOT] USB Serial mode: sync 3s countdown (startAt=%lu)\n", currentSequence.sequenceStartAt);
                     }
                 } else {
-                    currentSequence.sequenceStartAt = millis();
+                    currentSequence.sequenceStartAt = millis() + 3000UL;
                 }
                 
                 if (currentState == GameState::WAIT_PLAYERS || currentState == GameState::ROUND_RESULT || currentState == GameState::SELECT_MODE || currentState == GameState::COUNTDOWN) {
