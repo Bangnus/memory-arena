@@ -7,6 +7,11 @@ void GameEngine::changeState(GameState newState) {
     currentState = newState;
     stateStartTime = millis();
     
+    // Stop any standby theme or lingering tone when leaving WAIT_PLAYERS
+    if (newState != GameState::WAIT_PLAYERS) {
+        buzzerManager.stop();
+    }
+    
     switch(currentState) {
         case GameState::BOOT:
             Serial.println("[STATE] BOOT");
