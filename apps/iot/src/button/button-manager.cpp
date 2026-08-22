@@ -7,108 +7,106 @@ static ButtonEvent eventQueue[QUEUE_SIZE];
 static volatile int queueHead = 0;
 static volatile int queueTail = 0;
 static volatile bool playerButtonsEnabled = false;
-
-static unsigned long lastPressTime[40] = {0};
 static portMUX_TYPE buttonMux = portMUX_INITIALIZER_UNLOCKED;
 
-void IRAM_ATTR isr_p1_red()    { buttonManager.handleInterrupt(PIN_P1_RED); }
-void IRAM_ATTR isr_p1_green()  { buttonManager.handleInterrupt(PIN_P1_GREEN); }
-void IRAM_ATTR isr_p1_blue()   { buttonManager.handleInterrupt(PIN_P1_BLUE); }
-void IRAM_ATTR isr_p1_yellow() { buttonManager.handleInterrupt(PIN_P1_YELLOW); }
+struct PlayerButtonConfig {
+    uint8_t pin;
+    ButtonType button;
+    bool lastState;
+    unsigned long lastDebounceTime;
+};
 
-void IRAM_ATTR isr_p2_red()    { buttonManager.handleInterrupt(PIN_P2_RED); }
-void IRAM_ATTR isr_p2_green()  { buttonManager.handleInterrupt(PIN_P2_GREEN); }
-void IRAM_ATTR isr_p2_blue()   { buttonManager.handleInterrupt(PIN_P2_BLUE); }
-void IRAM_ATTR isr_p2_yellow() { buttonManager.handleInterrupt(PIN_P2_YELLOW); }
-
-void ButtonManager::handleInterrupt(uint8_t pin) {
-    if (!playerButtonsEnabled) return;
-
-    unsigned long now = millis();
-
-    // Per-pin debounce lockout: ignore contact bounce chatter within 120ms for this same pin
-    if (now - lastPressTime[pin] < DEBOUNCE_DELAY_MS) return;
-
-    // Disallow simultaneous button presses: check if another pin of this player is currently held LOW
-    if (pin == PIN_P1_RED || pin == PIN_P1_GREEN || pin == PIN_P1_BLUE || pin == PIN_P1_YELLOW) {
-        const uint8_t p1Pins[4] = { PIN_P1_RED, PIN_P1_GREEN, PIN_P1_BLUE, PIN_P1_YELLOW };
-        for (int i = 0; i < 4; i++) {
-            if (p1Pins[i] != pin && digitalRead(p1Pins[i]) == LOW) {
-                return; // Another button of P1 is held down simultaneously
-            }
-        }
-    } else if (pin == PIN_P2_RED || pin == PIN_P2_GREEN || pin == PIN_P2_BLUE || pin == PIN_P2_YELLOW) {
-        const uint8_t p2Pins[4] = { PIN_P2_RED, PIN_P2_GREEN, PIN_P2_BLUE, PIN_P2_YELLOW };
-        for (int i = 0; i < 4; i++) {
-            if (p2Pins[i] != pin && digitalRead(p2Pins[i]) == LOW) {
-                return; // Another button of P2 is held down simultaneously
-            }
-        }
-    }
-
-    // Valid unique single press
-    lastPressTime[pin] = now;
-
-    ButtonType btn = ButtonType::NONE;
-    if (pin == PIN_P1_RED) btn = ButtonType::P1_RED;
-    else if (pin == PIN_P1_GREEN) btn = ButtonType::P1_GREEN;
-    else if (pin == PIN_P1_BLUE) btn = ButtonType::P1_BLUE;
-    else if (pin == PIN_P1_YELLOW) btn = ButtonType::P1_YELLOW;
-    else if (pin == PIN_P2_RED) btn = ButtonType::P2_RED;
-    else if (pin == PIN_P2_GREEN) btn = ButtonType::P2_GREEN;
-    else if (pin == PIN_P2_BLUE) btn = ButtonType::P2_BLUE;
-    else if (pin == PIN_P2_YELLOW) btn = ButtonType::P2_YELLOW;
-
-    if (btn != ButtonType::NONE) {
-        portENTER_CRITICAL_ISR(&buttonMux);
-        int nextHead = (queueHead + 1) % QUEUE_SIZE;
-        if (nextHead != queueTail) {
-            eventQueue[queueHead].button = btn;
-            eventQueue[queueHead].timestamp = now;
-            queueHead = nextHead;
-        }
-        portEXIT_CRITICAL_ISR(&buttonMux);
-    }
-}
+static PlayerButtonConfig playerButtons[8] = {
+    { PIN_P1_RED,    ButtonType::P1_RED,    HIGH, 0 },
+    { PIN_P1_GREEN,  ButtonType::P1_GREEN,  HIGH, 0 },
+    { PIN_P1_BLUE,   ButtonType::P1_BLUE,   HIGH, 0 },
+    { PIN_P1_YELLOW, ButtonType::P1_YELLOW, HIGH, 0 },
+    { PIN_P2_RED,    ButtonType::P2_RED,    HIGH, 0 },
+    { PIN_P2_GREEN,  ButtonType::P2_GREEN,  HIGH, 0 },
+    { PIN_P2_BLUE,   ButtonType::P2_BLUE,   HIGH, 0 },
+    { PIN_P2_YELLOW, ButtonType::P2_YELLOW, HIGH, 0 }
+};
 
 void ButtonManager::setupPin(uint8_t pin) {
     pinMode(pin, INPUT_PULLUP);
 }
 
 void ButtonManager::init() {
-    setupPin(PIN_P1_RED);
-    setupPin(PIN_P1_GREEN);
-    setupPin(PIN_P1_BLUE);
-    setupPin(PIN_P1_YELLOW);
-
-    setupPin(PIN_P2_RED);
-    setupPin(PIN_P2_GREEN);
-    setupPin(PIN_P2_BLUE);
-    setupPin(PIN_P2_YELLOW);
+    for (int i = 0; i < 8; i++) {
+        setupPin(playerButtons[i].pin);
+        playerButtons[i].lastState = digitalRead(playerButtons[i].pin);
+        playerButtons[i].lastDebounceTime = 0;
+    }
 
     setupPin(PIN_BTN_START);
     setupPin(PIN_BTN_NEXT);
     setupPin(PIN_BTN_PREV);
     setupPin(PIN_BTN_RESTART);
+}
 
-    // Use FALLING to trigger cleanly only on button press down (HIGH to LOW)
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_RED), isr_p1_red, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_GREEN), isr_p1_green, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_BLUE), isr_p1_blue, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P1_YELLOW), isr_p1_yellow, FALLING);
+void ButtonManager::update() {
+    if (!playerButtonsEnabled) return;
 
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_RED), isr_p2_red, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_GREEN), isr_p2_green, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_BLUE), isr_p2_blue, FALLING);
-    attachInterrupt(digitalPinToInterrupt(PIN_P2_YELLOW), isr_p2_yellow, FALLING);
+    unsigned long now = millis();
+
+    for (int i = 0; i < 8; i++) {
+        uint8_t pin = playerButtons[i].pin;
+        int currentState = digitalRead(pin);
+
+        if (playerButtons[i].lastState == HIGH && currentState == LOW) {
+            // Button state transition: RELEASED (HIGH) -> PRESSED (LOW)
+            if (now - playerButtons[i].lastDebounceTime >= DEBOUNCE_DELAY_MS) {
+                // Multi-button press protection: verify no other button of the same player is down
+                bool otherHeld = false;
+                if (i < 4) {
+                    // P1 buttons (indices 0..3)
+                    for (int j = 0; j < 4; j++) {
+                        if (j != i && digitalRead(playerButtons[j].pin) == LOW) {
+                            otherHeld = true;
+                            break;
+                        }
+                    }
+                } else {
+                    // P2 buttons (indices 4..7)
+                    for (int j = 4; j < 8; j++) {
+                        if (j != i && digitalRead(playerButtons[j].pin) == LOW) {
+                            otherHeld = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (!otherHeld) {
+                    playerButtons[i].lastDebounceTime = now;
+                    playerButtons[i].lastState = LOW;
+
+                    // Push valid unique single press event
+                    portENTER_CRITICAL(&buttonMux);
+                    int nextHead = (queueHead + 1) % QUEUE_SIZE;
+                    if (nextHead != queueTail) {
+                        eventQueue[queueHead].button = playerButtons[i].button;
+                        eventQueue[queueHead].timestamp = now;
+                        queueHead = nextHead;
+                    }
+                    portEXIT_CRITICAL(&buttonMux);
+                }
+            }
+        } else if (playerButtons[i].lastState == LOW && currentState == HIGH) {
+            // Button state transition: PRESSED (LOW) -> RELEASED (HIGH)
+            // Record release timestamp for release chatter protection; NO press event emitted on release!
+            playerButtons[i].lastDebounceTime = now;
+            playerButtons[i].lastState = HIGH;
+        }
+    }
 }
 
 void ButtonManager::enablePlayerButtons() {
     portENTER_CRITICAL(&buttonMux);
     queueHead = 0;
     queueTail = 0;
-    for (int i = 0; i < 40; i++) {
-        lastPressTime[i] = 0;
+    for (int i = 0; i < 8; i++) {
+        playerButtons[i].lastState = digitalRead(playerButtons[i].pin);
+        playerButtons[i].lastDebounceTime = 0;
     }
     playerButtonsEnabled = true;
     portEXIT_CRITICAL(&buttonMux);
@@ -131,6 +129,10 @@ ButtonEvent ButtonManager::popEvent() {
     }
     portEXIT_CRITICAL(&buttonMux);
     return evt;
+}
+
+void ButtonManager::handleInterrupt(uint8_t pin) {
+    // Deprecated in favor of stateful loop update()
 }
 
 bool ButtonManager::isStartPressed() {

@@ -17,6 +17,7 @@ void GameEngine::init() {
 }
 
 void GameEngine::loop() {
+    buttonManager.update();
     ledManager.loop();
     buzzerManager.loop();
     wifiManager.loop();

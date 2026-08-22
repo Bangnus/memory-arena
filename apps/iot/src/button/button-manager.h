@@ -12,6 +12,7 @@ struct ButtonEvent {
 class ButtonManager {
 public:
     void init();
+    void update();
     void enablePlayerButtons();
     void disablePlayerButtons();
 
