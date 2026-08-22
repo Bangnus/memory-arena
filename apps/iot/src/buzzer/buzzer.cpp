@@ -28,6 +28,9 @@ void BuzzerManager::setMuted(bool mute) {
     if (isMuted) {
         stopTone();
         currentSound = BuzzerSound::NONE;
+        currentToneDuration = 0;
+        notePauseUntil = 0;
+        melodyStep = 0;
     }
 }
 
@@ -148,7 +151,7 @@ void BuzzerManager::play(BuzzerSound sound) {
 }
 
 void BuzzerManager::loop() {
-    if (currentSound == BuzzerSound::NONE) return;
+    if (isMuted || currentSound == BuzzerSound::NONE) return;
 
     unsigned long now = millis();
 

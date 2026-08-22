@@ -60,10 +60,16 @@ void SerialManager::parseIncomingLine(const String& line) {
         buzzerManager.playReset();
         gameEngine.handleSocketEvent("system:reset", "{}");
     } else if (line.startsWith("EVT:")) {
-        int firstColon = line.indexOf(':', 4);
-        if (firstColon != -1) {
-            String eventName = line.substring(4, firstColon);
-            String payload = line.substring(firstColon + 1);
+        int jsonStart = line.indexOf('{', 4);
+        if (jsonStart == -1) jsonStart = line.indexOf('[', 4);
+
+        if (jsonStart != -1) {
+            int eventEnd = jsonStart;
+            if (eventEnd > 4 && line.charAt(eventEnd - 1) == ':') {
+                eventEnd--;
+            }
+            String eventName = line.substring(4, eventEnd);
+            String payload = line.substring(jsonStart);
             gameEngine.handleSocketEvent(eventName, payload);
         } else {
             String eventName = line.substring(4);
