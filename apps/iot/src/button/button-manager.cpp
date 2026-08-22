@@ -14,17 +14,20 @@ struct PlayerButtonConfig {
     ButtonType button;
     bool lastState;
     unsigned long lastDebounceTime;
+    unsigned long lastPressTime;
 };
 
+static constexpr unsigned long MIN_SAME_BUTTON_INTERVAL_MS = 150;
+
 static PlayerButtonConfig playerButtons[8] = {
-    { PIN_P1_RED,    ButtonType::P1_RED,    HIGH, 0 },
-    { PIN_P1_GREEN,  ButtonType::P1_GREEN,  HIGH, 0 },
-    { PIN_P1_BLUE,   ButtonType::P1_BLUE,   HIGH, 0 },
-    { PIN_P1_YELLOW, ButtonType::P1_YELLOW, HIGH, 0 },
-    { PIN_P2_RED,    ButtonType::P2_RED,    HIGH, 0 },
-    { PIN_P2_GREEN,  ButtonType::P2_GREEN,  HIGH, 0 },
-    { PIN_P2_BLUE,   ButtonType::P2_BLUE,   HIGH, 0 },
-    { PIN_P2_YELLOW, ButtonType::P2_YELLOW, HIGH, 0 }
+    { PIN_P1_RED,    ButtonType::P1_RED,    HIGH, 0, 0 },
+    { PIN_P1_GREEN,  ButtonType::P1_GREEN,  HIGH, 0, 0 },
+    { PIN_P1_BLUE,   ButtonType::P1_BLUE,   HIGH, 0, 0 },
+    { PIN_P1_YELLOW, ButtonType::P1_YELLOW, HIGH, 0, 0 },
+    { PIN_P2_RED,    ButtonType::P2_RED,    HIGH, 0, 0 },
+    { PIN_P2_GREEN,  ButtonType::P2_GREEN,  HIGH, 0, 0 },
+    { PIN_P2_BLUE,   ButtonType::P2_BLUE,   HIGH, 0, 0 },
+    { PIN_P2_YELLOW, ButtonType::P2_YELLOW, HIGH, 0, 0 }
 };
 
 void ButtonManager::setupPin(uint8_t pin) {
@@ -36,6 +39,7 @@ void ButtonManager::init() {
         setupPin(playerButtons[i].pin);
         playerButtons[i].lastState = digitalRead(playerButtons[i].pin);
         playerButtons[i].lastDebounceTime = 0;
+        playerButtons[i].lastPressTime = 0;
     }
 
     setupPin(PIN_BTN_START);
@@ -55,7 +59,10 @@ void ButtonManager::update() {
 
         if (playerButtons[i].lastState == HIGH && currentState == LOW) {
             // Button state transition: RELEASED (HIGH) -> PRESSED (LOW)
-            if (now - playerButtons[i].lastDebounceTime >= DEBOUNCE_DELAY_MS) {
+            // 1. Must pass per-press lockout (150ms for the SAME button to prevent mechanical wobble)
+            // 2. Must pass state transition debounce (60ms since release)
+            if ((now - playerButtons[i].lastPressTime >= MIN_SAME_BUTTON_INTERVAL_MS) &&
+                (now - playerButtons[i].lastDebounceTime >= DEBOUNCE_DELAY_MS)) {
                 // Multi-button press protection: verify no other button of the same player is down
                 bool otherHeld = false;
                 if (i < 4) {
@@ -77,6 +84,7 @@ void ButtonManager::update() {
                 }
 
                 if (!otherHeld) {
+                    playerButtons[i].lastPressTime = now;
                     playerButtons[i].lastDebounceTime = now;
                     playerButtons[i].lastState = LOW;
 
@@ -107,6 +115,7 @@ void ButtonManager::enablePlayerButtons() {
     for (int i = 0; i < 8; i++) {
         playerButtons[i].lastState = digitalRead(playerButtons[i].pin);
         playerButtons[i].lastDebounceTime = 0;
+        playerButtons[i].lastPressTime = 0;
     }
     playerButtonsEnabled = true;
     portEXIT_CRITICAL(&buttonMux);
