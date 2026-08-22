@@ -41,21 +41,43 @@ struct MelodyNote {
     uint16_t pause;
 };
 
-// Modern Ambient Lounge Melody (Smooth, Gentle Acoustic Chime - Not 8-bit)
+// Pokemon Center Theme (Warm, Relaxing & Classic Game Melody - Perfect for Standby)
 static const MelodyNote STANDBY_THEME_NOTES[] = {
-    // Phrase 1: Calm Rising Wave (Pentatonic C-Major)
-    {262, 350, 150}, // C4 - warm base
-    {330, 350, 150}, // E4 - gentle mid
-    {392, 450, 200}, // G4 - bright chime
-    {440, 350, 150}, // A4 - airy note
-    {523, 600, 400}, // C5 - sustained harmonic finish
-
-    // Phrase 2: Gentle Descending Echo
-    {440, 350, 150}, // A4
+    // Phrase 1: Main Theme Melody
+    {523, 160, 60},  // C5
+    {494, 160, 60},  // B4
+    {523, 160, 60},  // C5
+    {392, 280, 100}, // G4
+    {349, 160, 60},  // F4
+    {392, 160, 60},  // G4
+    {440, 200, 80},  // A4
     {392, 350, 150}, // G4
-    {330, 450, 200}, // E4
-    {294, 350, 150}, // D4
-    {262, 700, 1200} // C4 - deep relaxing chime with 1.2s peaceful pause before repeating
+
+    // Phrase 2: Echo
+    {523, 160, 60},  // C5
+    {494, 160, 60},  // B4
+    {523, 160, 60},  // C5
+    {392, 280, 100}, // G4
+    {330, 160, 60},  // E4
+    {349, 160, 60},  // F4
+    {392, 350, 150}, // G4
+
+    // Phrase 3: Peaceful Cadence
+    {440, 160, 60},  // A4
+    {392, 160, 60},  // G4
+    {349, 160, 60},  // F4
+    {330, 200, 80},  // E4
+    {294, 160, 60},  // D4
+    {330, 160, 60},  // E4
+    {349, 160, 60},  // F4
+    {392, 250, 100}, // G4
+
+    // Phrase 4: Warm Resolution
+    {523, 200, 80},  // C5
+    {392, 200, 80},  // G4
+    {330, 200, 80},  // E4
+    {294, 250, 100}, // D4
+    {262, 500, 1200} // C4 (warm gentle finish with 1.2s peaceful pause before loop)
 };
 
 static const int STANDBY_THEME_LEN = sizeof(STANDBY_THEME_NOTES) / sizeof(MelodyNote);
