@@ -92,7 +92,7 @@ void BuzzerManager::playGameStart() { play(BuzzerSound::GAME_START); }
 void BuzzerManager::playCorrect() { play(BuzzerSound::CORRECT); }
 void BuzzerManager::playWrong() { play(BuzzerSound::WRONG); }
 void BuzzerManager::playWinner() { play(BuzzerSound::VICTORY); }
-void BuzzerManager::playReset() { play(BuzzerSound::NONE); }
+void BuzzerManager::playReset() { play(BuzzerSound::RESET); }
 void BuzzerManager::playStandbyTheme() { play(BuzzerSound::STANDBY_THEME); }
 void BuzzerManager::stop() { play(BuzzerSound::NONE); }
 
@@ -139,6 +139,10 @@ void BuzzerManager::play(BuzzerSound sound) {
             // Grand triumphant victory fanfare (duty 880)
             playTone(784, 160, 880);
             break;
+        case BuzzerSound::RESET:
+            // Crisp two-tone reset chime (duty 850)
+            playTone(880, 100, 850);
+            break;
         case BuzzerSound::STANDBY_THEME:
             // Soft gentle background music volume (duty 180)
             playTone(STANDBY_THEME_NOTES[0].freq, STANDBY_THEME_NOTES[0].duration, 180);
@@ -170,6 +174,14 @@ void BuzzerManager::loop() {
                 playTone(1319, 400, 880); // Step 3 (E6)
             } else {
                 currentSound = BuzzerSound::NONE;
+            }
+        } else if (currentSound == BuzzerSound::RESET) {
+            melodyStep++;
+            if (melodyStep == 1) {
+                playTone(587, 180, 850); // Step 2 (D5)
+            } else {
+                currentSound = BuzzerSound::NONE;
+                play(BuzzerSound::STANDBY_THEME);
             }
         } else if (currentSound == BuzzerSound::BUTTON_PRESS) {
             currentSound = BuzzerSound::NONE;

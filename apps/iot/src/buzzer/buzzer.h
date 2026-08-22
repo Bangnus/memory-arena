@@ -14,6 +14,7 @@ enum class BuzzerSound {
     CORRECT,
     WRONG,
     VICTORY,
+    RESET,
     STANDBY_THEME
 };
 

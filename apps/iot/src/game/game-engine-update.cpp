@@ -9,10 +9,10 @@ void GameEngine::updateState() {
     
     if (buttonManager.isRestartPressed()) {
         Serial.println("[RESTART] Physical RESTART button pressed! Triggering system:reset...");
-        buzzerManager.playReset();
         socketClient.sendSystemReset();
         serialManager.sendRestart();
         changeState(GameState::WAIT_PLAYERS);
+        buzzerManager.playReset();
         return;
     }
 
