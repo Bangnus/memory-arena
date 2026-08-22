@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Gamepad2, Play, Sparkles, Trophy, Cpu, Volume2, VolumeX, Music, Zap, Settings, X } from 'lucide-react';
+import { Gamepad2, Play, Sparkles, Trophy, Cpu, Volume2, VolumeX, Music, Zap, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LeaderboardTable } from '@/features/leaderboard/LeaderboardTable';
 import { useSocket } from '@/hooks/useSocket';
@@ -203,50 +203,40 @@ export default function Home() {
         {/* Right Side: Title & Play Button */}
         <div className="w-full lg:w-1/2 flex flex-col items-center lg:items-start text-center lg:text-left space-y-8 animate-in fade-in slide-in-from-right-8 duration-700">
           
-          {/* Main Title Banner */}
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/20 backdrop-blur-md border border-white/30 text-yellow-300 font-semibold text-sm shadow-inner">
-              <Sparkles className="w-4 h-4" />
-              <span>Interactive IoT Speed Battle</span>
-            </div>
-            
-            <h1 className="text-6xl sm:text-7xl xl:text-8xl font-black font-orbitron tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-white to-cyan-300 drop-shadow-[0_10px_20px_rgba(0,0,0,0.3)]">
-              MEMORY<br />ARENA
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-orange-400 via-amber-400 to-yellow-400 text-slate-950 font-black px-4 py-1.5 rounded-full text-sm shadow-lg transform -rotate-1">
+            <Sparkles className="w-4 h-4 fill-slate-950" />
+            <span>RMUT MEMORY BATTLE ARENA</span>
+          </div>
+
+          <div className="space-y-4">
+            <h1 className="text-6xl sm:text-7xl lg:text-8xl font-black font-orbitron tracking-tight leading-none text-white drop-shadow-[0_4px_12px_rgba(0,0,0,0.4)]">
+              MEMORY<br/>
+              <span className="bg-clip-text text-transparent bg-gradient-to-r from-yellow-300 via-amber-300 to-orange-400">
+                ARENA
+              </span>
             </h1>
-            
-            <p className="text-lg sm:text-xl text-sky-100 font-medium max-w-lg leading-relaxed drop-shadow">
-              Step up, memorize the sequence, and battle your opponent in real-time on real hardware buttons!
+            <p className="text-xl md:text-2xl text-purple-100/90 font-medium max-w-xl">
+              Remember the light pattern, tap the sequence fast, and beat your friend in real-time! ⚡
             </p>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
-            <Link href="/mode" className="w-full sm:w-auto">
-              <Button
-                size="lg"
-                className="w-full sm:w-auto h-16 px-10 text-xl font-black font-orbitron tracking-wider rounded-2xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 hover:from-emerald-300 hover:via-cyan-300 hover:to-blue-400 text-slate-950 shadow-[0_0_40px_rgba(52,211,153,0.6)] hover:shadow-[0_0_60px_rgba(52,211,153,0.9)] hover:scale-105 active:scale-95 transition-all duration-300 border-2 border-white/40"
-              >
-                <Play className="w-6 h-6 mr-3 fill-slate-950" />
-                START BATTLE
-              </Button>
-            </Link>
-
-            <Link href="/login" className="w-full sm:w-auto">
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full sm:w-auto h-16 px-8 text-lg font-bold font-orbitron tracking-wider rounded-2xl bg-white/10 hover:bg-white/20 border-2 border-white/40 text-white backdrop-blur-md shadow-lg hover:scale-105 active:scale-95 transition-all duration-300"
-              >
-                PLAYER LOGIN
-              </Button>
-            </Link>
+          <div className="w-full max-w-sm pt-2">
+            <Button 
+              asChild 
+              className="w-full h-20 text-3xl font-orbitron font-black tracking-wider rounded-3xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 hover:from-emerald-300 hover:to-blue-400 text-slate-950 shadow-[0_8px_30px_rgba(56,189,248,0.4)] hover:scale-105 active:scale-95 transition-all duration-300 border-4 border-white/20 cursor-pointer"
+            >
+              <Link href="/mode" className="flex items-center justify-center gap-3">
+                <Play className="w-8 h-8 fill-slate-950" />
+                START GAME
+              </Link>
+            </Button>
           </div>
-
-          {/* Feature Badges */}
-          <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+          
+          <div className="flex flex-wrap gap-4 pt-4 justify-center lg:justify-start">
             <div className="flex items-center gap-2 border-2 border-white/20 bg-white/10 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-sm">
               <Gamepad2 className="w-5 h-5 text-cyan-300" />
-              <span className="text-sm font-bold tracking-wider font-orbitron text-white">2 PLAYERS</span>
+              <span className="text-sm font-bold tracking-wider font-orbitron text-white">REALTIME 2P</span>
             </div>
             <div className="flex items-center gap-2 border-2 border-white/20 bg-white/10 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-sm">
               <Cpu className="w-5 h-5 text-amber-300" />
