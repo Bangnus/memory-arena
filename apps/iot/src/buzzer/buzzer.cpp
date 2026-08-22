@@ -12,8 +12,8 @@ void BuzzerManager::init() {
 void BuzzerManager::playTone(unsigned int frequency, unsigned long duration) {
     if (isMuted) return;
     ledcWriteTone(0, frequency);
-    // Set 35% duty cycle for mellow, warm and non-piercing acoustic sound
-    ledcWrite(0, 358);
+    // Set 45% duty cycle for clear, crisp, and non-piercing 8-bit arcade sound
+    ledcWrite(0, 460);
     currentToneStart = millis();
     currentToneDuration = duration;
 }
@@ -41,26 +41,35 @@ struct MelodyNote {
     uint16_t pause;
 };
 
-// Warm & Smooth 8-bit Tetris Lo-Fi Melody (Lower Octave 3-4: 220-330Hz, zero harsh beeps)
+// Classic Super Mario 8-bit Arcade Theme (Smoothed & balanced, no harsh high beeps)
 static const MelodyNote STANDBY_THEME_NOTES[] = {
-    {330, 240, 60},  // E4 (warm, low)
-    {247, 130, 40},  // B3
-    {262, 150, 40},  // C4
-    {294, 240, 60},  // D4
-    {262, 150, 40},  // C4
-    {247, 150, 40},  // B3
-    {220, 260, 60},  // A3 (deep, soft)
-    {262, 150, 40},  // C4
-    {330, 260, 60},  // E4
-    {294, 150, 40},  // D4
-    {262, 150, 40},  // C4
-    {247, 280, 80},  // B3
-    {262, 150, 40},  // C4
-    {294, 260, 60},  // D4
-    {330, 280, 60},  // E4
-    {262, 240, 50},  // C4
-    {220, 260, 60},  // A3
-    {220, 380, 800}  // A3 (gentle deep finish before peaceful loop)
+    // Intro Fanfare
+    {659, 100, 50},  // E5
+    {659, 100, 120}, // E5
+    {659, 100, 120}, // E5
+    {523, 100, 50},  // C5
+    {659, 100, 120}, // E5
+    {784, 150, 150}, // G5
+    {392, 180, 250}, // G4
+
+    // Main Catchy Groove
+    {523, 140, 60},  // C5
+    {392, 140, 60},  // G4
+    {330, 140, 100}, // E4
+    {440, 120, 50},  // A4
+    {494, 120, 50},  // B4
+    {466, 120, 50},  // Bb4
+    {440, 150, 100}, // A4
+
+    // Response Phrase (Smoothed mid-range, no 880Hz spike)
+    {392, 120, 50},  // G4
+    {659, 120, 50},  // E5
+    {784, 130, 60},  // G5
+    {698, 120, 50},  // F5
+    {659, 140, 80},  // E5
+    {523, 120, 50},  // C5
+    {587, 120, 50},  // D5
+    {494, 180, 800}  // B4 (gentle pause before loop repeats)
 };
 
 static const int STANDBY_THEME_LEN = sizeof(STANDBY_THEME_NOTES) / sizeof(MelodyNote);
