@@ -18,12 +18,13 @@ public:
     
     void startBlinking();
     void startCycling();
+    void startSteadyOn();
     void stopAnimation();
 
 private:
     unsigned long lastUpdate = 0;
     int animationStep = 0;
-    enum class Animation { NONE, BLINKING, CYCLING } currentAnimation = Animation::NONE;
+    enum class Animation { NONE, BLINKING, CYCLING, STEADY_ON } currentAnimation = Animation::NONE;
 };
 
 extern LedManager ledManager;

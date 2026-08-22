@@ -10,7 +10,7 @@ void GameEngine::changeState(GameState newState) {
     switch(currentState) {
         case GameState::BOOT:
             Serial.println("[STATE] BOOT");
-            ledManager.startCycling();
+            ledManager.startSteadyOn();
             buzzerManager.playBoot();
             buttonManager.disablePlayerButtons();
             break;
@@ -21,8 +21,7 @@ void GameEngine::changeState(GameState newState) {
             break;
         case GameState::WAIT_PLAYERS:
             Serial.println("[STATE] WAIT_PLAYERS");
-            ledManager.stopAnimation();
-            ledManager.turnOn(LedColor::ALL);
+            ledManager.startSteadyOn();
             buzzerManager.playStandbyTheme();
             buttonManager.disablePlayerButtons();
             currentSequence.length = 0;

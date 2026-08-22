@@ -68,6 +68,11 @@ void LedManager::startCycling() {
     lastUpdate = millis();
 }
 
+void LedManager::startSteadyOn() {
+    currentAnimation = Animation::STEADY_ON;
+    turnOn(LedColor::ALL);
+}
+
 void LedManager::stopAnimation() {
     currentAnimation = Animation::NONE;
     turnOffAll();
@@ -78,7 +83,12 @@ void LedManager::loop() {
 
     unsigned long now = millis();
 
-    if (currentAnimation == Animation::BLINKING) {
+    if (currentAnimation == Animation::STEADY_ON) {
+        digitalWrite(PIN_LED_MAIN_RED, LED_ON_STATE);
+        digitalWrite(PIN_LED_MAIN_GREEN, LED_ON_STATE);
+        digitalWrite(PIN_LED_MAIN_BLUE, LED_ON_STATE);
+        digitalWrite(PIN_LED_MAIN_YELLOW, LED_ON_STATE);
+    } else if (currentAnimation == Animation::BLINKING) {
         if (now - lastUpdate >= 1000) {
             lastUpdate = now;
             animationStep = !animationStep;
