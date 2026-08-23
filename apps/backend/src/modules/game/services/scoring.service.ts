@@ -40,7 +40,7 @@ export class ScoringService {
   }
 
   /**
-   * Checks if match has reached a winner (Best of 5 -> 3 wins required).
+   * Checks if match has reached a winner (Best of 3 -> 2 wins required).
    */
   checkMatchWinner(player1Score: number, player2Score: number): 1 | 2 | null {
     if (player1Score >= GAME_CONSTANTS.MAX_WIN_POINTS) return 1;

@@ -1,17 +1,17 @@
 export const DIFFICULTY_CONFIG = {
   EASY: {
-    sequenceLength: 4,
-    displaySpeed: 900,
+    sequenceLength: 3,
+    displaySpeed: 800,
     label: 'Easy',
   },
   MEDIUM: {
-    sequenceLength: 5,
-    displaySpeed: 700,
+    sequenceLength: 4,
+    displaySpeed: 650,
     label: 'Medium',
   },
   HARD: {
     sequenceLength: 6,
-    displaySpeed: 500,
+    displaySpeed: 450,
     label: 'Hard',
   },
 } as const;

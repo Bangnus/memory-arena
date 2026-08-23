@@ -302,7 +302,7 @@ LINE Login
 
 Match Format
 
-Best of 5
+Best of 3
 
 Difficulty
 

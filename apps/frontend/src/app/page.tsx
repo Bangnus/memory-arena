@@ -322,7 +322,7 @@ export default function Home() {
             </motion.div>
             <motion.div whileHover={{ scale: 1.05, y: -2 }} className="flex items-center gap-2 border border-white/30 bg-white/15 backdrop-blur-md px-4 py-2 rounded-2xl shadow-lg">
               <Trophy className="w-4 h-4 text-pink-300" />
-              <span className="text-xs font-bold tracking-wider font-orbitron text-white">BEST OF 5</span>
+              <span className="text-xs font-bold tracking-wider font-orbitron text-white">BEST OF 3</span>
             </motion.div>
           </div>
 
