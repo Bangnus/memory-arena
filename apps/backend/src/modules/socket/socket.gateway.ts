@@ -95,6 +95,12 @@ export class SocketGateway
     this.broadcastService.emit('device:start', { timestamp: new Date().toISOString() });
   }
 
+  @SubscribeMessage('device:standby')
+  handleStandby() {
+    this.logger.log('STANDBY from client -> broadcasting device:standby');
+    this.broadcastService.emit('device:standby', { timestamp: new Date().toISOString() });
+  }
+
   @SubscribeMessage('device:mode')
   handleModeChange(@MessageBody() data: { mode: number }) {
     this.broadcastService.emit('device:mode_change', { mode: data.mode });

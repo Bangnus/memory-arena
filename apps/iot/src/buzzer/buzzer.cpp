@@ -173,8 +173,8 @@ void BuzzerManager::play(BuzzerSound sound) {
             playTone(880, 100, 850);
             break;
         case BuzzerSound::STANDBY_THEME:
-            // Soft gentle background music volume (duty 180)
-            playTone(STANDBY_THEME_NOTES[0].freq, STANDBY_THEME_NOTES[0].duration, 180);
+            // Gentle background music volume (duty 700)
+            playTone(STANDBY_THEME_NOTES[0].freq, STANDBY_THEME_NOTES[0].duration, 700);
             break;
         case BuzzerSound::NONE:
         default:
@@ -242,7 +242,7 @@ void BuzzerManager::loop() {
         if (now >= notePauseUntil) {
             melodyStep = (melodyStep + 1) % STANDBY_THEME_LEN;
             const MelodyNote& note = STANDBY_THEME_NOTES[melodyStep];
-            playTone(note.freq, note.duration, 180);
+            playTone(note.freq, note.duration, 700);
         }
     }
 }

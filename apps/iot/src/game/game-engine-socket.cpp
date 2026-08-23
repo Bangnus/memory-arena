@@ -126,22 +126,31 @@ void GameEngine::handleSocketEvent(const String& event, const String& payload) {
         Serial.println("[SOCKET] Received system:reset -> Resetting to SELECT_MODE");
         buzzerManager.playReset();
         changeState(GameState::SELECT_MODE);
+    } else if (event == "device:standby") {
+        Serial.println("[SOCKET] Received device:standby -> Transitioning to WAIT_PLAYERS");
+        if (currentState != GameState::WAIT_PLAYERS && currentState != GameState::SHOW_SEQUENCE && currentState != GameState::PLAYER_INPUT) {
+            changeState(GameState::WAIT_PLAYERS);
+        } else if (currentState == GameState::WAIT_PLAYERS) {
+            if (!buzzerManager.isBgmMutedState()) {
+                buzzerManager.playStandbyTheme();
+            }
+        }
     } else if (event == "device:sound") {
         JsonDocument doc;
         if (!deserializeJson(doc, payload)) {
-            if (doc["bgm"].is<bool>() || doc["sfx"].is<bool>()) {
-                bool bgm = doc["bgm"] | true;
-                bool sfx = doc["sfx"] | true;
+            if (doc.containsKey("bgm") || doc.containsKey("sfx")) {
+                bool bgm = doc["bgm"].is<bool>() ? doc["bgm"].as<bool>() : true;
+                bool sfx = doc["sfx"].is<bool>() ? doc["sfx"].as<bool>() : true;
                 buzzerManager.setSoundConfig(bgm, sfx);
                 Serial.printf("[DEBUG][IOT] Sound Config -> BGM:%s, SFX:%s\n", bgm ? "ON" : "OFF", sfx ? "ON" : "OFF");
-                if (bgm && currentState == GameState::WAIT_PLAYERS) {
+                if (bgm && (currentState == GameState::WAIT_PLAYERS || currentState == GameState::BOOT)) {
                     buzzerManager.playStandbyTheme();
                 }
             } else {
-                bool enabled = doc["enabled"] | true;
+                bool enabled = doc["enabled"].is<bool>() ? doc["enabled"].as<bool>() : true;
                 buzzerManager.setMuted(!enabled);
                 Serial.printf("[DEBUG][IOT] Sound %s\n", enabled ? "ENABLED" : "MUTED");
-                if (enabled && currentState == GameState::WAIT_PLAYERS) {
+                if (enabled && (currentState == GameState::WAIT_PLAYERS || currentState == GameState::BOOT)) {
                     buzzerManager.playStandbyTheme();
                 }
             }

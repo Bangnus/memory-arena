@@ -22,12 +22,22 @@ const GAME_PADS = [
 export default function Home() {
   const router = useRouter();
   const { socket } = useSocket();
-  const { playButtonPress, playGameStart } = useSound();
+  const { playButtonPress } = useSound();
   const [starting, setStarting] = useState(false);
   const [showSoundModal, setShowSoundModal] = useState(false);
-  const [isBgmEnabled, setIsBgmEnabled] = useState(true);
-  const [isSfxEnabled, setIsSfxEnabled] = useState(true);
+  const [isBgmEnabled, setIsBgmEnabled] = useState<boolean>(true);
+  const [isSfxEnabled, setIsSfxEnabled] = useState<boolean>(true);
   const [activePad, setActivePad] = useState<string | null>(null);
+
+  // Load sound settings from localStorage on client mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedBgm = localStorage.getItem('sound_bgm_enabled');
+      const savedSfx = localStorage.getItem('sound_sfx_enabled');
+      if (savedBgm !== null) setIsBgmEnabled(savedBgm === 'true');
+      if (savedSfx !== null) setIsSfxEnabled(savedSfx === 'true');
+    }
+  }, []);
 
   // Attract Mode: Ambient cycling sequence simulation on home screen
   useEffect(() => {
@@ -45,9 +55,18 @@ export default function Home() {
   useEffect(() => {
     if (!socket) return;
 
+    // Notify IoT and backend that player is on Home page to resume Standby theme
+    socket.emit('device:standby');
+
+    // Sync saved sound preferences to connected device
+    const savedBgm = typeof window !== 'undefined' ? localStorage.getItem('sound_bgm_enabled') : null;
+    const savedSfx = typeof window !== 'undefined' ? localStorage.getItem('sound_sfx_enabled') : null;
+    const currentBgm = savedBgm !== null ? savedBgm === 'true' : true;
+    const currentSfx = savedSfx !== null ? savedSfx === 'true' : true;
+    socket.emit('device:sound', { bgm: currentBgm, sfx: currentSfx });
+
     const handleDeviceStart = () => {
       setStarting(true);
-      playGameStart();
       toast.info('Game starting from IoT device!');
       setTimeout(() => {
         router.push('/mode');
@@ -55,11 +74,21 @@ export default function Home() {
     };
 
     const handleSoundChange = (data: { bgm?: boolean; sfx?: boolean; enabled?: boolean }) => {
-      if (data.bgm !== undefined) setIsBgmEnabled(data.bgm);
-      if (data.sfx !== undefined) setIsSfxEnabled(data.sfx);
+      if (data.bgm !== undefined) {
+        setIsBgmEnabled(data.bgm);
+        if (typeof window !== 'undefined') localStorage.setItem('sound_bgm_enabled', String(data.bgm));
+      }
+      if (data.sfx !== undefined) {
+        setIsSfxEnabled(data.sfx);
+        if (typeof window !== 'undefined') localStorage.setItem('sound_sfx_enabled', String(data.sfx));
+      }
       if (data.enabled !== undefined && data.bgm === undefined && data.sfx === undefined) {
         setIsBgmEnabled(data.enabled);
         setIsSfxEnabled(data.enabled);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('sound_bgm_enabled', String(data.enabled));
+          localStorage.setItem('sound_sfx_enabled', String(data.enabled));
+        }
       }
     };
 
@@ -70,21 +99,29 @@ export default function Home() {
       socket.off(SOCKET_EVENTS.DEVICE_START, handleDeviceStart);
       socket.off('device:sound', handleSoundChange);
     };
-  }, [socket, router, playGameStart]);
+  }, [socket, router]);
 
   const toggleBgm = () => {
-    if (!socket) return;
     const nextBgm = !isBgmEnabled;
     setIsBgmEnabled(nextBgm);
-    socket.emit('device:sound', { bgm: nextBgm, sfx: isSfxEnabled });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sound_bgm_enabled', String(nextBgm));
+    }
+    if (socket) {
+      socket.emit('device:sound', { bgm: nextBgm, sfx: isSfxEnabled });
+    }
     toast.info(nextBgm ? 'Music Enabled 🎵' : 'Music Muted 🔇', { duration: 1500 });
   };
 
   const toggleSfx = () => {
-    if (!socket) return;
     const nextSfx = !isSfxEnabled;
     setIsSfxEnabled(nextSfx);
-    socket.emit('device:sound', { bgm: isBgmEnabled, sfx: nextSfx });
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sound_sfx_enabled', String(nextSfx));
+    }
+    if (socket) {
+      socket.emit('device:sound', { bgm: isBgmEnabled, sfx: nextSfx });
+    }
     toast.info(nextSfx ? 'Sound Effects Enabled ⚡' : 'Sound Effects Muted 🔇', { duration: 1500 });
   };
 
