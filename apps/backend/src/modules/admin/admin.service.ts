@@ -13,26 +13,20 @@ export class AdminService {
   ) {}
 
   /**
-   * Admin Reset: deletes sessions, matches, rounds, matchPlayers. Players remain intact.
+   * Reset active game session: clears only current game sessions, leaving players, matches, and leaderboard intact.
    */
   async resetSystem() {
     this.logger.warn(
-      'ADMIN RESET initiated. Clearing game sessions and match history...',
+      'Session reset initiated. Clearing current game session (match history & leaderboard preserved)...',
     );
 
-    await this.prisma.$transaction([
-      this.prisma.round.deleteMany(),
-      this.prisma.matchPlayer.deleteMany(),
-      this.prisma.match.deleteMany(),
-      this.prisma.gameSession.deleteMany(),
-    ]);
+    await this.prisma.gameSession.deleteMany();
 
     this.broadcast.emit(SocketEvent.SYSTEM_RESET, { reset: true });
-    this.broadcast.emit(SocketEvent.LEADERBOARD_UPDATE, { updated: true });
 
     return {
       message:
-        'System reset completed successfully. Match history and sessions cleared.',
+        'Active game session reset completed successfully. Match history and leaderboard preserved.',
     };
   }
 

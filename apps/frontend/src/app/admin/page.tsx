@@ -138,15 +138,15 @@ export default function AdminPage() {
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Are you absolutely sure?</DialogTitle>
+                    <DialogTitle>Reset Game Session</DialogTitle>
                     <DialogDescription>
-                      This action will delete all active game sessions, match history, and rounds.
-                      Player profiles will remain intact. This cannot be undone.
+                      This action will reset the active game session back to mode selection.
+                      Match history, player rankings, and leaderboards will remain intact.
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
                     <Button variant="destructive" onClick={() => resetMutation.mutate()} disabled={resetMutation.isPending}>
-                      {resetMutation.isPending ? 'Resetting...' : 'Yes, Reset System'}
+                      {resetMutation.isPending ? 'Resetting...' : 'Yes, Reset Session'}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
