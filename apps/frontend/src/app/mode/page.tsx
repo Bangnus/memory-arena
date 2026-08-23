@@ -47,7 +47,9 @@ export default function ModePage() {
     socket.on('device:start', handleDeviceStart);
 
     const handleSystemReset = () => {
-      router.push('/login');
+      setSelecting(false);
+      setStarting(false);
+      router.push('/mode');
     };
     socket.on('system:reset', handleSystemReset);
 

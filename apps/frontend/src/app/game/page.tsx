@@ -84,11 +84,11 @@ export default function GamePage() {
     return () => { socket.off('device:start', handleDeviceStart); };
   }, [socket, router]);
 
-  // IoT Physical / Admin RESTART button → redirect to /login
+  // IoT Physical / Admin RESTART button → redirect to /mode
   useEffect(() => {
     if (!socket) return;
     const handleSystemReset = () => {
-      router.push('/login');
+      router.push('/mode');
     };
     socket.on('system:reset', handleSystemReset);
     return () => { socket.off('system:reset', handleSystemReset); };

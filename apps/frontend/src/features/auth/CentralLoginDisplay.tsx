@@ -32,8 +32,15 @@ export function CentralLoginDisplay() {
   useEffect(() => {
     if (!socket) return;
     const handleGameWaiting = (data: { countdown: number }) => setRedirectCountdown(data.countdown);
+    const handleSystemReset = () => {
+      window.location.href = '/mode';
+    };
     socket.on('game:waiting', handleGameWaiting);
-    return () => { socket.off('game:waiting', handleGameWaiting); };
+    socket.on('system:reset', handleSystemReset);
+    return () => {
+      socket.off('game:waiting', handleGameWaiting);
+      socket.off('system:reset', handleSystemReset);
+    };
   }, [socket]);
 
   useEffect(() => {

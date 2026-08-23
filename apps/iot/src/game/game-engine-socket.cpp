@@ -123,9 +123,9 @@ void GameEngine::handleSocketEvent(const String& event, const String& payload) {
     } else if (event == "match:result") {
         changeState(GameState::GAME_RESULT);
     } else if (event == "system:reset") {
-        Serial.println("[SOCKET] Received system:reset -> Resetting to WAIT_PLAYERS");
+        Serial.println("[SOCKET] Received system:reset -> Resetting to SELECT_MODE");
         buzzerManager.playReset();
-        changeState(GameState::WAIT_PLAYERS);
+        changeState(GameState::SELECT_MODE);
     } else if (event == "device:sound") {
         JsonDocument doc;
         if (!deserializeJson(doc, payload)) {
