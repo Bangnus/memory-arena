@@ -52,9 +52,9 @@ run-local: ## Run NestJS + Next.js locally on Windows in development mode (DB & 
 	cmd.exe /c start cmd /k "echo Starting Backend... && cd apps/backend && npm run start:dev"
 	cmd.exe /c start cmd /k "echo Starting Frontend... && cd apps/frontend && npm run dev"
 
-run-local-prod: ## Build & Run NestJS + Next.js locally on Windows in production mode (DB & Ngrok in Docker, apps locally)
+run-local-prod: ## Build & Run NestJS + Next.js locally on Windows in production mode (Fresh DB reset & clean start)
 	docker compose up -d postgres ngrok --no-deps
-	cd apps/backend && npx prisma migrate deploy && npm run build
+	cd apps/backend && npx prisma migrate reset --force && npm run build
 	cd apps/frontend && npm run build
 	cmd.exe /c start cmd /k "echo Starting Backend (Production)... && cd apps/backend && npm run start:prod"
 	cmd.exe /c start cmd /k "echo Starting Frontend (Production)... && cd apps/frontend && npm run start"
