@@ -2,23 +2,25 @@
 title Memory Arena Game Launcher
 color 0b
 
+cd /d "%~dp0.."
+
 echo ===================================================
 echo             MEMORY ARENA - GAME LAUNCHER           
 echo ===================================================
 echo [1/3] Syncing Local Database (SQLite Zero-Config)...
 cd apps\backend
-call npx prisma db push --skip-generate
-cd ..\..
+call npx prisma db push
+cd /d "%~dp0.."
 
 echo [2/3] Starting Local Game Engine (NestJS)...
-start "Memory Arena Backend" /min cmd /c "cd apps\backend && npm run start:prod"
+start "Memory Arena Backend" cmd /k "cd /d \"%~dp0..\\apps\\backend\" && npm run start:dev"
 
 echo [3/3] Starting Game Interface (Next.js)...
-start "Memory Arena Frontend" /min cmd /c "cd apps\frontend && npm run start"
+start "Memory Arena Frontend" cmd /k "cd /d \"%~dp0..\\apps\\frontend\" && npm run dev"
 
 echo.
 echo Waiting for game services to initialize...
-timeout /t 3 /nobreak >nul
+timeout /t 4 /nobreak >nul
 
 echo.
 echo Launching Memory Arena Game Screen...
