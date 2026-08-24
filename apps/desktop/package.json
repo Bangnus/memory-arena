@@ -1,0 +1,119 @@
+{
+  "name": "memory-arena-desktop",
+  "version": "1.0.0",
+  "description": "Memory Arena - Desktop Application",
+  "author": "Bangnus",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "dist/main.js",
+  "scripts": {
+    "build:ts": "tsc",
+    "build:backend": "cd ../backend && npm run build",
+    "build:frontend": "cd ../frontend && npm run build",
+    "build:all": "npm run build:backend && npm run build:frontend && npm run build:ts",
+    "dev": "tsc && electron .",
+    "dist": "npm run build:all && electron-builder",
+    "dist:win": "npm run build:all && electron-builder --win"
+  },
+  "dependencies": {
+    "electron-is-dev": "^3.0.1"
+  },
+  "devDependencies": {
+    "electron": "35.0.1",
+    "electron-builder": "26.0.12",
+    "png-to-ico": "^3.0.2",
+    "typescript": "^5.7.3"
+  },
+  "build": {
+    "electronVersion": "35.0.1",
+    "appId": "com.bangnus.memory-arena",
+    "productName": "Memory Arena",
+    "copyright": "Copyright © 2026 Bangnus",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "node_modules/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend/dist",
+        "to": "backend",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../backend/node_modules",
+        "to": "backend-node_modules",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../backend/prisma",
+        "to": "backend-prisma",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../backend/data",
+        "to": "backend-data",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../frontend/.next",
+        "to": "frontend/.next",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../frontend/public",
+        "to": "frontend/public",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "../frontend/package.json",
+        "to": "frontend/package.json"
+      },
+      {
+        "from": "../frontend/node_modules",
+        "to": "frontend-node_modules",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "build/icon.ico",
+      "signAndEditExecutable": false,
+      "forceCodeSigning": false,
+      "signExts": []
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "build/icon.ico",
+      "uninstallerIcon": "build/icon.ico",
+      "installerHeaderIcon": "build/icon.ico",
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Memory Arena"
+    }
+  }
+}
