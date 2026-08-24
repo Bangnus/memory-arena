@@ -7,10 +7,12 @@
   "private": true,
   "main": "dist/main.js",
   "scripts": {
+    "icon:convert": "node scripts/convert-icon.js",
     "build:ts": "tsc",
     "build:backend": "cd ../backend && npm run build",
     "build:frontend": "cd ../frontend && npm run build",
-    "build:all": "npm run build:backend && npm run build:frontend && npm run build:ts",
+    "prepare:resources": "node scripts/prepare-resources.js",
+    "build:all": "npm run icon:convert && npm run build:backend && npm run build:frontend && npm run prepare:resources && npm run build:ts",
     "dev": "tsc && electron .",
     "dist": "npm run build:all && electron-builder",
     "dist:win": "npm run build:all && electron-builder --win"
@@ -29,8 +31,10 @@
     "appId": "com.bangnus.memory-arena",
     "productName": "Memory Arena",
     "copyright": "Copyright © 2026 Bangnus",
+    "icon": "build/icon.ico",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
@@ -66,26 +70,8 @@
         ]
       },
       {
-        "from": "../frontend/.next",
-        "to": "frontend/.next",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "../frontend/public",
-        "to": "frontend/public",
-        "filter": [
-          "**/*"
-        ]
-      },
-      {
-        "from": "../frontend/package.json",
-        "to": "frontend/package.json"
-      },
-      {
-        "from": "../frontend/node_modules",
-        "to": "frontend-node_modules",
+        "from": "../frontend/.next/standalone",
+        "to": "frontend-standalone",
         "filter": [
           "**/*"
         ]

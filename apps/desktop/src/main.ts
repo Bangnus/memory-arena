@@ -125,9 +125,11 @@ async function startBackend(): Promise<void> {
     ], {
       env: {
         ...process.env,
+        ELECTRON_RUN_AS_NODE: '1',
         PORT: String(BACKEND_PORT),
         DATABASE_URL: `file:${dbTarget.replace(/\\/g, '/')}`,
         NODE_MODULES_PATH: backendNodeModules,
+        NODE_PATH: backendNodeModules,
         PRISMA_SCHEMA_PATH: path.join(backendPrisma, 'schema.prisma'),
         NODE_ENV: 'production',
       },
@@ -184,22 +186,25 @@ async function startFrontend(): Promise<void> {
       shell: true,
     });
   } else {
-    const frontendDir = getResourcePath('frontend');
-    const frontendNodeModules = getResourcePath('frontend-node_modules');
-    const nextBin = path.join(frontendNodeModules, '.bin', 'next');
+    const standaloneDir = getResourcePath('frontend-standalone');
+    const serverJsNested = path.join(standaloneDir, 'apps', 'frontend', 'server.js');
+    const serverJsFlat = path.join(standaloneDir, 'server.js');
+    const serverJs = fs.existsSync(serverJsNested) ? serverJsNested : serverJsFlat;
+    const serverCwd = path.dirname(serverJs);
 
-    frontendProcess = spawn(nextBin, ['start', '-p', String(FRONTEND_PORT)], {
-      cwd: frontendDir,
+    frontendProcess = spawn(process.execPath, [serverJs], {
+      cwd: serverCwd,
       env: {
         ...process.env,
+        ELECTRON_RUN_AS_NODE: '1',
+        PORT: String(FRONTEND_PORT),
+        HOSTNAME: '127.0.0.1',
         NODE_ENV: 'production',
-        NODE_PATH: frontendNodeModules,
         NEXT_PUBLIC_API_URL: `http://localhost:${BACKEND_PORT}`,
         NEXT_PUBLIC_WS_URL: `http://localhost:${BACKEND_PORT}`,
         NEXT_PUBLIC_AUTH_GATEWAY_URL: process.env.NEXT_PUBLIC_AUTH_GATEWAY_URL || 'https://memory-arena-auth-gateway.vercel.app',
       },
       stdio: ['ignore', 'pipe', 'pipe'],
-      shell: true,
     });
   }
 
