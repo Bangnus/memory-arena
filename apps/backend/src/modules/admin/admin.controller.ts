@@ -11,10 +11,20 @@ export class AdminController {
   @ApiOperation({
     summary: 'Admin Reset System',
     description:
-      'Deletes all match history, rounds, and active game sessions. Preserves player profiles.',
+      'Resets active game sessions while preserving match history, players, and leaderboard.',
   })
   async resetSystem() {
     return this.adminService.resetSystem();
+  }
+
+  @Post('reset-db')
+  @ApiOperation({
+    summary: 'Admin Hard Reset Database',
+    description:
+      'Purges all player records, matches, rounds, sessions, and leaderboard data.',
+  })
+  async resetDatabase() {
+    return this.adminService.resetDatabase();
   }
 
   @Post('export')

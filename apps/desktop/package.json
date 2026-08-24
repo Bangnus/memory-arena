@@ -49,7 +49,7 @@
         ]
       },
       {
-        "from": "../backend/node_modules",
+        "from": "build/backend-node_modules",
         "to": "backend-node_modules",
         "filter": [
           "**/*",
@@ -74,6 +74,13 @@
       {
         "from": "../frontend/.next/standalone",
         "to": "frontend-standalone",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "build/frontend-node_modules",
+        "to": "frontend-node_modules",
         "filter": [
           "**/*"
         ]

@@ -139,8 +139,11 @@ export class SerialService implements OnModuleInit, OnModuleDestroy {
         }
       }
     } else if (line === 'RESTART') {
-      this.logger.warn('[USB Serial] Physical RESTART button pressed via USB!');
+      this.logger.warn('[USB Serial] Physical RESTART button pressed via USB (Session Reset)!');
       this.adminService.resetSystem();
+    } else if (line === 'DB_RESET' || line === 'HARD_RESET') {
+      this.logger.warn('[USB Serial] Physical RESTART button held for 5s via USB (FULL DATABASE RESET)!');
+      this.adminService.resetDatabase();
     }
   }
 
@@ -153,6 +156,8 @@ export class SerialService implements OnModuleInit, OnModuleDestroy {
       this.broadcast.emit('device:mode_change', { direction: 'PREV' });
     } else if (btn === 'RESTART') {
       this.adminService.resetSystem();
+    } else if (btn === 'DB_RESET' || btn === 'HARD_RESET') {
+      this.adminService.resetDatabase();
     } else if (btn.startsWith('P1_') || btn.startsWith('P2_')) {
       const parts = btn.split('_');
       const playerNum = parts[0] === 'P1' ? 1 : 2;

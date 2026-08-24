@@ -129,7 +129,13 @@ export class SocketGateway
 
   @SubscribeMessage('system:reset')
   async handleSystemReset() {
-    this.logger.warn('[WS] System reset requested');
+    this.logger.warn('[WS] System reset requested (Session Reset)');
     return await this.adminService.resetSystem();
+  }
+
+  @SubscribeMessage('system:db_reset')
+  async handleDatabaseReset() {
+    this.logger.warn('[WS] Database hard reset requested (Hold 5s)');
+    return await this.adminService.resetDatabase();
   }
 }

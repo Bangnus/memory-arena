@@ -8,6 +8,7 @@ public:
     void loop();
     void sendButtonPress(const String& btnName);
     void sendRestart();
+    void sendDbReset();
     void sendInput(const String& sessionId, int round,
                    const String& p1Inputs, int p1Time,
                    const String& p2Inputs, int p2Time);

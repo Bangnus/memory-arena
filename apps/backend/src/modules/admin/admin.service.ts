@@ -31,6 +31,28 @@ export class AdminService {
   }
 
   /**
+   * Hard reset database: clears all rounds, match players, matches, game sessions, and player accounts.
+   */
+  async resetDatabase() {
+    this.logger.warn(
+      'DATABASE HARD RESET INITIATED! Purging all records across all database tables...',
+    );
+
+    await this.prisma.round.deleteMany();
+    await this.prisma.matchPlayer.deleteMany();
+    await this.prisma.match.deleteMany();
+    await this.prisma.gameSession.deleteMany();
+    await this.prisma.player.deleteMany();
+
+    this.broadcast.emit(SocketEvent.SYSTEM_RESET, { reset: true, fullDbReset: true });
+
+    return {
+      message:
+        'Complete database hard reset finished. All players, matches, rounds, and sessions purged.',
+    };
+  }
+
+  /**
    * Export match history in JSON or CSV format
    */
   async exportData(format: 'json' | 'csv' = 'json') {

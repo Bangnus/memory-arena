@@ -9,6 +9,12 @@ struct ButtonEvent {
     unsigned long timestamp;
 };
 
+enum class RestartAction {
+    NONE = 0,
+    SHORT_PRESS,
+    LONG_PRESS_5S
+};
+
 class ButtonManager {
 public:
     void init();
@@ -23,11 +29,19 @@ public:
     bool isNextPressed();
     bool isPrevPressed();
     bool isRestartPressed();
+    RestartAction getRestartAction();
 
     void handleInterrupt(uint8_t pin);
 
 private:
     void setupPin(uint8_t pin);
+
+    // Restart button long-press tracking
+    bool restartLastState = HIGH;
+    bool isRestartHeld = false;
+    bool restartDbResetTriggered = false;
+    unsigned long restartPressStartTime = 0;
 };
 
 extern ButtonManager buttonManager;
+

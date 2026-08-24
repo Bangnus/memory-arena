@@ -138,6 +138,8 @@ async function startBackend(): Promise<void> {
     });
   }
 
+  const recentBackendLogs: string[] = [];
+
   if (backendProcess?.stdout) {
     backendProcess.stdout.on('data', (data: Buffer) => {
       console.log(`[Backend] ${data.toString().trim()}`);
@@ -145,17 +147,32 @@ async function startBackend(): Promise<void> {
   }
   if (backendProcess?.stderr) {
     backendProcess.stderr.on('data', (data: Buffer) => {
-      console.error(`[Backend ERR] ${data.toString().trim()}`);
+      const errText = data.toString().trim();
+      console.error(`[Backend ERR] ${errText}`);
+      recentBackendLogs.push(errText);
+      if (recentBackendLogs.length > 8) recentBackendLogs.shift();
     });
   }
 
+  let backendExitedEarly = false;
+  let backendExitCode: number | null = null;
   backendProcess?.on('exit', (code) => {
     console.log(`[Desktop] Backend exited with code ${code}`);
+    backendExitedEarly = true;
+    backendExitCode = code;
     backendProcess = null;
   });
 
-  await waitForPort(BACKEND_PORT, 30000);
-  console.log('[Desktop] Backend is ready.');
+  try {
+    await waitForPort(BACKEND_PORT, 30000);
+    console.log('[Desktop] Backend is ready.');
+  } catch (err) {
+    if (backendExitedEarly || recentBackendLogs.length > 0) {
+      const details = recentBackendLogs.length > 0 ? `\n\nError output:\n${recentBackendLogs.join('\n')}` : `\n\nProcess exited with code ${backendExitCode}`;
+      throw new Error(`Port ${BACKEND_PORT} did not start.${details}`);
+    }
+    throw err;
+  }
 }
 
 /**
@@ -187,10 +204,19 @@ async function startFrontend(): Promise<void> {
     });
   } else {
     const standaloneDir = getResourcePath('frontend-standalone');
+    const frontendNodeModules = getResourcePath('frontend-node_modules');
+    const backendNodeModules = getResourcePath('backend-node_modules');
     const serverJsNested = path.join(standaloneDir, 'apps', 'frontend', 'server.js');
     const serverJsFlat = path.join(standaloneDir, 'server.js');
     const serverJs = fs.existsSync(serverJsNested) ? serverJsNested : serverJsFlat;
     const serverCwd = path.dirname(serverJs);
+
+    const nodePaths = [
+      frontendNodeModules,
+      path.join(standaloneDir, 'node_modules'),
+      path.join(standaloneDir, 'apps', 'frontend', 'node_modules'),
+      backendNodeModules,
+    ].join(path.delimiter);
 
     frontendProcess = spawn(process.execPath, [serverJs], {
       cwd: serverCwd,
@@ -200,6 +226,7 @@ async function startFrontend(): Promise<void> {
         PORT: String(FRONTEND_PORT),
         HOSTNAME: '127.0.0.1',
         NODE_ENV: 'production',
+        NODE_PATH: nodePaths,
         NEXT_PUBLIC_API_URL: `http://localhost:${BACKEND_PORT}`,
         NEXT_PUBLIC_WS_URL: `http://localhost:${BACKEND_PORT}`,
         NEXT_PUBLIC_AUTH_GATEWAY_URL: process.env.NEXT_PUBLIC_AUTH_GATEWAY_URL || 'https://memory-arena-auth-gateway.vercel.app',
@@ -208,6 +235,8 @@ async function startFrontend(): Promise<void> {
     });
   }
 
+  const recentFrontendLogs: string[] = [];
+
   if (frontendProcess?.stdout) {
     frontendProcess.stdout.on('data', (data: Buffer) => {
       console.log(`[Frontend] ${data.toString().trim()}`);
@@ -215,17 +244,32 @@ async function startFrontend(): Promise<void> {
   }
   if (frontendProcess?.stderr) {
     frontendProcess.stderr.on('data', (data: Buffer) => {
-      console.error(`[Frontend ERR] ${data.toString().trim()}`);
+      const errText = data.toString().trim();
+      console.error(`[Frontend ERR] ${errText}`);
+      recentFrontendLogs.push(errText);
+      if (recentFrontendLogs.length > 8) recentFrontendLogs.shift();
     });
   }
 
+  let frontendExitedEarly = false;
+  let frontendExitCode: number | null = null;
   frontendProcess?.on('exit', (code) => {
     console.log(`[Desktop] Frontend exited with code ${code}`);
+    frontendExitedEarly = true;
+    frontendExitCode = code;
     frontendProcess = null;
   });
 
-  await waitForPort(FRONTEND_PORT, 30000);
-  console.log('[Desktop] Frontend is ready.');
+  try {
+    await waitForPort(FRONTEND_PORT, 30000);
+    console.log('[Desktop] Frontend is ready.');
+  } catch (err) {
+    if (frontendExitedEarly || recentFrontendLogs.length > 0) {
+      const details = recentFrontendLogs.length > 0 ? `\n\nError output:\n${recentFrontendLogs.join('\n')}` : `\n\nProcess exited with code ${frontendExitCode}`;
+      throw new Error(`Port ${FRONTEND_PORT} did not start.${details}`);
+    }
+    throw err;
+  }
 }
 
 /**

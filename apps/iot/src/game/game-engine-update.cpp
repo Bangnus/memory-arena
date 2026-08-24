@@ -9,13 +9,23 @@ void GameEngine::updateState() {
     
     bool canRestart = (currentState != GameState::BOOT);
 
-    if (canRestart && buttonManager.isRestartPressed()) {
-        Serial.println("[RESTART] Physical RESTART button pressed! Triggering system:reset...");
-        socketClient.sendSystemReset();
-        serialManager.sendRestart();
-        changeState(GameState::SELECT_MODE);
-        buzzerManager.playReset();
-        return;
+    if (canRestart) {
+        RestartAction restartAction = buttonManager.getRestartAction();
+        if (restartAction == RestartAction::LONG_PRESS_5S) {
+            Serial.println("[RESTART] Physical RESTART button held for 5s! Triggering FULL DATABASE RESET...");
+            socketClient.sendDbReset();
+            serialManager.sendDbReset();
+            changeState(GameState::SELECT_MODE);
+            buzzerManager.playReset();
+            return;
+        } else if (restartAction == RestartAction::SHORT_PRESS) {
+            Serial.println("[RESTART] Physical RESTART button pressed! Triggering game session reset...");
+            socketClient.sendSystemReset();
+            serialManager.sendRestart();
+            changeState(GameState::SELECT_MODE);
+            buzzerManager.playReset();
+            return;
+        }
     }
 
     switch (currentState) {

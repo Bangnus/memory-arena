@@ -42,6 +42,10 @@ void SerialManager::sendRestart() {
     Serial.println("RESTART");
 }
 
+void SerialManager::sendDbReset() {
+    Serial.println("DB_RESET");
+}
+
 void SerialManager::sendHeartbeat() {
     Serial.println("HB:" + String(DEVICE_ID));
 }

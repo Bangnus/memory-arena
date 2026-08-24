@@ -214,24 +214,37 @@ bool ButtonManager::isPrevPressed() {
 }
 
 bool ButtonManager::isRestartPressed() {
-    static bool lastState = HIGH;
-    static unsigned long lastDebounce = 0;
+    return getRestartAction() == RestartAction::SHORT_PRESS;
+}
+
+RestartAction ButtonManager::getRestartAction() {
     unsigned long now = millis();
     bool currentState = digitalRead(PIN_BTN_RESTART);
-    bool pressed = false;
-    
-    if (lastState == HIGH && currentState == LOW) {
-        if (now - lastDebounce >= DEBOUNCE_DELAY_MS) {
-            if (digitalRead(PIN_BTN_START) == HIGH &&
-                digitalRead(PIN_BTN_NEXT) == HIGH &&
-                digitalRead(PIN_BTN_PREV) == HIGH) {
-            pressed = true;
-            lastDebounce = now;
+    RestartAction action = RestartAction::NONE;
+
+    if (restartLastState == HIGH && currentState == LOW) {
+        // Just pressed down
+        restartPressStartTime = now;
+        isRestartHeld = true;
+        restartDbResetTriggered = false;
+    } else if (isRestartHeld && currentState == LOW) {
+        // Holding down
+        unsigned long heldDuration = now - restartPressStartTime;
+        if (heldDuration >= 5000 && !restartDbResetTriggered) {
+            restartDbResetTriggered = true;
+            action = RestartAction::LONG_PRESS_5S;
         }
+    } else if (isRestartHeld && currentState == HIGH) {
+        // Released
+        isRestartHeld = false;
+        unsigned long heldDuration = now - restartPressStartTime;
+        if (!restartDbResetTriggered && heldDuration >= DEBOUNCE_DELAY_MS) {
+            action = RestartAction::SHORT_PRESS;
         }
-    } else if (lastState == LOW && currentState == HIGH) {
-        lastDebounce = now;
+        restartDbResetTriggered = false;
     }
-    lastState = currentState;
-    return pressed;
+
+    restartLastState = currentState;
+    return action;
 }
+
