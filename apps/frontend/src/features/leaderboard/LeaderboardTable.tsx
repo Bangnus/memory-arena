@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, Medal, Timer, Hash } from 'lucide-react';
+import { Trophy, Medal, Timer, Hash, Gamepad2, Flame } from 'lucide-react';
 import { leaderboardService } from '@/services/leaderboard.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -30,8 +30,8 @@ export function LeaderboardTable() {
         </CardDescription>
       </CardHeader>
 
-      <CardContent className="pt-4 flex-1 min-h-0 overflow-y-auto px-4 md:px-6">
-        <div className="flex flex-col gap-2.5">
+      <CardContent className="pt-4 flex-1 min-h-0 overflow-y-auto custom-scrollbar px-3 md:px-5 pr-2 md:pr-3">
+        <div className="flex flex-col gap-2.5 pr-1">
           {players.length === 0 ? (
             <div className="text-center py-10 text-purple-600 font-semibold bg-purple-50/60 rounded-2xl border-2 border-dashed border-purple-200">
               No data available
@@ -77,7 +77,7 @@ export function LeaderboardTable() {
                   
                   {/* Avatar */}
                   <Avatar className={cn(
-                    "h-10 w-10 md:h-11 md:w-11 border-2 shadow-sm",
+                    "h-10 w-10 md:h-11 md:w-11 border-2 shadow-sm flex-shrink-0",
                     isTop ? "border-amber-400" : "border-purple-200"
                   )}>
                     <AvatarImage src={entry.pictureUrl || ''} />
@@ -86,23 +86,38 @@ export function LeaderboardTable() {
                     </AvatarFallback>
                   </Avatar>
                   
-                  {/* Player Name */}
+                  {/* Player Name & Play Stats */}
                   <div className="flex-1 min-w-0">
-                    <div className={cn(
-                      "font-black truncate text-sm md:text-base",
-                      isTop ? "text-amber-950" : "text-slate-800"
-                    )}>
-                      {entry.displayName}
-                    </div>
-                    {isTop && (
-                      <span className="inline-block bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full font-orbitron">
-                        Champion
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className={cn(
+                        "font-black truncate text-sm md:text-base",
+                        isTop ? "text-amber-950" : "text-slate-800"
+                      )}>
+                        {entry.displayName}
                       </span>
-                    )}
+                      {isTop && (
+                        <span className="inline-block bg-amber-400 text-amber-950 text-[10px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full font-orbitron">
+                          Champion
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Matches Played & Win Rate */}
+                    <div className="flex items-center gap-2 mt-0.5 text-[11px] font-semibold flex-wrap">
+                      <span className="inline-flex items-center gap-1 text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-md">
+                        <Gamepad2 className="w-3 h-3 text-indigo-500" />
+                        <span>{entry.games} {entry.games === 1 ? 'Match' : 'Matches'}</span>
+                      </span>
+                      {entry.games > 0 && (
+                        <span className="text-emerald-600 font-mono text-[10px] font-bold">
+                          {entry.winRate}% Win
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   {/* Stats */}
-                  <div className="flex flex-col items-end gap-0.5">
+                  <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
                     <div className="font-orbitron font-black text-base md:text-lg text-purple-700">
                       {entry.wins} <span className="text-[10px] text-purple-500 font-bold uppercase">Wins</span>
                     </div>

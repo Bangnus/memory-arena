@@ -64,3 +64,31 @@
     @apply font-orbitron tracking-wide;
   }
 }
+
+/* Custom Slim & Sleek Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.35) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 9999px;
+  margin: 6px 0;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(147, 51, 234, 0.3);
+  border-radius: 9999px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(147, 51, 234, 0.6);
+}
+

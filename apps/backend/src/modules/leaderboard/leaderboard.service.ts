@@ -72,11 +72,32 @@ export class LeaderboardService {
       }),
     );
 
-    // Sort by wins (desc), then winRate (desc), then avgTimeMs (asc)
+    // Sort by:
+    // 1. Active players (games > 0) before unplayed players (games === 0)
+    // 2. Wins (desc)
+    // 3. Win Rate (desc)
+    // 4. Avg Time (asc, valid times > 0 first)
+    // 5. Total games played (desc)
     entries.sort((a, b) => {
+      // 1. Players who played come before players who never played
+      if (a.games > 0 && b.games === 0) return -1;
+      if (a.games === 0 && b.games > 0) return 1;
+
+      // 2. Sort by wins (desc)
       if (b.wins !== a.wins) return b.wins - a.wins;
+
+      // 3. Sort by win rate (desc)
       if (b.winRate !== a.winRate) return b.winRate - a.winRate;
-      return a.avgTimeMs - b.avgTimeMs;
+
+      // 4. Sort by avgTimeMs (asc) — 0ms treated as unrecorded / Infinity
+      const timeA = a.avgTimeMs > 0 ? a.avgTimeMs : Infinity;
+      const timeB = b.avgTimeMs > 0 ? b.avgTimeMs : Infinity;
+      if (timeA !== timeB) return timeA - timeB;
+
+      // 5. Sort by matches played (desc)
+      if (b.games !== a.games) return b.games - a.games;
+
+      return a.displayName.localeCompare(b.displayName);
     });
 
     // Assign rank
