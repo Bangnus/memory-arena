@@ -46,15 +46,13 @@ backend-logs: ## View backend logs
 db-logs: ## View database logs
 	docker compose -f docker-compose.dev.yml logs -f postgres
 
-run-local: ## Run NestJS + Next.js locally on Windows in development mode (DB & Ngrok in Docker, apps locally)
-	docker compose up -d postgres ngrok --no-deps
-	cd apps/backend && npx prisma migrate deploy
+run-local: ## Run NestJS + Next.js locally on Windows (Zero-Config SQLite, No Docker/Ngrok needed)
+	cd apps/backend && npx prisma db push
 	cmd.exe /c start cmd /k "echo Starting Backend... && cd apps/backend && npm run start:dev"
 	cmd.exe /c start cmd /k "echo Starting Frontend... && cd apps/frontend && npm run dev"
 
-run-local-prod: ## Build & Run NestJS + Next.js locally on Windows in production mode (Fresh DB reset & clean start)
-	docker compose up -d postgres ngrok --no-deps
-	cd apps/backend && npx prisma migrate reset --force && npm run build
+run-local-prod: ## Build & Run NestJS + Next.js locally on Windows in production mode (Zero-Config SQLite)
+	cd apps/backend && npx prisma db push && npm run build
 	cd apps/frontend && npm run build
 	cmd.exe /c start cmd /k "echo Starting Backend (Production)... && cd apps/backend && npm run start:prod"
 	cmd.exe /c start cmd /k "echo Starting Frontend (Production)... && cd apps/frontend && npm run start"

@@ -5,12 +5,14 @@ import * as path from "path";
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 import { defineConfig } from "prisma/config";
 
+const dbUrl = process.env.DATABASE_URL || "file:./data/memory_arena.db";
+
 export default defineConfig({
   schema: "prisma/schema.prisma",
   migrations: {
     path: "prisma/migrations",
   },
   datasource: {
-    url: process.env["DATABASE_URL"],
+    url: dbUrl,
   },
 });

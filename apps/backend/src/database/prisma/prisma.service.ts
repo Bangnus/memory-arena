@@ -5,8 +5,6 @@ import {
   Logger,
 } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
 
 @Injectable()
 export class PrismaService
@@ -16,17 +14,14 @@ export class PrismaService
   private readonly logger = new Logger(PrismaService.name);
 
   constructor() {
-    const connectionString = process.env.DATABASE_URL;
-    const pool = new Pool({ connectionString });
-    const adapter = new PrismaPg(pool);
-    super({ adapter });
+    super();
   }
 
   async onModuleInit(): Promise<void> {
     try {
       await this.$connect();
       this.logger.log(
-        'Successfully connected to PostgreSQL database via Prisma',
+        'Successfully connected to SQLite database via Prisma',
       );
     } catch (error) {
       this.logger.warn(
@@ -37,6 +32,6 @@ export class PrismaService
 
   async onModuleDestroy(): Promise<void> {
     await this.$disconnect();
-    this.logger.log('Disconnected from PostgreSQL database');
+    this.logger.log('Disconnected from SQLite database');
   }
 }

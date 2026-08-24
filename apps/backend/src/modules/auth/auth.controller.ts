@@ -38,6 +38,30 @@ export class AuthController {
     return this.authService.loginWithLine(dto);
   }
 
+  @Post('gateway-login')
+  @ApiOperation({
+    summary: 'Direct Login with Gateway Profile',
+    description: 'Registers player profile received from Cloud Auth Gateway',
+  })
+  @ApiResponse({ status: 200, description: 'Authentication successful' })
+  async gatewayLogin(
+    @Body()
+    body: {
+      lineUserId: string;
+      displayName: string;
+      pictureUrl?: string | null;
+      playerNumber?: number;
+    },
+  ) {
+    const authResult = await this.authService.loginWithProfile(body);
+    if (body.playerNumber) {
+      await this.sessionService.joinPlayer(authResult.player.id, {
+        playerNumber: body.playerNumber,
+      });
+    }
+    return authResult;
+  }
+
   @Get('line/callback')
   @ApiOperation({
     summary: 'LINE OAuth Callback Redirect',

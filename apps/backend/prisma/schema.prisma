@@ -5,32 +5,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-}
-
-enum Difficulty {
-  EASY
-  MEDIUM
-  HARD
-}
-
-enum SessionStatus {
-  WAITING
-  LOGIN
-  READY
-  COUNTDOWN
-  SHOW_SEQUENCE
-  PLAYER_INPUT
-  ROUND_RESULT
-  MATCH_RESULT
-  FINISHED
-}
-
-enum Color {
-  RED
-  GREEN
-  BLUE
-  YELLOW
+  provider = "sqlite"
 }
 
 model Player {
@@ -48,31 +23,31 @@ model Player {
 }
 
 model GameSession {
-  id              String        @id @default(cuid())
-  status          SessionStatus @default(WAITING)
-  difficulty      Difficulty    @default(MEDIUM)
+  id              String   @id @default(cuid())
+  status          String   @default("WAITING")
+  difficulty      String   @default("MEDIUM")
   player1Id       String?
   player2Id       String?
-  currentRound    Int           @default(1)
-  player1Score    Int           @default(0)
-  player2Score    Int           @default(0)
+  currentRound    Int      @default(1)
+  player1Score    Int      @default(0)
+  player2Score    Int      @default(0)
   currentSequence Json?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   @@index([status])
 }
 
 model Match {
-  id           String     @id @default(cuid())
-  difficulty   Difficulty
+  id           String   @id @default(cuid())
+  difficulty   String   @default("MEDIUM")
   winnerId     String?
-  durationMs   Int        @default(0)
-  player1Score Int        @default(0)
-  player2Score Int        @default(0)
-  startedAt    DateTime   @default(now())
-  finishedAt   DateTime   @default(now())
-  createdAt    DateTime   @default(now())
+  durationMs   Int      @default(0)
+  player1Score Int      @default(0)
+  player2Score Int      @default(0)
+  startedAt    DateTime @default(now())
+  finishedAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   winner       Player?       @relation("MatchWinner", fields: [winnerId], references: [id], onDelete: SetNull)
   rounds       Round[]

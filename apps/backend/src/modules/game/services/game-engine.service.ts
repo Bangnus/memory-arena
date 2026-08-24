@@ -11,7 +11,7 @@ import { ValidatorService } from './validator.service';
 import { ScoringService } from './scoring.service';
 import { StateMachineService } from './state-machine.service';
 import { SubmitInputDto } from '../dto/submit-input.dto';
-import { Color, SessionStatus, SocketEvent } from '../../../common/enums';
+import { Color, SessionStatus, SocketEvent, Difficulty } from '../../../common/enums';
 import { GAME_CONSTANTS } from '../../../common/constants/game.constants';
 
 @Injectable()
@@ -65,7 +65,7 @@ export class GameEngineService {
     let sequence = session.currentSequence as Color[];
 
     if (!sequence || sequence.length === 0) {
-      sequence = this.sequenceService.generateSequence(session.difficulty);
+      sequence = this.sequenceService.generateSequence(session.difficulty as Difficulty);
       await this.prisma.gameSession.update({
         where: { id: session.id },
         data: {
@@ -76,7 +76,7 @@ export class GameEngineService {
     }
 
     const displaySpeed =
-      GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty] || 500;
+      GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty as Difficulty] || 500;
 
     const sessionWithPlayers = await this.getCurrentSession();
     this.broadcast.emit(SocketEvent.SESSION_UPDATE, sessionWithPlayers);
@@ -172,9 +172,10 @@ export class GameEngineService {
 
     // Generate next sequence
     const nextSequence = this.sequenceService.generateSequence(
-      session.difficulty,
+      session.difficulty as Difficulty,
     );
-    const displaySpeed = GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty];
+    const displaySpeed =
+      GAME_CONSTANTS.DISPLAY_SPEED_MS[session.difficulty as Difficulty];
 
     if (isMatchFinished) {
       // Determine winner player ID

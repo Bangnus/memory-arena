@@ -1,3 +1,14 @@
 .mimocode/
 node_modules/
 .env
+.env.*
+.env.local
+*.db
+*.db-journal
+apps/backend/data/
+.next/
+dist/
+build/
+*.tsbuildinfo
+
+

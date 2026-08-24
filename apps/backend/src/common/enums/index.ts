@@ -1,6 +1,27 @@
-import { Difficulty, SessionStatus, Color } from '@prisma/client';
+export enum Difficulty {
+  EASY = 'EASY',
+  MEDIUM = 'MEDIUM',
+  HARD = 'HARD',
+}
 
-export { Difficulty, SessionStatus, Color };
+export enum SessionStatus {
+  WAITING = 'WAITING',
+  LOGIN = 'LOGIN',
+  READY = 'READY',
+  COUNTDOWN = 'COUNTDOWN',
+  SHOW_SEQUENCE = 'SHOW_SEQUENCE',
+  PLAYER_INPUT = 'PLAYER_INPUT',
+  ROUND_RESULT = 'ROUND_RESULT',
+  MATCH_RESULT = 'MATCH_RESULT',
+  FINISHED = 'FINISHED',
+}
+
+export enum Color {
+  RED = 'RED',
+  GREEN = 'GREEN',
+  BLUE = 'BLUE',
+  YELLOW = 'YELLOW',
+}
 
 export enum SocketEvent {
   SESSION_UPDATE = 'session:update',

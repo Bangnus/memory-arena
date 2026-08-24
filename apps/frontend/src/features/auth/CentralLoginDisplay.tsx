@@ -7,27 +7,77 @@ import { useGameEngine } from '@/hooks/useGameEngine';
 import { useSocket } from '@/hooks/useSocket';
 import { PlayerLoginCard } from './PlayerLoginCard';
 import { toast } from 'sonner';
+import { api } from '@/services/api';
 
 export function CentralLoginDisplay() {
   const { session } = useGameEngine();
   const { socket } = useSocket();
+  const [sessionId, setSessionId] = useState<string>('');
   const [qrUrls, setQrUrls] = useState<{ p1: string; p2: string } | null>(null);
   const [redirectCountdown, setRedirectCountdown] = useState<number | null>(null);
 
   useEffect(() => {
     gameService.getCurrentSession().catch(console.error);
 
-    const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || '';
-    const redirectUri = process.env.NEXT_PUBLIC_LINE_CALLBACK_URL || 'https://equivocal-unmapped-pecan.ngrok-free.dev/api/v1/auth/line/callback';
-    
-    if (!clientId) {
-      toast.error('LINE Client ID is missing!');
-      return;
-    }
+    const generatedSessionId = `arena_${Math.random().toString(36).substring(2, 8)}_${Date.now().toString(36)}`;
+    setSessionId(generatedSessionId);
 
-    const buildUrl = (role: number) => `https://access.line.me/oauth2/v2.1/authorize?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&state=mobile_role_${role}&scope=profile%20openid`;
-    setQrUrls({ p1: buildUrl(1), p2: buildUrl(2) });
+    const gatewayUrl = process.env.NEXT_PUBLIC_AUTH_GATEWAY_URL || 'https://memory-arena-auth.vercel.app';
+    const clientId = process.env.NEXT_PUBLIC_LINE_CLIENT_ID || '2010838428';
+
+    // Build gateway QR code URLs
+    const buildGatewayUrl = (role: number) =>
+      `${gatewayUrl}/api/auth/line/authorize?sessionId=${generatedSessionId}&role=${role}`;
+
+    setQrUrls({
+      p1: buildGatewayUrl(1),
+      p2: buildGatewayUrl(2),
+    });
   }, []);
+
+  // Poll Cloud Auth Gateway for mobile scans
+  useEffect(() => {
+    if (!sessionId) return;
+    const gatewayUrl = process.env.NEXT_PUBLIC_AUTH_GATEWAY_URL || 'https://memory-arena-auth.vercel.app';
+
+    const interval = setInterval(async () => {
+      // If player 1 not joined yet, poll P1
+      if (!session?.player1Id) {
+        try {
+          const res = await fetch(`${gatewayUrl}/api/auth/line/poll?sessionId=${sessionId}&role=1`);
+          const data = await res.json();
+          if (data?.success && data?.player) {
+            await api.post('/auth/gateway-login', {
+              ...data.player,
+              playerNumber: 1,
+            });
+            toast.success(`Player 1 (${data.player.displayName}) Connected!`);
+          }
+        } catch {
+          // Ignore network retry silently
+        }
+      }
+
+      // If player 2 not joined yet, poll P2
+      if (!session?.player2Id) {
+        try {
+          const res = await fetch(`${gatewayUrl}/api/auth/line/poll?sessionId=${sessionId}&role=2`);
+          const data = await res.json();
+          if (data?.success && data?.player) {
+            await api.post('/auth/gateway-login', {
+              ...data.player,
+              playerNumber: 2,
+            });
+            toast.success(`Player 2 (${data.player.displayName}) Connected!`);
+          }
+        } catch {
+          // Ignore network retry silently
+        }
+      }
+    }, 1500);
+
+    return () => clearInterval(interval);
+  }, [sessionId, session?.player1Id, session?.player2Id]);
 
   useEffect(() => {
     if (!socket) return;

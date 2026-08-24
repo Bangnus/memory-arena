@@ -116,6 +116,38 @@ export class AuthService {
     };
   }
 
+  async loginWithProfile(profile: {
+    lineUserId: string;
+    displayName: string;
+    pictureUrl?: string | null;
+  }) {
+    const player = await this.prisma.player.upsert({
+      where: { lineUserId: profile.lineUserId },
+      update: {
+        displayName: profile.displayName,
+        pictureUrl: profile.pictureUrl,
+      },
+      create: {
+        lineUserId: profile.lineUserId,
+        displayName: profile.displayName,
+        pictureUrl: profile.pictureUrl,
+      },
+    });
+
+    const payload: IJwtPayload = {
+      sub: player.id,
+      lineUserId: player.lineUserId,
+      displayName: player.displayName,
+    };
+
+    const token = this.jwtService.sign(payload);
+
+    return {
+      token,
+      player,
+    };
+  }
+
   async getMe(playerId: string) {
     const player = await this.prisma.player.findUnique({
       where: { id: playerId },
