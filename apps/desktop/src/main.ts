@@ -15,6 +15,30 @@ let mainWindow: BrowserWindow | null = null;
 let backendProcess: ChildProcess | null = null;
 let frontendProcess: ChildProcess | null = null;
 
+let logFilePath = '';
+
+function initLogger() {
+  try {
+    const userData = app.getPath('userData');
+    if (!fs.existsSync(userData)) {
+      fs.mkdirSync(userData, { recursive: true });
+    }
+    logFilePath = path.join(userData, 'server.log');
+    fs.writeFileSync(logFilePath, `=== Memory Arena Server Log [${new Date().toISOString()}] ===\nApp Version: ${app.getVersion()}\nExec Path: ${process.execPath}\nUserData: ${userData}\n\n`);
+  } catch (e) {
+    console.error('Failed to initialize server.log:', e);
+  }
+}
+
+function writeLog(prefix: string, msg: string) {
+  if (!logFilePath) return;
+  const line = `[${new Date().toISOString()}] ${prefix} ${msg}\n`;
+  try {
+    fs.appendFileSync(logFilePath, line);
+  } catch (e) { }
+}
+
+
 // Ensure single application instance to prevent multiple instances clashing on port 3000/3001
 const gotSingleInstanceLock = app.requestSingleInstanceLock();
 if (!gotSingleInstanceLock) {
@@ -39,28 +63,30 @@ function getResourcePath(subPath: string): string {
 }
 
 /**
- * Check if a TCP port is already in use.
+ * Check if a TCP port is free, properly waiting for it to close if we bound to it.
  */
-function isPortInUse(port: number): Promise<boolean> {
+function checkPortFree(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const server = net.createServer();
-    server.once('error', () => resolve(true));
+    server.once('error', () => resolve(false));
     server.once('listening', () => {
-      server.close();
-      resolve(false);
+      server.close(() => {
+        resolve(true); // Wait until socket is completely closed before resolving
+      });
     });
     server.listen(port, '0.0.0.0');
   });
 }
 
 /**
- * Kill any stale process listening on a specific port (Windows taskkill helper).
+ * Forcefully kill any process on the port and wait until the port is truly free.
  */
-function killStaleProcessOnPort(port: number): Promise<void> {
-  return new Promise((resolve) => {
-    if (process.platform !== 'win32') return resolve();
-    exec(`netstat -ano | findstr :${port}`, (err, stdout) => {
-      if (err || !stdout) return resolve();
+async function ensurePortFree(port: number, timeoutMs: number = 5000): Promise<void> {
+  if (process.platform === 'win32') {
+    try {
+      const stdout = await new Promise<string>((resolve) => {
+        exec(`netstat -ano | findstr :${port}`, (err, out) => resolve(out || ''));
+      });
       const lines = stdout.trim().split('\n');
       const pids = new Set<string>();
       for (const line of lines) {
@@ -70,13 +96,27 @@ function killStaleProcessOnPort(port: number): Promise<void> {
           pids.add(pid);
         }
       }
-      if (pids.size === 0) return resolve();
-      const killCommands = Array.from(pids).map((pid) => `taskkill /F /T /PID ${pid}`).join(' & ');
-      exec(killCommands, () => {
-        setTimeout(resolve, 500);
-      });
-    });
-  });
+      if (pids.size > 0) {
+        console.log(`[Desktop] Found stale processes on port ${port}: PID ${Array.from(pids).join(', ')}. Killing...`);
+        const killCommands = Array.from(pids).map((pid) => `taskkill /F /T /PID ${pid}`).join(' & ');
+        await new Promise<void>((resolve) => {
+          exec(killCommands, () => resolve());
+        });
+      }
+    } catch (e) {
+      console.error(`[Desktop] Failed to clean port ${port}:`, e);
+    }
+  }
+
+  // Poll until the port is actually free
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    const isFree = await checkPortFree(port);
+    if (isFree) return;
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
+  throw new Error(`Port ${port} is currently locked by another application. Please close the application using port ${port} and try again.`);
 }
 
 /**
@@ -86,26 +126,32 @@ function waitForPort(port: number, timeoutMs: number = 30000): Promise<void> {
   const start = Date.now();
   return new Promise((resolve, reject) => {
     const check = () => {
+      if (Date.now() - start > timeoutMs) {
+        return reject(new Error(`Port ${port} did not become available within ${timeoutMs}ms`));
+      }
+
       const socket = new net.Socket();
-      socket.setTimeout(500);
-      socket.once('connect', () => {
+      let hasFinished = false;
+
+      const finish = (success: boolean) => {
+        if (hasFinished) return;
+        hasFinished = true;
         socket.destroy();
-        resolve();
-      });
-      socket.once('error', () => {
-        socket.destroy();
-        if (Date.now() - start > timeoutMs) {
-          reject(new Error(`Port ${port} did not become available within ${timeoutMs}ms`));
+        if (success) {
+          resolve();
         } else {
-          setTimeout(check, 300);
+          setTimeout(check, 500);
         }
-      });
-      socket.once('timeout', () => {
-        socket.destroy();
-        setTimeout(check, 300);
-      });
+      };
+
+      socket.setTimeout(2000);
+      socket.once('connect', () => finish(true));
+      socket.once('error', () => finish(false));
+      socket.once('timeout', () => finish(false));
+
       socket.connect(port, '127.0.0.1');
     };
+
     check();
   });
 }
@@ -114,14 +160,7 @@ function waitForPort(port: number, timeoutMs: number = 30000): Promise<void> {
  * Start the NestJS backend server.
  */
 async function startBackend(): Promise<void> {
-  // Clear any zombie process on BACKEND_PORT before spawning
-  await killStaleProcessOnPort(BACKEND_PORT);
-
-  const portBusy = await isPortInUse(BACKEND_PORT);
-  if (portBusy) {
-    console.log(`[Desktop] Backend port ${BACKEND_PORT} already in use, skipping spawn.`);
-    return;
-  }
+  await ensurePortFree(BACKEND_PORT, 5000);
 
   console.log('[Desktop] Starting NestJS backend...');
 
@@ -182,38 +221,53 @@ async function startBackend(): Promise<void> {
 
   const recentBackendLogs: string[] = [];
 
+  const addLog = (text: string, isErr: boolean) => {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (isErr) console.error(`[Backend ERR] ${line}`);
+      else console.log(`[Backend] ${line}`);
+
+      writeLog(isErr ? '[Backend ERR]' : '[Backend]', line);
+
+      recentBackendLogs.push(line);
+      if (recentBackendLogs.length > 20) recentBackendLogs.shift();
+    }
+  };
+
   if (backendProcess?.stdout) {
     backendProcess.stdout.on('data', (data: Buffer) => {
-      console.log(`[Backend] ${data.toString().trim()}`);
+      addLog(data.toString(), false);
     });
   }
   if (backendProcess?.stderr) {
     backendProcess.stderr.on('data', (data: Buffer) => {
-      const errText = data.toString().trim();
-      console.error(`[Backend ERR] ${errText}`);
-      recentBackendLogs.push(errText);
-      if (recentBackendLogs.length > 8) recentBackendLogs.shift();
+      addLog(data.toString(), true);
     });
   }
 
   let backendExitedEarly = false;
   let backendExitCode: number | null = null;
   backendProcess?.on('exit', (code) => {
+    writeLog('[Desktop]', `Backend exited with code ${code}`);
     console.log(`[Desktop] Backend exited with code ${code}`);
     backendExitedEarly = true;
     backendExitCode = code;
     backendProcess = null;
   });
+  backendProcess?.on('error', (err) => {
+    writeLog('[Desktop ERR]', `Backend spawn error: ${err.message}`);
+    console.error(`[Desktop] Backend spawn error:`, err);
+    backendExitedEarly = true;
+    addLog(`Spawn Error: ${err.message}`, true);
+  });
 
   try {
     await waitForPort(BACKEND_PORT, 30000);
+    writeLog('[Desktop]', 'Backend is ready.');
     console.log('[Desktop] Backend is ready.');
   } catch (err) {
-    if (backendExitedEarly || recentBackendLogs.length > 0) {
-      const details = recentBackendLogs.length > 0 ? `\n\nError output:\n${recentBackendLogs.join('\n')}` : `\n\nProcess exited with code ${backendExitCode}`;
-      throw new Error(`Port ${BACKEND_PORT} did not start.${details}`);
-    }
-    throw err;
+    const details = recentBackendLogs.length > 0 ? `\n\nRecent Logs:\n${recentBackendLogs.join('\n')}` : `\n\nProcess exited with code ${backendExitCode}`;
+    throw new Error(`${err instanceof Error ? err.message : 'Port 3000 did not start'}.${details}\n\nPlease check server.log at: ${logFilePath}`);
   }
 }
 
@@ -221,14 +275,8 @@ async function startBackend(): Promise<void> {
  * Start the Next.js frontend server.
  */
 async function startFrontend(): Promise<void> {
-  // Clear any zombie process on FRONTEND_PORT before spawning
-  await killStaleProcessOnPort(FRONTEND_PORT);
-
-  const portBusy = await isPortInUse(FRONTEND_PORT);
-  if (portBusy) {
-    console.log(`[Desktop] Frontend port ${FRONTEND_PORT} already in use, skipping spawn.`);
-    return;
-  }
+  // Ensure the port is entirely free before spawning, kill zombies if needed
+  await ensurePortFree(FRONTEND_PORT, 5000);
 
   console.log('[Desktop] Starting Next.js frontend...');
 
@@ -282,38 +330,53 @@ async function startFrontend(): Promise<void> {
 
   const recentFrontendLogs: string[] = [];
 
+  const addFrontendLog = (text: string, isErr: boolean) => {
+    const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      if (isErr) console.error(`[Frontend ERR] ${line}`);
+      else console.log(`[Frontend] ${line}`);
+
+      writeLog(isErr ? '[Frontend ERR]' : '[Frontend]', line);
+
+      recentFrontendLogs.push(line);
+      if (recentFrontendLogs.length > 20) recentFrontendLogs.shift();
+    }
+  };
+
   if (frontendProcess?.stdout) {
     frontendProcess.stdout.on('data', (data: Buffer) => {
-      console.log(`[Frontend] ${data.toString().trim()}`);
+      addFrontendLog(data.toString(), false);
     });
   }
   if (frontendProcess?.stderr) {
     frontendProcess.stderr.on('data', (data: Buffer) => {
-      const errText = data.toString().trim();
-      console.error(`[Frontend ERR] ${errText}`);
-      recentFrontendLogs.push(errText);
-      if (recentFrontendLogs.length > 8) recentFrontendLogs.shift();
+      addFrontendLog(data.toString(), true);
     });
   }
 
   let frontendExitedEarly = false;
   let frontendExitCode: number | null = null;
   frontendProcess?.on('exit', (code) => {
+    writeLog('[Desktop]', `Frontend exited with code ${code}`);
     console.log(`[Desktop] Frontend exited with code ${code}`);
     frontendExitedEarly = true;
     frontendExitCode = code;
     frontendProcess = null;
   });
+  frontendProcess?.on('error', (err) => {
+    writeLog('[Desktop ERR]', `Frontend spawn error: ${err.message}`);
+    console.error(`[Desktop] Frontend spawn error:`, err);
+    frontendExitedEarly = true;
+    addFrontendLog(`Spawn Error: ${err.message}`, true);
+  });
 
   try {
     await waitForPort(FRONTEND_PORT, 30000);
+    writeLog('[Desktop]', 'Frontend is ready.');
     console.log('[Desktop] Frontend is ready.');
   } catch (err) {
-    if (frontendExitedEarly || recentFrontendLogs.length > 0) {
-      const details = recentFrontendLogs.length > 0 ? `\n\nError output:\n${recentFrontendLogs.join('\n')}` : `\n\nProcess exited with code ${frontendExitCode}`;
-      throw new Error(`Port ${FRONTEND_PORT} did not start.${details}`);
-    }
-    throw err;
+    const details = recentFrontendLogs.length > 0 ? `\n\nRecent Logs:\n${recentFrontendLogs.join('\n')}` : `\n\nProcess exited with code ${frontendExitCode}`;
+    throw new Error(`${err instanceof Error ? err.message : 'Port 3001 did not start'}.${details}\n\nPlease check server.log at: ${logFilePath}`);
   }
 }
 
@@ -373,22 +436,22 @@ function killChildProcesses(): void {
     console.log('[Desktop] Stopping frontend process tree...');
     try {
       if (process.platform === 'win32') {
-        exec(`taskkill /F /T /PID ${frontendProcess.pid}`, () => {});
+        exec(`taskkill /F /T /PID ${frontendProcess.pid}`, () => { });
       } else {
         frontendProcess.kill('SIGKILL');
       }
-    } catch {}
+    } catch { }
     frontendProcess = null;
   }
   if (backendProcess?.pid) {
     console.log('[Desktop] Stopping backend process tree...');
     try {
       if (process.platform === 'win32') {
-        exec(`taskkill /F /T /PID ${backendProcess.pid}`, () => {});
+        exec(`taskkill /F /T /PID ${backendProcess.pid}`, () => { });
       } else {
         backendProcess.kill('SIGKILL');
       }
-    } catch {}
+    } catch { }
     backendProcess = null;
   }
 }
@@ -397,6 +460,8 @@ function killChildProcesses(): void {
  * Application entry point.
  */
 app.whenReady().then(async () => {
+  initLogger();
+  writeLog('[Desktop]', `App ready. Platform: ${process.platform}, Arch: ${process.arch}, IS_DEV: ${IS_DEV}`);
   if (!gotSingleInstanceLock) return;
 
   try {
@@ -404,6 +469,8 @@ app.whenReady().then(async () => {
     await startFrontend();
     createWindow();
   } catch (error) {
+    const errMsg = error instanceof Error ? error.stack || error.message : String(error);
+    writeLog('[Desktop CRITICAL]', `Startup failed: ${errMsg}`);
     console.error('[Desktop] Startup failed:', error);
     dialog.showErrorBox(
       'Memory Arena - Startup Error',
