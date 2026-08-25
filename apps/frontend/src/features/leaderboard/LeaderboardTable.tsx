@@ -118,12 +118,12 @@ export function LeaderboardTable() {
                   
                   {/* Stats */}
                   <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                    <div className="font-orbitron font-black text-base md:text-lg text-purple-700">
-                      {entry.wins} <span className="text-[10px] text-purple-500 font-bold uppercase">Wins</span>
+                    <div className="font-orbitron font-black text-base md:text-lg text-cyan-700 flex items-center gap-1">
+                      <Timer className="w-3.5 h-3.5 text-cyan-600" />
+                      <span>{entry.avgTimeMs > 0 ? `${(entry.avgTimeMs / 1000).toFixed(2)}s` : '-'}</span>
                     </div>
-                    <div className="text-xs font-mono font-bold text-slate-500 flex items-center gap-1">
-                      <Timer className="w-3 h-3 text-cyan-600" />
-                      {entry.avgTimeMs > 0 ? `${(entry.avgTimeMs / 1000).toFixed(2)}s` : '-'}
+                    <div className="text-xs font-mono font-bold text-slate-500">
+                      {entry.wins} <span className="text-[10px] text-purple-500 font-bold uppercase">Wins</span>
                     </div>
                   </div>
                 </div>

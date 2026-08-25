@@ -2,14 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Play, Volume2, VolumeX, BookOpen, Users, Cpu, Trophy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { LeaderboardTable } from '@/features/leaderboard/LeaderboardTable';
 import { useSocket } from '@/hooks/useSocket';
-import { useSound } from '@/hooks/useSound';
 import { SOCKET_EVENTS } from '@/constants/socket';
 import { HowToPlayModal } from '@/features/home/HowToPlayModal';
 import { SoundSettingsModal } from '@/features/home/SoundSettingsModal';
@@ -19,7 +17,6 @@ import { InteractiveSimonPads } from '@/features/home/InteractiveSimonPads';
 export default function Home() {
   const router = useRouter();
   const { socket } = useSocket();
-  const { playGameStart } = useSound();
   const [starting, setStarting] = useState(false);
   const [showSoundModal, setShowSoundModal] = useState(false);
   const [showRulesModal, setShowRulesModal] = useState(false);
@@ -50,10 +47,9 @@ export default function Home() {
 
     const handleDeviceStart = () => {
       setStarting(true);
-      playGameStart();
       setTimeout(() => {
         router.push('/mode');
-      }, 500);
+      }, 1200);
     };
 
     const handleSoundChange = (data: { bgm?: boolean; sfx?: boolean; enabled?: boolean }) => {
@@ -74,7 +70,15 @@ export default function Home() {
       socket.off(SOCKET_EVENTS.DEVICE_START, handleDeviceStart);
       socket.off('device:sound', handleSoundChange);
     };
-  }, [socket, router, playGameStart]);
+  }, [socket, router]);
+
+  const handleStartGameClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setStarting(true);
+    setTimeout(() => {
+      router.push('/mode');
+    }, 1200);
+  };
 
   const toggleBgm = () => {
     const nextBgm = !isBgmEnabled;
@@ -152,19 +156,16 @@ export default function Home() {
         onToggleSfx={toggleSfx}
       />
 
-      {/* Overlay animation on START */}
+      {/* Classic Overlay animation on START */}
       {starting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md animate-in fade-in duration-300">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1.1, opacity: 1 }}
-            className="flex flex-col items-center gap-4"
-          >
-            <div className="w-20 h-20 rounded-full border-4 border-emerald-400 border-t-transparent animate-spin" />
-            <h2 className="text-3xl font-black font-orbitron text-white tracking-widest animate-pulse">
-              INITIALIZING ARENA...
-            </h2>
-          </motion.div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
+          <div className="flex flex-col items-center space-y-6 animate-in zoom-in duration-500">
+            <div className="w-24 h-24 rounded-full bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 flex items-center justify-center animate-pulse shadow-[0_0_60px_rgba(56,189,248,0.6)]">
+              <Play className="w-12 h-12 text-white fill-white ml-1" />
+            </div>
+            <h2 className="text-4xl font-black font-orbitron text-white animate-pulse">STARTING GAME...</h2>
+            <p className="text-xl text-cyan-300 font-medium">Get Ready!</p>
+          </div>
         </div>
       )}
 
@@ -201,13 +202,13 @@ export default function Home() {
           <div className="w-full max-w-sm pt-2 relative">
             <div className="absolute -inset-1 bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 rounded-3xl blur-md opacity-60 animate-pulse" />
             <Button
-              asChild
+              onClick={handleStartGameClick}
               className="relative w-full h-18 text-2xl sm:text-3xl font-orbitron font-black tracking-wider rounded-3xl bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-500 hover:from-emerald-300 hover:to-blue-400 text-slate-950 shadow-[0_8px_35px_rgba(56,189,248,0.5)] hover:scale-105 active:scale-95 transition-all duration-300 border-2 border-white/40 cursor-pointer"
             >
-              <Link href="/mode" className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-3">
                 <Play className="w-8 h-8 fill-current" />
                 <span>START GAME</span>
-              </Link>
+              </div>
             </Button>
           </div>
 
