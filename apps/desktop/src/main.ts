@@ -1,5 +1,5 @@
 import { app, BrowserWindow, shell, dialog } from 'electron';
-import { ChildProcess, fork, spawn } from 'child_process';
+import { ChildProcess, spawn, exec } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
 import * as net from 'net';
@@ -14,6 +14,19 @@ const IS_DEV = !app.isPackaged;
 let mainWindow: BrowserWindow | null = null;
 let backendProcess: ChildProcess | null = null;
 let frontendProcess: ChildProcess | null = null;
+
+// Ensure single application instance to prevent multiple instances clashing on port 3000/3001
+const gotSingleInstanceLock = app.requestSingleInstanceLock();
+if (!gotSingleInstanceLock) {
+  app.quit();
+} else {
+  app.on('second-instance', () => {
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+}
 
 /**
  * Resolve resource paths depending on dev vs packaged mode.
@@ -36,7 +49,33 @@ function isPortInUse(port: number): Promise<boolean> {
       server.close();
       resolve(false);
     });
-    server.listen(port, '127.0.0.1');
+    server.listen(port, '0.0.0.0');
+  });
+}
+
+/**
+ * Kill any stale process listening on a specific port (Windows taskkill helper).
+ */
+function killStaleProcessOnPort(port: number): Promise<void> {
+  return new Promise((resolve) => {
+    if (process.platform !== 'win32') return resolve();
+    exec(`netstat -ano | findstr :${port}`, (err, stdout) => {
+      if (err || !stdout) return resolve();
+      const lines = stdout.trim().split('\n');
+      const pids = new Set<string>();
+      for (const line of lines) {
+        const parts = line.trim().split(/\s+/);
+        const pid = parts[parts.length - 1];
+        if (line.includes('LISTENING') && pid && pid !== '0' && pid !== String(process.pid)) {
+          pids.add(pid);
+        }
+      }
+      if (pids.size === 0) return resolve();
+      const killCommands = Array.from(pids).map((pid) => `taskkill /F /T /PID ${pid}`).join(' & ');
+      exec(killCommands, () => {
+        setTimeout(resolve, 500);
+      });
+    });
   });
 }
 
@@ -75,6 +114,9 @@ function waitForPort(port: number, timeoutMs: number = 30000): Promise<void> {
  * Start the NestJS backend server.
  */
 async function startBackend(): Promise<void> {
+  // Clear any zombie process on BACKEND_PORT before spawning
+  await killStaleProcessOnPort(BACKEND_PORT);
+
   const portBusy = await isPortInUse(BACKEND_PORT);
   if (portBusy) {
     console.log(`[Desktop] Backend port ${BACKEND_PORT} already in use, skipping spawn.`);
@@ -179,6 +221,9 @@ async function startBackend(): Promise<void> {
  * Start the Next.js frontend server.
  */
 async function startFrontend(): Promise<void> {
+  // Clear any zombie process on FRONTEND_PORT before spawning
+  await killStaleProcessOnPort(FRONTEND_PORT);
+
   const portBusy = await isPortInUse(FRONTEND_PORT);
   if (portBusy) {
     console.log(`[Desktop] Frontend port ${FRONTEND_PORT} already in use, skipping spawn.`);
@@ -321,17 +366,29 @@ function createWindow(): void {
 }
 
 /**
- * Kill all child processes on shutdown.
+ * Kill all child processes forcefully using taskkill on Windows.
  */
 function killChildProcesses(): void {
-  if (frontendProcess && !frontendProcess.killed) {
-    console.log('[Desktop] Stopping frontend...');
-    frontendProcess.kill('SIGTERM');
+  if (frontendProcess?.pid) {
+    console.log('[Desktop] Stopping frontend process tree...');
+    try {
+      if (process.platform === 'win32') {
+        exec(`taskkill /F /T /PID ${frontendProcess.pid}`, () => {});
+      } else {
+        frontendProcess.kill('SIGKILL');
+      }
+    } catch {}
     frontendProcess = null;
   }
-  if (backendProcess && !backendProcess.killed) {
-    console.log('[Desktop] Stopping backend...');
-    backendProcess.kill('SIGTERM');
+  if (backendProcess?.pid) {
+    console.log('[Desktop] Stopping backend process tree...');
+    try {
+      if (process.platform === 'win32') {
+        exec(`taskkill /F /T /PID ${backendProcess.pid}`, () => {});
+      } else {
+        backendProcess.kill('SIGKILL');
+      }
+    } catch {}
     backendProcess = null;
   }
 }
@@ -340,6 +397,8 @@ function killChildProcesses(): void {
  * Application entry point.
  */
 app.whenReady().then(async () => {
+  if (!gotSingleInstanceLock) return;
+
   try {
     await startBackend();
     await startFrontend();
@@ -350,6 +409,7 @@ app.whenReady().then(async () => {
       'Memory Arena - Startup Error',
       `Failed to start the game servers.\n\n${error instanceof Error ? error.message : String(error)}\n\nPlease try restarting the application.`
     );
+    killChildProcesses();
     app.quit();
   }
 });
@@ -368,3 +428,4 @@ app.on('activate', () => {
     createWindow();
   }
 });
+
