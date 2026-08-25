@@ -7,6 +7,7 @@ import * as net from 'net';
 /** Port configuration */
 const BACKEND_PORT = 3000;
 const FRONTEND_PORT = 3001;
+const STARTUP_TIMEOUT_MS = 60000; // 60s for slow startup / antivirus real-time scan
 
 /** Paths for bundled resources (production) vs dev */
 const IS_DEV = !app.isPackaged;
@@ -262,7 +263,7 @@ async function startBackend(): Promise<void> {
   });
 
   try {
-    await waitForPort(BACKEND_PORT, 30000);
+    await waitForPort(BACKEND_PORT, STARTUP_TIMEOUT_MS);
     writeLog('[Desktop]', 'Backend is ready.');
     console.log('[Desktop] Backend is ready.');
   } catch (err) {
@@ -371,7 +372,7 @@ async function startFrontend(): Promise<void> {
   });
 
   try {
-    await waitForPort(FRONTEND_PORT, 30000);
+    await waitForPort(FRONTEND_PORT, STARTUP_TIMEOUT_MS);
     writeLog('[Desktop]', 'Frontend is ready.');
     console.log('[Desktop] Frontend is ready.');
   } catch (err) {
