@@ -22,4 +22,13 @@ export const GAME_CONSTANTS = {
     [Color.BLUE]: 2,
     [Color.YELLOW]: 3,
   },
+  LEADERBOARD: {
+    WIN_POINTS: {
+      [Difficulty.EASY]: 100,
+      [Difficulty.MEDIUM]: 200,
+      [Difficulty.HARD]: 300,
+    },
+    CLEAN_SWEEP_BONUS: 50,
+    PARTICIPATION_POINTS: 20,
+  },
 } as const;

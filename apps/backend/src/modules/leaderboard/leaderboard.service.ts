@@ -1,11 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma/prisma.service';
+import { GAME_CONSTANTS } from '../../common/constants/game.constants';
+import { Difficulty } from '../../common/enums';
 
 export interface ILeaderboardEntry {
   rank: number;
   playerId: string;
   displayName: string;
   pictureUrl: string | null;
+  score: number;
   wins: number;
   games: number;
   winRate: number;
@@ -33,6 +36,34 @@ export class LeaderboardService {
         const games = player.matchPlayers.length;
         const wins = player.wonMatches.length;
         const winRate = games > 0 ? Math.round((wins / games) * 100) : 0;
+
+        // Calculate total weighted score from all played matches
+        let score = 0;
+
+        for (const mp of player.matchPlayers) {
+          const match = mp.match;
+          if (!match) continue;
+
+          const isWinner = match.winnerId === player.id;
+          const diff = (match.difficulty?.toUpperCase() || Difficulty.MEDIUM) as Difficulty;
+          const winPoints =
+            GAME_CONSTANTS.LEADERBOARD.WIN_POINTS[diff] ??
+            GAME_CONSTANTS.LEADERBOARD.WIN_POINTS[Difficulty.MEDIUM];
+
+          if (isWinner) {
+            score += winPoints;
+            // Clean sweep bonus (e.g. 2-0: loser has 0 points while winner has > 0)
+            const isCleanSweep =
+              (match.player1Score > 0 && match.player2Score === 0) ||
+              (match.player2Score > 0 && match.player1Score === 0);
+            if (isCleanSweep) {
+              score += GAME_CONSTANTS.LEADERBOARD.CLEAN_SWEEP_BONUS;
+            }
+          } else {
+            // Participation points for playing the match
+            score += GAME_CONSTANTS.LEADERBOARD.PARTICIPATION_POINTS;
+          }
+        }
 
         // Calculate average round completion time
         const roundsP1 = await this.prisma.round.aggregate({
@@ -64,6 +95,7 @@ export class LeaderboardService {
           playerId: player.id,
           displayName: player.displayName,
           pictureUrl: player.pictureUrl,
+          score,
           wins,
           games,
           winRate,
@@ -74,19 +106,18 @@ export class LeaderboardService {
 
     // Sort by:
     // 1. Active players (games > 0) before unplayed players (games === 0)
-    // 2. Avg Time (asc, lowest/fastest time first, valid times > 0 before unrecorded)
+    // 2. Score / Total Points (desc)
     // 3. Wins (desc)
     // 4. Win Rate (desc)
     // 5. Total games played (desc)
+    // 6. Display Name (asc)
     entries.sort((a, b) => {
       // 1. Players who played come before players who never played
       if (a.games > 0 && b.games === 0) return -1;
       if (a.games === 0 && b.games > 0) return 1;
 
-      // 2. Sort by avgTimeMs (asc) — 0ms treated as unrecorded / Infinity
-      const timeA = a.avgTimeMs > 0 ? a.avgTimeMs : Infinity;
-      const timeB = b.avgTimeMs > 0 ? b.avgTimeMs : Infinity;
-      if (timeA !== timeB) return timeA - timeB;
+      // 2. Sort by score (desc)
+      if (b.score !== a.score) return b.score - a.score;
 
       // 3. Sort by wins (desc)
       if (b.wins !== a.wins) return b.wins - a.wins;

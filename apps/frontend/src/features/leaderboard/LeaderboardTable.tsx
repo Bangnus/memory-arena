@@ -1,12 +1,10 @@
 'use client';
 
 import { useQuery } from '@tanstack/react-query';
-import { Trophy, Medal, Timer, Hash, Gamepad2, Flame } from 'lucide-react';
+import { Trophy, Medal, Zap, Gamepad2, Flame, Award } from 'lucide-react';
 import { leaderboardService } from '@/services/leaderboard.service';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 export function LeaderboardTable() {
@@ -26,7 +24,7 @@ export function LeaderboardTable() {
           GLOBAL LEADERBOARD
         </CardTitle>
         <CardDescription className="text-sm font-semibold text-purple-600/80">
-          Top Arena Champions 👑
+          Top Arena Champions & Points 👑
         </CardDescription>
       </CardHeader>
 
@@ -34,7 +32,7 @@ export function LeaderboardTable() {
         <div className="flex flex-col gap-2.5 pr-1">
           {players.length === 0 ? (
             <div className="text-center py-10 text-purple-600 font-semibold bg-purple-50/60 rounded-2xl border-2 border-dashed border-purple-200">
-              No data available
+              {isLoading ? 'Loading leaderboard...' : 'No data available'}
             </div>
           ) : (
             players.map((entry, idx) => {
@@ -48,12 +46,12 @@ export function LeaderboardTable() {
                   className={cn(
                     "flex items-center gap-3 p-3 md:p-3.5 rounded-2xl transition-all duration-300 border-2",
                     isTop 
-                      ? "bg-gradient-to-r from-amber-100 via-amber-50 to-white border-amber-400 shadow-md scale-[1.02]" 
+                      ? "bg-gradient-to-r from-amber-100 via-amber-50 to-white border-amber-400 shadow-md scale-[1.01]" 
                       : isSecond 
                       ? "bg-slate-50 border-slate-300 shadow-sm"
                       : isThird
                       ? "bg-amber-50/60 border-amber-200 shadow-sm"
-                      : "bg-white border-slate-100"
+                      : "bg-white border-slate-100 hover:border-purple-200"
                   )}
                 >
                   {/* Rank Badge */}
@@ -82,7 +80,7 @@ export function LeaderboardTable() {
                   )}>
                     <AvatarImage src={entry.pictureUrl || ''} />
                     <AvatarFallback className="bg-purple-100 text-purple-700 font-bold">
-                      {entry.displayName.substring(0, 2).toUpperCase()}
+                      {entry.displayName ? entry.displayName.substring(0, 2).toUpperCase() : 'PL'}
                     </AvatarFallback>
                   </Avatar>
                   
@@ -109,21 +107,27 @@ export function LeaderboardTable() {
                         <span>{entry.games} {entry.games === 1 ? 'Match' : 'Matches'}</span>
                       </span>
                       {entry.games > 0 && (
-                        <span className="text-emerald-600 font-mono text-[10px] font-bold">
+                        <span className="text-emerald-600 font-mono text-[10px] font-bold bg-emerald-50 px-1.5 py-0.5 rounded-md border border-emerald-200">
                           {entry.winRate}% Win
                         </span>
                       )}
                     </div>
                   </div>
                   
-                  {/* Stats */}
-                  <div className="flex flex-col items-end gap-0.5 flex-shrink-0">
-                    <div className="font-orbitron font-black text-base md:text-lg text-cyan-700 flex items-center gap-1">
-                      <Timer className="w-3.5 h-3.5 text-cyan-600" />
-                      <span>{entry.avgTimeMs > 0 ? `${(entry.avgTimeMs / 1000).toFixed(2)}s` : '-'}</span>
+                  {/* Score & Wins Stats */}
+                  <div className="flex flex-col items-end justify-center gap-0.5 flex-shrink-0">
+                    <div className={cn(
+                      "font-orbitron font-black text-base md:text-lg flex items-center gap-1",
+                      isTop ? "text-amber-600" : "text-purple-700"
+                    )}>
+                      <Zap className={cn("w-4 h-4", isTop ? "fill-amber-500 text-amber-500" : "fill-purple-500 text-purple-500")} />
+                      <span>{(entry.score ?? 0).toLocaleString()}</span>
+                      <span className="text-[10px] font-black uppercase text-purple-400 tracking-wider">PTS</span>
                     </div>
-                    <div className="text-xs font-mono font-bold text-slate-500">
-                      {entry.wins} <span className="text-[10px] text-purple-500 font-bold uppercase">Wins</span>
+                    <div className="text-[11px] font-bold text-slate-500 flex items-center gap-1">
+                      <Award className="w-3 h-3 text-purple-400" />
+                      <span className="text-purple-600 font-extrabold">{entry.wins}</span>
+                      <span className="text-[10px] uppercase text-slate-400 font-semibold">{entry.wins === 1 ? 'Win' : 'Wins'}</span>
                     </div>
                   </div>
                 </div>

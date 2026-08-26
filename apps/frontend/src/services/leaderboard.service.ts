@@ -5,10 +5,11 @@ export interface LeaderboardEntry {
   playerId: string;
   displayName: string;
   pictureUrl: string | null;
+  score: number;
   wins: number;
   games: number;
   winRate: number;
-  avgTimeMs: number;
+  avgTimeMs?: number;
 }
 
 export const leaderboardService = {
