@@ -1,19 +1,19 @@
 @echo off
-title Memory Arena Game Launcher
+title Memory Arena Game Launcher (Production)
 color 0b
 
 echo ===================================================
-echo             MEMORY ARENA - GAME LAUNCHER           
+echo        MEMORY ARENA - GAME LAUNCHER (PROD)           
 echo ===================================================
 cd /d "%~dp0"
 
 echo [1/3] Database Ready (SQLite Zero-Config)...
 
-echo [2/3] Starting Backend (NestJS on Port 3000)...
-start "Memory Arena Backend" cmd.exe /k "title Backend && cd /d \"%~dp0apps\backend\" && npm.cmd run start:dev"
+echo [2/3] Starting Backend (Production on Port 3000)...
+start "Backend" /d "%~dp0apps\backend" cmd.exe /k "npm.cmd run start:prod"
 
-echo [3/3] Starting Frontend (Next.js on Port 3001)...
-start "Memory Arena Frontend" cmd.exe /k "title Frontend && cd /d \"%~dp0apps\frontend\" && npm.cmd run dev"
+echo [3/3] Starting Frontend (Production on Port 3001)...
+start "Frontend" /d "%~dp0apps\frontend" cmd.exe /k "npm.cmd run start"
 
 echo.
 echo ===================================================
